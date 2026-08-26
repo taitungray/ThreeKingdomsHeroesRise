@@ -195,6 +195,21 @@ const EXTRA_EQUIPMENT = {
     { id: "golden-feather", name: "金翎", bonus: "速度 +9", stats: { speed: 9 }, className: "paper-accessory-golden-feather" },
     { id: "imperial-edict", name: "天子詔", bonus: "攻擊 +7、生命 +20", stats: { atk: 7, hp: 20 }, className: "paper-accessory-imperial-edict" }
   ]
+};window.THREE_KINGDOMS_DATA.mountVisuals = {
+  foot: { species: "foot", tier: 0 },
+  grey: { species: "horse", tier: 1, body: "#aaa99e", light: "#d1c8b8", mane: "#5a5148", hoof: "#28241e", armor: "#6a744f", vfx: "dust" },
+  redhare: { species: "horse", tier: 3, body: "#6f342d", light: "#c15a42", mane: "#301c22", hoof: "#211b1b", armor: "#d8ae45", ornament: "#f0d47a", vfx: "ember" },
+  jadelion: { species: "horse", tier: 3, body: "#d9d9ce", light: "#f1eee1", mane: "#8d9a92", hoof: "#4b4b45", armor: "#82a9a2", ornament: "#dff4dd", vfx: "snow" },
+  whitehorse: { species: "horse", tier: 1, body: "#c9d0d0", light: "#eef0df", mane: "#8da1a5", hoof: "#3f4748", armor: "#738e9a", vfx: "dust" },
+  blackhorse: { species: "horse", tier: 2, body: "#34383d", light: "#676d75", mane: "#151820", hoof: "#121318", armor: "#555f75", vfx: "shadow" },
+  "war-elephant": { species: "elephant", tier: 3, body: "#4e5d56", light: "#8aa08d", mane: "#26352f", hoof: "#202923", armor: "#a68a58", ornament: "#e4c87b", vfx: "leaf" },
+  "cloud-deer": { species: "deer", tier: 3, body: "#8e9f9e", light: "#c9e1d2", mane: "#e7f3e5", hoof: "#3b4a48", armor: "#789ca1", ornament: "#dff6ef", vfx: "mist" },
+  "hex-mark": { species: "horse", tier: 2, body: "#b9b6a7", light: "#f0e7c5", mane: "#665a4d", hoof: "#3c302a", armor: "#b98542", ornament: "#f1d481", vfx: "dust" },
+  "thunder-horse": { species: "horse", tier: 4, body: "#384d62", light: "#8db6d2", mane: "#18283d", hoof: "#172232", armor: "#527ba6", ornament: "#d9f4ff", vfx: "lightning" },
+  "armored-rhino": { species: "rhino", tier: 4, body: "#59636b", light: "#aab6b4", mane: "#2e363a", hoof: "#20272b", armor: "#a07d57", ornament: "#e0bd76", vfx: "dust" },
+  "crimson-deer": { species: "deer", tier: 2, body: "#874844", light: "#cc7d60", mane: "#4e2528", hoof: "#2b1d22", armor: "#9c5744", ornament: "#f0b56b", vfx: "ember" },
+  "flying-horse": { species: "horse", tier: 4, body: "#7a91ae", light: "#dceaf4", mane: "#e9f5ff", hoof: "#35475d", armor: "#7894bc", ornament: "#f7fcff", vfx: "mist" },
+  "black-panther": { species: "panther", tier: 4, body: "#252b39", light: "#59637d", mane: "#141622", hoof: "#171722", armor: "#4f5d8a", ornament: "#c7d2ff", vfx: "shadow" }
 };
 for (const slot of window.THREE_KINGDOMS_DATA.paperDollSlots) slot.choices.push(...(EXTRA_EQUIPMENT[slot.id] || []));
 for (const [index, hero] of window.THREE_KINGDOMS_DATA.heroes.entries()) {

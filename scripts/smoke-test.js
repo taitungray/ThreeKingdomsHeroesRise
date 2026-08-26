@@ -15,6 +15,10 @@ assert.ok(data.heroes.length >= 50, "the roster should contain at least fifty he
 assert.equal(new Set(data.heroes.map((hero) => hero.id)).size, data.heroes.length, "hero ids must be unique");
 assert.ok(data.heroes.every((hero) => hero.skillCooldown > 0 && hero.role), "every hero needs a role and skill cooldown");
 assert.equal(data.paperDollSlots.length, 4, "paper doll must expose four equipment slots");
+const mountSlot = data.paperDollSlots.find((slot) => slot.id === "mount");
+assert.ok(mountSlot && mountSlot.choices.length >= 14, "mount paper-doll slot should contain the full mount pool");
+assert.ok(mountSlot.choices.every((choice) => data.mountVisuals?.[choice.id]), "every mount needs a visual definition");
+assert.ok(data.mountVisuals.redhare.tier >= 3 && data.mountVisuals["thunder-horse"].vfx, "high-tier mounts need detail metadata and VFX");
 assert.ok(data.paperDollSlots.reduce((sum, slot) => sum + slot.choices.length, 0) >= 66, "equipment pool should contain at least sixty-six choices");
 assert.ok(data.tactics.length >= 3, "the first release needs three tactics");
 assert.ok(data.stages.length >= 100, "stage data must cover a long campaign");

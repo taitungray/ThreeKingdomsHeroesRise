@@ -256,19 +256,164 @@ function drawWeapon(unit, color) {
   ctx.restore();
 }
 
+function mountVisualDefinition(unit, heroId, mountId) {
+  const configured = mountId && GAME_DATA.mountVisuals?.[mountId];
+  if (configured) return configured;
+  return {
+    species: "horse",
+    tier: 1,
+    body: heroId === "lubu" ? "#6f342d" : unit.team === "ally" ? "#aaa99e" : "#5e5042",
+    light: heroId === "lubu" ? "#c15a42" : unit.team === "ally" ? "#c1b6a4" : "#756250",
+    mane: "#3a302b",
+    hoof: "#28241e",
+    armor: heroId === "lubu" ? "#d8ae45" : unit.team === "ally" ? "#6a744f" : "#4b352a",
+    ornament: "#f0d47a",
+    vfx: "dust"
+  };
+}
+
+function drawMountVfx(mount, unit, walkCycle) {
+  const pulse = (Math.sin(runtime.elapsed * 7 + unit.x * 0.04) + 1) * 0.5;
+  const drift = Math.round(Math.sin(runtime.elapsed * 4 + unit.y * 0.03) * 2);
+  if (mount.vfx === "ember") {
+    ctx.globalAlpha = 0.42 + pulse * 0.28;
+    drawPixelRect(18, -9 - drift, 3, 3, mount.ornament || "#f0a03d");
+    drawPixelRect(-20 - drift, -4, 2, 3, "#e2683d");
+    drawPixelRect(10, -29 + drift, 2, 3, "#ffd36b");
+    ctx.globalAlpha = 1;
+  } else if (mount.vfx === "snow") {
+    ctx.globalAlpha = 0.48 + pulse * 0.22;
+    drawPixelRect(-23 + drift, -22, 2, 2, mount.ornament || "#e4f8ff");
+    drawPixelRect(20 - drift, -10, 2, 2, "#f7ffff");
+    drawPixelRect(-10, 1 + drift, 3, 2, "#d8f2ea");
+    ctx.globalAlpha = 1;
+  } else if (mount.vfx === "lightning") {
+    ctx.globalAlpha = 0.35 + pulse * 0.4;
+    drawPixelLine(-25, -3, -21, -7, mount.ornament || "#d9f4ff", 1.5);
+    drawPixelLine(-21, -7, -23, -11, mount.ornament || "#d9f4ff", 1.5);
+    drawPixelLine(25, -4, 22, -8, "#9bd7ff", 1.5);
+    ctx.globalAlpha = 1;
+  } else if (mount.vfx === "mist") {
+    ctx.globalAlpha = 0.2 + pulse * 0.14;
+    drawPixelRect(-26, -4 + drift, 8, 3, mount.ornament || "#dff6ef");
+    drawPixelRect(19, -1 - drift, 9, 3, "#e8f4ff");
+    ctx.globalAlpha = 1;
+  } else if (mount.vfx === "leaf") {
+    ctx.globalAlpha = 0.52;
+    drawPixelRect(-26 + drift, -17, 3, 2, mount.ornament || "#c4e39a");
+    drawPixelRect(23 - drift, -7, 3, 2, "#96c27b");
+    ctx.globalAlpha = 1;
+  } else if (mount.vfx === "shadow") {
+    ctx.globalAlpha = 0.28 + pulse * 0.12;
+    drawPixelRect(-25 - drift, -7, 5, 3, mount.mane || "#141622");
+    drawPixelRect(21 + drift, -4, 5, 3, mount.mane || "#141622");
+    ctx.globalAlpha = 1;
+  } else if (unit.moving) {
+    ctx.globalAlpha = 0.2;
+    drawPixelRect(-24, 0, 6, 2, "#d3c09c");
+    drawPixelRect(20, 2, 5, 2, "#b8a98d");
+    ctx.globalAlpha = 1;
+  }
+}
+
+function drawDetailedMount(mount, unit, heroId, walkCycle) {
+  const stride = unit.moving ? Math.round(walkCycle * 2) : 0;
+  const body = mount.body || "#8e8373";
+  const light = mount.light || body;
+  const mane = mount.mane || "#3a302b";
+  const hoof = mount.hoof || "#28241e";
+  const armor = mount.armor || "#6a744f";
+  const ornament = mount.ornament || light;
+  const species = mount.species || "horse";
+
+  if (species === "elephant") {
+    drawPixelRect(-23, -18, 37, 16, body);
+    drawPixelRect(-17, -22, 25, 7, light);
+    drawPixelRect(11, -21, 11, 12, light);
+    drawPixelRect(20, -15, 5, 18, body);
+    drawPixelRect(23, 0, 4, 6, light);
+    drawPixelRect(7, -24, 10, 7, mane);
+    drawPixelRect(-18 + stride, -4, 6, 11, hoof);
+    drawPixelRect(-5 - stride, -3, 6, 10, hoof);
+    drawPixelRect(8 + stride, -4, 6, 11, hoof);
+    drawPixelRect(-13, -20, 25, 4, armor);
+    drawPixelRect(-7, -24, 3, 4, ornament);
+    drawPixelRect(1, -24, 3, 4, ornament);
+  } else if (species === "deer") {
+    drawPixelRect(-19, -14, 29, 9, body);
+    drawPixelRect(-8, -21, 12, 11, body);
+    drawPixelRect(6, -27, 10, 9, light);
+    drawPixelRect(14, -24, 8, 4, light);
+    drawPixelRect(-15 + stride, -5, 4, 11, hoof);
+    drawPixelRect(-5 - stride, -5, 4, 11, hoof);
+    drawPixelRect(4 + stride, -5, 4, 11, hoof);
+    drawPixelRect(15 - stride, -5, 4, 11, hoof);
+    drawPixelRect(-8, -18, 17, 3, armor);
+    drawPixelLine(9, -28, 5, -34, ornament, 2);
+    drawPixelLine(12, -28, 16, -34, ornament, 2);
+    drawPixelLine(7, -32, 3, -33, ornament, 1);
+    drawPixelLine(15, -32, 19, -33, ornament, 1);
+  } else if (species === "rhino") {
+    drawPixelRect(-23, -17, 39, 15, body);
+    drawPixelRect(-13, -22, 25, 8, light);
+    drawPixelRect(13, -21, 11, 10, light);
+    drawPixelRect(23, -19, 7, 4, ornament);
+    drawPixelRect(-18 + stride, -4, 7, 11, hoof);
+    drawPixelRect(-5 - stride, -4, 7, 11, hoof);
+    drawPixelRect(8 + stride, -4, 7, 11, hoof);
+    drawPixelRect(-13, -20, 27, 5, armor);
+    drawPixelRect(-1, -24, 3, 5, ornament);
+  } else if (species === "panther") {
+    drawPixelRect(-22, -13, 35, 9, body);
+    drawPixelRect(8, -19, 13, 10, light);
+    drawPixelRect(17, -23, 9, 7, light);
+    drawPixelRect(18, -29, 4, 7, mane);
+    drawPixelRect(24, -27, 4, 3, ornament);
+    drawPixelRect(-15 + stride, -5, 4, 10, hoof);
+    drawPixelRect(-4 - stride, -5, 4, 10, hoof);
+    drawPixelRect(7 + stride, -5, 4, 10, hoof);
+    drawPixelRect(-20, -15, 7, 3, mane);
+    drawPixelLine(-21, -11, -29, -17 - stride, mane, 2);
+    drawPixelRect(-10, -17, 18, 3, armor);
+  } else {
+    drawPixelRect(-21, -14, 34, 12, body);
+    drawPixelRect(-12, -19, 23, 8, body);
+    drawPixelRect(8, -22, 13, 10, light);
+    drawPixelRect(18, -26, 9, 7, light);
+    drawPixelRect(23, -23, 7, 3, light);
+    drawPixelRect(13, -30, 4, 7, mane);
+    drawPixelRect(9, -27, 3, 8, mane);
+    drawPixelRect(-15 + stride, -4, 5, 11, hoof);
+    drawPixelRect(-3 - stride, -4, 5, 10, hoof);
+    drawPixelRect(7 + stride, -4, 5, 11, hoof);
+    drawPixelRect(18 - stride, -4, 5, 10, hoof);
+    drawPixelRect(-10, -18, 20, 4, armor);
+    drawPixelRect(-4, -21, 8, 3, ornament);
+    drawPixelLine(21, -21, 27, -20, ornament, 1);
+    drawPixelRect(23, -23, 2, 2, "#241b1b");
+    drawPixelRect(15, -19, 3, 2, ornament);
+  }
+  if (mount.tier >= 3) {
+    drawPixelRect(-18, -12, 4, 4, ornament);
+    drawPixelRect(10, -13, 4, 4, ornament);
+    drawPixelLine(-17, -9, -11, -6, armor, 1);
+    drawPixelLine(10, -9, 16, -6, armor, 1);
+  }
+  if (mount.tier >= 4) {
+    const glint = (Math.sin(runtime.elapsed * 5 + unit.x * 0.05) + 1) * 0.5;
+    ctx.globalAlpha = 0.45 + glint * 0.35;
+    drawPixelRect(-1, -25, 3, 3, ornament);
+    drawPixelRect(3, -24, 3, 2, ornament);
+    ctx.globalAlpha = 1;
+  }
+  drawMountVfx(mount, unit, walkCycle);
+}
+
 function drawMountOrFeet(unit, heroId, walkCycle, mountId = "") {
   const mounted = (unit.role === "騎兵" || unit.type === "boss") && mountId !== "foot";
   if (mounted) {
-    const horse = mountId === "jadelion" || heroId === "zhaoyun" ? "#d9d9ce" : mountId === "redhare" || heroId === "lubu" ? "#6f342d" : heroId === "guanyu" ? "#715343" : unit.team === "ally" ? "#aaa99e" : "#5e5042";
-    const horseLight = mountId === "jadelion" || heroId === "zhaoyun" ? "#f1eee1" : mountId === "redhare" || heroId === "lubu" ? "#9b4a36" : unit.team === "ally" ? "#c1b6a4" : "#756250";
-    const gallop = unit.moving ? Math.round(walkCycle * 2) : 0;
-    drawPixelRect(-18, -13, 35, 12, horse);
-    drawPixelRect(11, -19, 13, 12, horseLight);
-    drawPixelRect(17, -23, 7, 6, horseLight);
-    drawPixelRect(-14 + gallop, -3, 5, 9, "#28241e");
-    drawPixelRect(8 - gallop, -3, 5, 9, "#28241e");
-    drawPixelRect(-20, -12, 5, 3, heroId === "lubu" ? "#c84535" : "#332a24");
-    drawPixelRect(-8, -16, 17, 4, heroId === "lubu" ? "#d8ae45" : unit.team === "ally" ? "#6a744f" : "#4b352a");
+    const mount = mountVisualDefinition(unit, heroId, mountId);
+    drawDetailedMount(mount, unit, heroId, walkCycle);
   } else {
     const stride = unit.moving ? Math.round(walkCycle * (heroId === "zhangfei" ? 4 : 3)) : 0;
     const boot = heroId === "diaochan" || heroId === "sunshang" ? "#5b3047" : "#2a251e";
