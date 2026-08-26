@@ -1,0 +1,16 @@
+node_modules/
+www/
+builds/
+.build-tools/
+android/.gradle/
+android/local.properties
+android/app/build/
+android/build/
+android/.idea/
+*.jks
+*.keystore
+*.apk
+*.aab
+google-services.json
+.env
+.env.*

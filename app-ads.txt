@@ -1,0 +1,2 @@
+# TODO: Replace this comment with this app's verified Google AdMob publisher line before publication.
+# Format: google.com, pub-XXXXXXXXXXXXXXXX, DIRECT, f08c47fec0942fa0

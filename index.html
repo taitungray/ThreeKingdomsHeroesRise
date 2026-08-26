@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <meta name="theme-color" content="#171a16">
+  <title>三國：群英再起｜像素三國放置 RPG</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main id="gameApp" class="game-app" aria-label="三國：群英再起遊戲">
+    <section id="battleScreen" class="battle-screen">
+      <canvas id="battleCanvas" width="390" height="720" aria-label="像素武將自動戰鬥場景"></canvas>
+
+      <header class="top-hud">
+        <button class="lord-card" id="profileButton" type="button" aria-label="查看主公資訊">
+          <span class="pixel-avatar avatar-liubei" aria-hidden="true"><i></i></span>
+          <span class="lord-info">
+            <strong id="lordName">劉玄德</strong>
+            <span class="level-line"><b id="lordLevel">Lv.1</b><span class="exp-track"><i id="expFill"></i></span><small id="expText">0/100</small></span>
+            <em id="armyTitle">義勇軍</em>
+          </span>
+        </button>
+
+        <div class="battle-meta">
+          <button id="autoButton" class="metal-button active" type="button" aria-pressed="true">自動戰鬥</button>
+          <button id="speedButton" class="speed-button" type="button" aria-label="切換戰鬥速度" aria-valuetext="戰鬥速度 ×1">×1</button>
+          <p><span id="chapterLabel">黃巾之亂</span><b id="stageLabel">1-1</b></p>
+        </div>
+      </header>
+
+      <aside class="right-rail" aria-label="快捷功能">
+        <button type="button" data-panel="settings"><i class="icon-gear"></i><span>設定</span></button>
+        <button type="button" data-panel="mail"><i class="icon-mail"></i><span>軍件</span><b class="alert-dot" id="mailDot"></b></button>
+        <button type="button" data-panel="rank"><i class="icon-rank"></i><span>排行</span></button>
+        <button type="button" data-panel="achievement"><i class="icon-medal"></i><span>成就</span></button>
+        <button type="button" data-panel="record"><i class="icon-scroll"></i><span>戰報</span></button>
+      </aside>
+
+      <div class="stage-stamp" aria-live="polite">
+        <span id="waveLabel">第 1 波</span>
+        <strong id="enemyCount">敵軍 4</strong>
+      </div>
+
+      <div id="dialogueBox" class="dialogue-box" aria-live="polite">
+        <span id="dialoguePortrait" class="pixel-avatar avatar-zhangfei"><i></i></span>
+        <p><strong id="dialogueName">張飛</strong><span id="dialogueText">大哥，前方發現黃巾賊軍！</span></p>
+      </div>
+
+      <div id="bossBanner" class="boss-banner" aria-hidden="true">
+        <span>強敵來襲</span>
+        <strong id="bossName">黃巾渠帥</strong>
+      </div>
+
+      <section class="bottom-hud">
+        <div class="resource-strip" aria-label="資源">
+          <span><i class="res-coin"></i><b id="goldValue">860</b></span>
+          <span><i class="res-food"></i><b id="foodValue">320</b></span>
+          <span><i class="res-jade"></i><b id="jadeValue">12</b></span>
+          <button id="bossButton" type="button"><small>關卡首領</small><strong id="bossProgress">0 / 4</strong></button>
+        </div>
+
+        <nav class="bottom-nav" aria-label="主要功能">
+          <button class="selected" type="button" data-panel="battle"><i class="nav-battle"></i><span>征戰</span></button>
+          <button type="button" data-panel="heroes"><i class="nav-heroes"></i><span>武將</span><b id="heroNotice" class="nav-notice">1</b></button>
+          <button type="button" data-panel="formation"><i class="nav-formation"></i><span>編隊</span></button>
+          <button type="button" data-panel="tactics"><i class="nav-tactics"></i><span>戰法</span></button>
+          <button type="button" data-panel="campaign"><i class="nav-map"></i><span>戰役</span></button>
+        </nav>
+      </section>
+    </section>
+
+    <div id="panelBackdrop" class="panel-backdrop" hidden>
+      <section id="gamePanel" class="game-panel" role="dialog" aria-modal="true" aria-labelledby="panelTitle">
+        <header class="panel-header">
+          <button id="panelBack" class="panel-back" type="button" aria-label="返回" hidden></button>
+          <span class="header-ornament"></span>
+          <h2 id="panelTitle">武將</h2>
+          <button id="panelClose" class="panel-close" type="button" aria-label="關閉"></button>
+        </header>
+        <div id="panelContent" class="panel-content" aria-live="polite"></div>
+      </section>
+    </div>
+
+    <div id="offlineModal" class="modal-backdrop" hidden>
+      <section class="reward-modal" role="dialog" aria-modal="true" aria-labelledby="offlineTitle">
+        <span class="reward-rays"></span>
+        <div class="reward-chest" aria-hidden="true"><i></i></div>
+        <h2 id="offlineTitle">軍糧已送達</h2>
+        <p id="offlineTime">離線 00:00</p>
+        <div class="offline-loot">
+          <span><i class="res-coin"></i><b id="offlineGold">0</b> 銅錢</span>
+          <span><i class="res-food"></i><b id="offlineFood">0</b> 糧草</span>
+        </div>
+        <button id="claimOffline" class="seal-button" type="button">收下軍資</button>
+      </section>
+    </div>
+
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    <div id="rotateHint" class="rotate-hint"><i></i><p>請將裝置轉回直向<br><small>豎屏才能看清戰局</small></p></div>
+  </main>
+
+  <script src="js/admob-config.js"></script>
+  <script src="js/admob.js"></script>
+  <script src="game.js"></script>
+  <script>
+    if ("serviceWorker" in navigator && location.protocol !== "file:") {
+      window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}), { once: true });
+    }
+  </script>
+</body>
+</html>

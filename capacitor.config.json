@@ -1,0 +1,15 @@
+{
+  "appId": "com.taitungray.taoyuanqunying",
+  "appName": "三國：群英再起",
+  "webDir": "www",
+  "bundledWebRuntime": false,
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 1400,
+      "launchAutoHide": true,
+      "backgroundColor": "#171a16",
+      "showSpinner": false,
+      "androidSplashResourceName": "splash"
+    }
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "name": "taoyuan-qunying",
+  "version": "0.1.0",
+  "private": true,
+  "description": "三國：群英再起 - 直式像素三國放置 RPG",
+  "main": "index.html",
+  "scripts": {
+    "start": "node serve-local.js 8788",
+    "dev": "node scripts/dev-server.js --port 8788",
+    "build": "node build.js",
+    "build:release": "node build.js --release",
+    "build:android": "powershell -ExecutionPolicy Bypass -File scripts/build-release.ps1",
+    "build:apk": "powershell -ExecutionPolicy Bypass -File scripts/build-release.ps1",
+    "cap:sync": "npx cap sync",
+    "setup:android": "powershell -ExecutionPolicy Bypass -File scripts/setup-android.ps1",
+    "release:android": "powershell -ExecutionPolicy Bypass -File scripts/build-release.ps1",
+    "start:android": "powershell -ExecutionPolicy Bypass -File scripts/start-android.ps1",
+    "start:android:studio": "powershell -ExecutionPolicy Bypass -File scripts/start-android.ps1 -OpenAndroidStudio"
+  },
+  "dependencies": {
+    "@capacitor-community/admob": "^6.0.0",
+    "@capacitor/android": "^6.0.0",
+    "@capacitor/app": "^6.0.3",
+    "@capacitor/core": "^6.0.0",
+    "@capacitor/splash-screen": "^6.0.0"
+  },
+  "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
+    "@capacitor/cli": "^6.0.0"
+  }
+}
