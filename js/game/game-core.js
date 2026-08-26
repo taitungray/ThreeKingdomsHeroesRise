@@ -174,6 +174,10 @@ function persist() {
   localStorage.setItem(SAVE_KEY, JSON.stringify(save));
 }
 
+function enemyGeneralById(id) {
+  return (GAME_DATA.enemyGenerals || []).find((general) => general.id === id) || null;
+}
+
 function heroById(id) {
   return HEROES.find((hero) => hero.id === id);
 }

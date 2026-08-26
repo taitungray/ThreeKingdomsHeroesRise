@@ -123,3 +123,19 @@ disabled 不能只用 opacity；要有實色、文字原因與不可操作的語
 - 橫向短高：顯示旋轉提示，不讓戰鬥 UI 半截露出。
 - 檢查 normal、pressed、selected、disabled、claimed、loading、error。
 - 檢查無障礙名稱、焦點、對比與 reduced-motion。
+
+## Small-sprite readability
+
+Battlefield heroes keep their chunky pixel silhouette, then receive a compact detail pass: 1-2px shoulder studs, collar/belt landmarks, face highlights, hero-specific hair or crest pixels, and one marker for each paper-doll slot. Units rendered below 1x are snapped to half-pixel coordinates for crisp edges while the health bar and movement interpolation remain smooth. This keeps small characters detailed and recognizable without increasing hitboxes or adding bitmap dependencies.
+Allied health bars are anchored below the feet, with an equal-length ultimate-energy bar directly underneath; enemy minions have no health bars, while the BOSS bar stays above the crown. The energy fill reflects attack charges, dims during cooldown, and pulses gold when the skill is ready.
+
+Battlefield sprite scale uses 0.88x for allies, 0.82-0.90x for regular enemies, and 1.30x for bosses; the hierarchy remains clear while all characters occupy less space. Shadows follow the same scale.
+
+Combat damage numbers use a readable 16px base / 24px critical scale on the 390px battle canvas. Normal hits remain compact enough for stacked attacks; critical hits use heavier weight and a 3px dark outline so the value is legible over sprites and effects. Both use the existing restrained pop curve and upward drift.
+
+## Stage identity and enemy preview
+
+Every stage exposes a data-driven display name in the battle header and canvas watermark, so the HUD never falls back to a generic “wave 1” identity. The battle HUD permanently shows one named enemy general for the active wave; it switches when the next wave spawns and changes to the boss general during the boss wave. Each card uses the same compact pixel portrait vocabulary as the roster, while every enemy in a normal wave shares that wave general id for future general-specific skills, drops and paper-doll variants.
+## Character portrait identity
+
+Portraits use a fixed three-anchor contract: silhouette (headgear or hair shape), face mark (beard, eyepatch, eye color or cheek mark), and costume block (robe, armor or scarf). Each anchor is rendered as a crisp pixel layer and is preserved by the large detail portrait, roster thumbnail, dialogue portrait and enemy preview. Equipment layers remain above the portrait anchors so the paper-doll system can change weapons and armor without erasing a hero's identity. Extra roster entries also receive a small accent rune from their data palette, making shared visual families distinct at thumbnail size.

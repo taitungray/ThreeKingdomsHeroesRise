@@ -12,25 +12,67 @@ function updateHud() {
   const chapter = chapterForStage();
   $("chapterLabel").textContent = chapter.name;
   const stage = activeStageNumber();
-  $("stageLabel").textContent = Math.ceil(stage / 2) + "-" + (stage % 2 || 2);
-  $("waveLabel").textContent = runtime.bossActive ? "首領戰" : "第 " + (runtime.waveClears + 1) + " 波";
+  const stageConfig = stageDefinition(stage);
+  const chapterStage = ((stage - 1) % STAGES_PER_CHAPTER) + 1;
+  const chapterNumber = Math.floor((stage - 1) / STAGES_PER_CHAPTER) + 1;
+  $("stageLabel").textContent = chapterNumber + "-" + chapterStage;
+  $("stageName").textContent = stageConfig?.name || "\u95dc\u5361 " + stage;
+  const previewStage = $("enemyPreviewStage");
+  if (previewStage) previewStage.textContent = stageConfig?.name || "\u95dc\u5361 " + stage;
+  $("waveLabel").textContent = runtime.bossActive ? "\u9996\u9818\u6230" : "\u7b2c " + (runtime.waveClears + 1) + " \u6ce2";
   const living = runtime.enemies.filter((enemy) => !enemy.dead).length;
-  $("enemyCount").textContent = "敵軍 " + living;
+  $("enemyCount").textContent = "\u6575\u8ecd " + living;
   $("bossProgress").textContent = Math.min(runtime.waveClears, 3) + " / 3";
   $("bossButton").disabled = runtime.waveClears < 3 || runtime.bossActive || runtime.spawning;
-  $("bossButton").setAttribute("aria-label", runtime.bossActive ? "首領戰進行中" : runtime.waveClears < 3 ? "完成三波後挑戰關卡首領" : runtime.spawning ? "首領正在準備" : "挑戰關卡首領");
+  $("bossButton").setAttribute("aria-label", runtime.bossActive ? "\u9996\u9818\u6230\u9032\u884c\u4e2d" : runtime.waveClears < 3 ? "\u5b8c\u6210\u4e09\u6ce2\u5f8c\u6311\u6230\u95dc\u5361\u9996\u9818" : runtime.spawning ? "\u9996\u9818\u6b63\u5728\u6e96\u5099" : "\u6311\u6230\u95dc\u5361\u9996\u9818");
   $("autoButton").classList.toggle("active", runtime.auto);
-  $("autoButton").textContent = runtime.auto ? "自動戰鬥" : "暫停戰鬥";
+  $("autoButton").textContent = runtime.auto ? "\u81ea\u52d5" : "\u624b\u52d5";
   $("autoButton").setAttribute("aria-pressed", String(runtime.auto));
-  $("speedButton").textContent = "×" + runtime.timeScale;
-  $("speedButton").setAttribute("aria-valuetext", "戰鬥速度 ×" + runtime.timeScale);
+  $("speedButton").textContent = "\u00d7" + runtime.timeScale;
+  $("speedButton").setAttribute("aria-valuetext", "\u6230\u9b25\u901f\u5ea6 \u00d7" + runtime.timeScale);
   $("mailDot").hidden = save.mailClaimed;
 }
 
+function enemyPreviewAvatarHtml(general) {
+  const avatar = general?.avatar || "avatar-locked";
+  return '<span class="pixel-avatar ' + avatar + ' enemy-preview-avatar"><i></i><span class="portrait-eyes" aria-hidden="true"></span><span class="avatar-detail" aria-hidden="true"></span></span>';
+}
+
+function showEnemyPreview(stage = activeStageNumber(), wave = null) {
+  const preview = $("enemyPreview");
+  const list = $("enemyPreviewList");
+  if (!preview || !list) return;
+  const config = stageDefinition(stage);
+  const generals = (config?.enemyGenerals || []).map(enemyGeneralById).filter(Boolean);
+  const currentWave = Number.isFinite(wave) ? wave : runtime.bossActive ? 4 : runtime.waveClears + 1;
+  const bossWave = runtime.bossActive || currentWave > 3;
+  const selected = bossWave
+    ? enemyGeneralById(config?.bossGeneral)
+    : generals[Math.min(Math.max(currentWave - 1, 0), generals.length - 1)] || generals[0];
+  const cards = selected ? [{ ...selected, isBoss: bossWave }] : [];
+  list.classList.toggle("single", cards.length === 1);
+  list.innerHTML = cards.map((general) =>
+    "<article class=\"enemy-preview-card" + (general.isBoss ? " boss" : "") + "\">" +
+      enemyPreviewAvatarHtml(general) +
+      "<div><strong>" + (general.name || "\u6575\u5c07") + "</strong><small>" + (general.title || general.role || "\u6575\u5c07") + "</small></div>" +
+      (general.isBoss ? "<span class=\"general-badge\">BOSS</span>" : "") +
+    "</article>"
+  ).join("");
+  const stageName = config?.name || "\u95dc\u5361 " + stage;
+  const stageLabel = $("enemyPreviewStage");
+  if (stageLabel) stageLabel.textContent = stageName;
+  const phaseLabel = $("enemyPreviewLabel");
+  if (phaseLabel) phaseLabel.textContent = bossWave ? "\u9996\u9818\u6575\u5c07" : "\u672c\u6ce2\u6575\u5c07";
+  preview.dataset.wave = bossWave ? "boss" : String(currentWave);
+  preview.dataset.general = selected?.id || "";
+  preview.classList.add("show", "persistent");
+  clearTimeout(runtime.enemyPreviewTimer);
+  runtime.enemyPreviewTimer = null;
+}
 function showDialogue(name, text, avatarClass) {
   const portrait = $("dialoguePortrait");
   portrait.className = "pixel-avatar " + avatarClass;
-  portrait.innerHTML = '<i></i><span class="avatar-detail" aria-hidden="true"></span>';
+  portrait.innerHTML = '<i></i><span class="portrait-eyes" aria-hidden="true"></span><span class="avatar-detail" aria-hidden="true"></span>';
   $("dialogueName").textContent = name;
   $("dialogueText").textContent = text;
   $("dialogueBox").classList.add("show");
@@ -49,7 +91,8 @@ function avatarHtml(hero, large = false) {
   const loadoutClasses = hero.id ? " " + paperDollClasses(hero.id) : "";
   const heroData = hero.id ? ' data-hero="' + hero.id + '"' : "";
   const paperLayer = hero.id ? '<b class="paper-layer" aria-hidden="true"></b><em class="mount-mark" aria-hidden="true"></em>' : "";
-  return '<span class="pixel-avatar ' + hero.avatar + loadoutClasses + (large ? " large" : "") + '"' + heroData + '><i></i><span class="avatar-detail" aria-hidden="true"></span>' + paperLayer + '</span>';
+  const portraitStyle = hero.accent ? ' style="--portrait-tone:' + hero.color + ';--portrait-accent:' + hero.accent + '"' : "";
+  return '<span class="pixel-avatar ' + hero.avatar + loadoutClasses + (large ? " large" : "") + '"' + heroData + portraitStyle + '><i></i><span class="portrait-eyes" aria-hidden="true"></span><span class="portrait-rune" aria-hidden="true"></span><span class="avatar-detail" aria-hidden="true"></span>' + paperLayer + '</span>';
 }
 
 function heroCardHtml(hero, action = "hero-detail") {
@@ -228,6 +271,7 @@ function startStage(stage, reason = "") {
   runtime.numbers = [];
   buildTerrain();
   resetAllies();
+  showEnemyPreview(target);
   spawnWave(false);
   updateHud();
   persist();
@@ -239,11 +283,13 @@ function renderCampaign() {
   const items = CHAPTERS.map((chapter, index) => {
     const firstStage = index * STAGES_PER_CHAPTER + 1;
     const lastStage = firstStage + STAGES_PER_CHAPTER - 1;
+    const firstStageConfig = stageDefinition(firstStage);
     const locked = save.stage < firstStage;
     const complete = save.stage > lastStage;
     const active = activeStageNumber() >= firstStage && activeStageNumber() <= lastStage;
     return '<button class="campaign-card' + (locked ? " locked" : active ? " active" : "") + '" type="button" data-number="' + String(index + 1).padStart(2, "0") + '" data-action="' + (locked ? "toast" : "campaign-select") + '" data-stage="' + firstStage + '" data-message="先完成前一章戰役">' +
       '<h3>' + chapter.name + '</h3>' +
+      '<span class="campaign-stage-name">' + (firstStageConfig?.name || 'Stage ' + firstStage) + '</span>' +
       '<p>' + chapter.stage + ' · 首領：' + chapter.boss + '</p>' +
       '<span class="stage-stars">' + (complete ? "◆ ◆ ◆" : locked ? "◇ ◇ ◇" : "◆ ◇ ◇") + '</span>' +
     "</button>";

@@ -1,6 +1,11 @@
 /* Combat: units, waves, damage, skills and progression */
 "use strict";
 
+// Battlefield sprite scale: all units are smaller, while bosses retain hierarchy.
+const ALLY_UNIT_SCALE = 0.88;
+const ENEMY_UNIT_SCALE = 0.82;
+const BOSS_UNIT_SCALE = 1.30;
+
 function buildTerrain() {
   runtime.terrain.length = 0;
   let seed = activeStageNumber() * 92821 + 17;
@@ -76,7 +81,7 @@ function makeAlly(heroId, slot, index) {
     deathTime: 0,
     deathSpin: 0,
     dead: false,
-    scale: 1,
+    scale: ALLY_UNIT_SCALE,
     role: hero.role
   };
 }
@@ -92,6 +97,9 @@ function makeEnemy(index, boss = false) {
   const config = stageDefinition(stage);
   const stagePower = config?.enemyPower || 1 + (stage - 1) * 0.16;
   const enemyType = boss ? "boss" : config?.enemyPool?.[(index + runtime.waveClears) % config.enemyPool.length] || (chance(0.25) ? "archer" : chance(0.32) ? "brute" : "bandit");
+  const generalIds = config?.enemyGenerals || [];
+  const waveGeneralIndex = Math.min(runtime.waveClears, Math.max(0, generalIds.length - 1));
+  const enemyGeneralId = generalIds.length ? generalIds[waveGeneralIndex] : null;
   const enemyProfiles = {
     bandit: { role: "步兵", hp: 105, atk: 11, def: 3.5, speed: 13, range: 27, color: "#8f3630" },
     brute: { role: "步兵", hp: 148, atk: 14, def: 6, speed: 10, range: 29, color: "#565858" },
@@ -108,6 +116,7 @@ function makeEnemy(index, boss = false) {
     id: "enemy-" + Date.now() + "-" + index,
     team: "enemy",
     type: enemyType,
+    enemyGeneralId: boss ? config?.bossGeneral || enemyGeneralId : enemyGeneralId,
     x: spawnX,
     y: spawnY,
     renderX: spawnX,
@@ -137,7 +146,7 @@ function makeEnemy(index, boss = false) {
     deathTime: 0,
     deathSpin: 0,
     dead: false,
-    scale: boss ? 1.48 : 0.9 + Math.random() * 0.14,
+    scale: boss ? BOSS_UNIT_SCALE : ENEMY_UNIT_SCALE + Math.random() * 0.08,
     color: boss ? "#6f2b26" : profile.color,
     accent: boss ? "#d29f3a" : "#b34935",
     role: boss ? "步兵" : profile.role
@@ -152,9 +161,10 @@ function spawnWave(boss = false) {
   const config = stageDefinition();
   const count = boss ? 1 + Math.min(4, activeStageNumber()) : config?.enemyCount || 4 + Math.min(7, activeStageNumber() + runtime.waveClears);
   for (let i = 0; i < count; i += 1) runtime.enemies.push(makeEnemy(i, boss && i === 0));
+  showEnemyPreview(activeStageNumber(), boss ? 4 : runtime.waveClears + 1);
   if (boss) {
     const chapter = chapterForStage();
-    $("bossName").textContent = chapter.boss;
+    $("bossName").textContent = enemyGeneralById(config?.bossGeneral)?.name || chapter.boss;
     $("bossBanner").classList.remove("show");
     void $("bossBanner").offsetWidth;
     $("bossBanner").classList.add("show");
@@ -187,7 +197,9 @@ function addNumber(x, y, value, critical = false, heal = false) {
     life: 0.72,
     maxLife: 0.72,
     color: heal ? "#88e899" : critical ? "#ffe16b" : "#fff1da",
-    size: critical ? 17 : 12
+    // Damage needs to read instantly on a small mobile canvas. Keep crits
+    // clearly dominant while leaving normal hits compact enough for stacks.
+    size: critical ? 24 : 16
   });
 }
 

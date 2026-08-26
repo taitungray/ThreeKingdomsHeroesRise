@@ -2,7 +2,31 @@
 
 // Content is kept outside the runtime rules so new heroes, stages and rewards can
 // be tuned without changing the canvas or UI code.
+const ENEMY_GENERALS = [
+  { id: "zhangjiao", name: "\u5f35\u89d2", title: "\u592a\u5e73\u9053\u4e3b", avatar: "avatar-zhugeliang", role: "\u5996\u8853", color: "#8c6a92", accent: "#e3c36b" },
+  { id: "dongzhuo", name: "\u8463\u5353", title: "\u897f\u6dbc\u66b4\u541b", avatar: "avatar-lubu", role: "\u66b4\u541b", color: "#7b3b34", accent: "#e0a44e" },
+  { id: "lvbu", name: "\u5442\u5e03", title: "\u5929\u4e0b\u7121\u96d9", avatar: "avatar-lubu", role: "\u98db\u5c07", color: "#9c2d31", accent: "#f0c65e" },
+  { id: "yuanshao", name: "\u8881\u7d39", title: "\u6cb3\u5317\u76df\u4e3b", avatar: "avatar-caocao", role: "\u8ecd\u7565", color: "#75624f", accent: "#e5c887" },
+  { id: "yanliang", name: "\u984f\u826f", title: "\u6cb3\u5317\u731b\u5c07", avatar: "avatar-zhangfei", role: "\u731b\u5c07", color: "#684d48", accent: "#d99355" },
+  { id: "wenchou", name: "\u6587\u919c", title: "\u9435\u9a0e\u5148\u92d2", avatar: "avatar-xiahoudun", role: "\u9435\u9a0e", color: "#3e536e", accent: "#d9bd72" },
+  { id: "taishici", name: "\u592a\u53f2\u6148", title: "\u6c5f\u6771\u795e\u5c04", avatar: "avatar-huangzhong", role: "\u795e\u5c04", color: "#466b69", accent: "#e4c975" },
+  { id: "menghuo", name: "\u5b5f\u7372", title: "\u5357\u4e2d\u883b\u738b", avatar: "avatar-zhangfei", role: "\u883b\u738b", color: "#496956", accent: "#d89a54" },
+  { id: "zhurong", name: "\u795d\u878d", title: "\u5357\u4e2d\u706b\u795e", avatar: "avatar-diaochan", role: "\u706b\u5203", color: "#a25347", accent: "#f1c263" },
+  { id: "simayi", name: "\u53f8\u99ac\u61ff", title: "\u51a5\u754c\u8b00\u4e3b", avatar: "avatar-caocao", role: "\u9b3c\u8b00", color: "#42465b", accent: "#b497d8" }
+];
+const ENEMY_GENERAL_SETS = [
+  ["zhangjiao", "yanliang", "taishici"], ["dongzhuo", "wenchou", "yuanshao"], ["yuanshao", "taishici", "simayi"],
+  ["lvbu", "zhangjiao", "wenchou"], ["yanliang", "wenchou", "lvbu"], ["menghuo", "zhurong", "lvbu"],
+  ["dongzhuo", "yuanshao", "zhangjiao"], ["taishici", "zhangjiao", "huangzhong"], ["wenchou", "lvbu", "dongzhuo"],
+  ["zhurong", "menghuo", "taishici"]
+];
+const BOSS_GENERAL_IDS = ["zhangjiao", "dongzhuo", "lvbu", "yuanshao", "menghuo", "zhurong", "simayi"];
+const STAGE_NAME_PREFIXES = [
+  "\u6843\u5712\u521d\u9663", "\u9ec3\u5dfe\u4f0f\u5175", "\u6c5c\u6c34\u95dc\u524d", "\u864e\u7262\u93d6\u6230", "\u5f90\u5dde\u5b88\u57ce", "\u5b98\u6e21\u70fd\u7159", "\u9577\u5742\u7a81\u570d", "\u8d64\u58c1\u706b\u8a08", "\u834a\u5dde\u591c\u8972", "\u6f22\u4e2d\u722d\u92d2",
+  "\u5937\u9675\u9918\u71fc", "\u897f\u5ddd\u5165\u8700", "\u528d\u95a3\u5929\u96aa", "\u5408\u80a5\u6025\u8972", "\u6fc1\u9808\u6c34\u5be8", "\u5b9a\u8ecd\u5c71\u53e3", "\u4e94\u4e08\u539f\u98a8", "\u5317\u4f10\u5148\u92d2", "\u8857\u4ead\u98a8\u96f2", "\u6d1b\u967d\u6c7a\u6230"
+];
 window.THREE_KINGDOMS_DATA = {
+  enemyGenerals: ENEMY_GENERALS,
   heroes: [
     { id: "liubei", name: "劉備", title: "仁德昭烈", avatar: "avatar-liubei", role: "步兵", color: "#e7e1c7", accent: "#4c9558", atk: 23, hp: 230, def: 12, speed: 24, range: 31, skill: "仁德回春", skillCooldown: 6, unlock: 0, rarity: 4, passive: "友軍受到治療時額外回復 4% 最大兵力" },
     { id: "guanyu", name: "關羽", title: "武聖雲長", avatar: "avatar-guanyu", role: "騎兵", color: "#2b855b", accent: "#b6372c", atk: 34, hp: 265, def: 14, speed: 29, range: 35, skill: "青龍偃月", skillCooldown: 5.2, unlock: 0, rarity: 5, passive: "對 Boss 傷害提高 12%" },
@@ -80,6 +104,9 @@ window.THREE_KINGDOMS_DATA = {
   stages: Array.from({ length: 100 }, (_, index) => ({
     id: index + 1,
     chapter: Math.floor(index / 5),
+    name: STAGE_NAME_PREFIXES[index % STAGE_NAME_PREFIXES.length] + " " + ((index % 5) + 1),
+    enemyGenerals: ENEMY_GENERAL_SETS[index % ENEMY_GENERAL_SETS.length],
+    bossGeneral: BOSS_GENERAL_IDS[index % BOSS_GENERAL_IDS.length],
     waveCount: 3,
     enemyCount: 4 + Math.min(7, Math.floor(index / 2) + 1),
     enemyPower: 1 + index * 0.08,

@@ -26,7 +26,7 @@
         <div class="battle-meta">
           <button id="autoButton" class="metal-button active" type="button" aria-pressed="true">自動戰鬥</button>
           <button id="speedButton" class="speed-button" type="button" aria-label="切換戰鬥速度" aria-valuetext="戰鬥速度 ×1">×1</button>
-          <p><span id="chapterLabel">黃巾之亂</span><b id="stageLabel">1-1</b></p>
+          <p class="stage-meta"><span id="chapterLabel">&#x95dc;&#x5361;</span><b id="stageLabel">1-1</b><strong id="stageName">&#x6843;&#x5712;&#x521d;&#x9663; 1</strong></p>
         </div>
       </header>
 
@@ -39,9 +39,14 @@
       </aside>
 
       <div class="stage-stamp" aria-live="polite">
-        <span id="waveLabel">第 1 波</span>
-        <strong id="enemyCount">敵軍 4</strong>
+        <span id="waveLabel">&#x7b2c; 1 &#x6ce2;</span>
+        <strong id="enemyCount">&#x6575;&#x8ecd; 4</strong>
       </div>
+
+      <section id="enemyPreview" class="enemy-preview" aria-live="polite" aria-label="&#x672c;&#x6ce2;&#x6575;&#x5c07;">
+        <header><span id="enemyPreviewLabel">&#x672c;&#x6ce2;&#x6575;&#x5c07;</span><b id="enemyPreviewStage">&#x6843;&#x5712;&#x521d;&#x9663; 1</b></header>
+        <div id="enemyPreviewList" class="enemy-preview-list"></div>
+      </section>
 
       <div id="dialogueBox" class="dialogue-box" aria-live="polite">
         <span id="dialoguePortrait" class="pixel-avatar avatar-zhangfei"><i></i></span>

@@ -64,6 +64,7 @@ window.addEventListener("beforeunload", persist);
 const secondsAway = Math.max(0, (Date.now() - (save.lastSeen || Date.now())) / 1000);
 buildTerrain();
 resetAllies();
+showEnemyPreview(activeStageNumber());
 spawnWave(false);
 updateHud();
 showDialogue("張飛", "大哥，前方發現黃巾賊軍！", "avatar-zhangfei");

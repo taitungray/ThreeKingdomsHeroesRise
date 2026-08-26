@@ -308,6 +308,27 @@ button:focus-visible { outline: 3px solid #fff0a0; outline-offset: 2px; }
 .stage-stamp span { color: #e1c473; font-family: "DFKai-SB", "KaiTi", serif; font-size: 13px; }
 .stage-stamp strong { color: #eee7d3; font-size: 10px; }
 
+.battle-meta p.stage-meta { display: grid; grid-column: 1 / -1; justify-items: end; gap: 1px; width: 100%; margin: 1px 0 0; padding: 2px 7px 3px 10px; color: #eee4cb; background: linear-gradient(90deg, transparent, #171914bb 18%); font-size: 10px; text-align: right; text-shadow: 1px 1px #000; }
+.stage-meta span { max-width: 154px; overflow: hidden; color: #ddd4bd; font-size: 9px; line-height: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.battle-meta p.stage-meta b { margin-left: 0; color: #f0c653; font-size: 13px; line-height: 14px; }
+.stage-meta strong { max-width: 154px; overflow: hidden; color: #f5e7bf; font-family: "DFKai-SB", "KaiTi", serif; font-size: 10px; font-weight: 600; line-height: 12px; text-overflow: ellipsis; white-space: nowrap; }
+
+.enemy-preview { position: absolute; z-index: 10; top: calc(119px + var(--safe-top)); left: 9px; right: 54px; max-width: 335px; pointer-events: none; opacity: 0; transform: translateY(-7px); transition: opacity .2s ease, transform .2s ease; }
+.enemy-preview.show { opacity: 1; transform: translateY(0); }
+.enemy-preview header { display: flex; align-items: center; justify-content: space-between; padding: 3px 7px; color: #f1dfab; background: linear-gradient(90deg, #171914e8, #1d2117c4, transparent); font-family: "DFKai-SB", "KaiTi", serif; font-size: 11px; text-shadow: 1px 1px #000; }
+.enemy-preview header b { color: #c9d3ae; font-family: ui-monospace, Consolas, monospace; font-size: 9px; font-weight: 500; }
+.enemy-preview-list { display: flex; gap: 4px; padding: 5px; overflow: hidden; border: 1px solid #aa8c50; background: linear-gradient(90deg, #151814ed, #25271ee8); box-shadow: 0 3px 8px #0009; }
+.enemy-preview-list.single { justify-content: flex-start; }
+.enemy-preview-list.single .enemy-preview-card { flex: 0 1 236px; }
+.enemy-preview-card { position: relative; display: grid; grid-template-columns: 29px minmax(0, 1fr); flex: 1 1 0; gap: 4px; min-width: 0; padding: 3px; border: 1px solid #514f3e; background: #2c2d24dd; }
+.enemy-preview-card.boss { border-color: #d2a53d; background: linear-gradient(135deg, #43301bdd, #2c2d24dd); }
+.enemy-preview-avatar { width: 29px !important; height: 29px !important; border-width: 1px !important; border-radius: 4px !important; box-shadow: 1px 2px 0 #10120f; }
+.enemy-preview-avatar::before { border-width: 2px; }
+.enemy-preview-card strong, .enemy-preview-card small { display: block; overflow: hidden; min-width: 0; text-overflow: ellipsis; white-space: nowrap; }
+.enemy-preview-card strong { align-self: end; color: #f5e3b2; font-family: "DFKai-SB", "KaiTi", serif; font-size: 11px; line-height: 13px; }
+.enemy-preview-card small { color: #b8b39e; font-size: 8px; line-height: 10px; }
+.enemy-preview-card.boss strong { color: #ffd46a; }
+.enemy-preview-card .general-badge { position: absolute; right: 2px; top: 1px; color: #d9ad50; font-family: ui-monospace, Consolas, monospace; font-size: 7px; }
 .dialogue-box {
   position: absolute;
   z-index: 8;
@@ -468,6 +489,7 @@ button:focus-visible { outline: 3px solid #fff0a0; outline-offset: 2px; }
 .tactic-sigil span { transform: rotate(-45deg); }
 .tactic-card h3, .campaign-card h3, .achievement-item h3 { margin: 0 0 4px; font-size: 15px; }
 .tactic-card p, .campaign-card p, .achievement-item p { margin: 0; color: #514936; font-size: 10px; line-height: 1.45; }
+.campaign-card .campaign-stage-name { display: block; margin: -1px 0 3px; overflow: hidden; color: #8a3f25; font-family: "DFKai-SB", "KaiTi", serif; font-size: 11px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
 .tactic-card .level-tag { position: absolute; right: 9px; top: 8px; color: #7b2d20; font-size: 10px; }
 .tactic-card button { position: absolute; right: 9px; bottom: 8px; min-height: 29px; padding: 3px 10px; }
 
@@ -655,3 +677,191 @@ button { touch-action: manipulation; }
   .paper-slot > b { font-size: 9px; }
   .paper-slot > small, .paper-slot > em { font-size: 7px; }
 }
+
+/* Character portrait pass: distinct facial silhouettes survive at card and detail sizes. */
+.avatar-liubei {
+  border-radius: 8px 8px 3px 3px;
+  background:
+    linear-gradient(90deg, transparent 0 22%, #342519 22% 31%, transparent 31% 69%, #342519 69% 78%, transparent 78%) 50% 55% / 100% 43% no-repeat,
+    linear-gradient(90deg, transparent 0 28%, #d9a071 28% 72%, transparent 72%) 50% 52% / 100% 43% no-repeat,
+    linear-gradient(90deg, transparent 0 11%, #e8e1c5 11% 89%, transparent 89%) 50% 100% / 100% 37% no-repeat,
+    #466948;
+}
+.avatar-liubei::before { left: 29%; width: 42%; height: 24%; background: #5a955b; clip-path: polygon(14% 100%, 19% 28%, 36% 28%, 42% 0, 58% 0, 64% 28%, 81% 28%, 86% 100%); }
+.avatar-liubei::after { left: 29%; top: 62%; width: 42%; height: 18%; background: #4b2c20; clip-path: polygon(0 20%, 28% 0, 44% 34%, 56% 34%, 72% 0, 100% 20%, 79% 64%, 50% 100%, 21% 64%); }
+.avatar-liubei .avatar-detail::before { left: 22%; top: 45%; width: 56%; height: 13%; background: linear-gradient(168deg, transparent 0 34%, #4b2c20 35% 48%, transparent 49%) 0 0 / 50% 100% no-repeat, linear-gradient(192deg, transparent 0 34%, #4b2c20 35% 48%, transparent 49%) 100% 0 / 50% 100% no-repeat; box-shadow: 0 8px 0 #f0c08c; opacity: 1; }
+.avatar-liubei .avatar-detail::after { left: 24%; top: 77%; width: 52%; height: 12%; background: linear-gradient(90deg, transparent 0 20%, #c9bf9e 20% 35%, transparent 35% 65%, #c9bf9e 65% 80%, transparent 80%); clip-path: none; opacity: 1; }
+
+.avatar-guanyu {
+  border-radius: 4px 4px 7px 7px;
+  background:
+    linear-gradient(90deg, transparent 0 17%, #1d1110 17% 31%, transparent 31% 69%, #1d1110 69% 83%, transparent 83%) 50% 54% / 100% 46% no-repeat,
+    linear-gradient(90deg, transparent 0 27%, #bd6448 27% 73%, transparent 73%) 50% 51% / 100% 46% no-repeat,
+    linear-gradient(90deg, transparent 0 10%, #2f8662 10% 90%, transparent 90%) 50% 100% / 100% 38% no-repeat,
+    #24553f;
+}
+.avatar-guanyu::before { left: 20%; width: 60%; height: 21%; background: #29694e; clip-path: polygon(0 42%, 25% 42%, 34% 0, 66% 0, 75% 42%, 100% 42%, 90% 100%, 10% 100%); }
+.avatar-guanyu::after { left: 21%; top: 56%; width: 58%; height: 43%; background: #2b1b17; clip-path: polygon(5% 0, 95% 0, 83% 53%, 68% 62%, 59% 100%, 50% 81%, 41% 100%, 32% 62%, 17% 53%); }
+.avatar-guanyu .avatar-detail::before { left: 18%; top: 43%; width: 64%; height: 18%; background: linear-gradient(170deg, transparent 0 33%, #231714 34% 49%, transparent 50%) 0 0 / 50% 100% no-repeat, linear-gradient(190deg, transparent 0 33%, #231714 34% 49%, transparent 50%) 100% 0 / 50% 100% no-repeat; box-shadow: 0 8px 0 #e0a079; opacity: 1; }
+.avatar-guanyu .avatar-detail::after { left: 32%; top: 72%; width: 36%; height: 7%; background: #b6372c; clip-path: polygon(0 0, 100% 0, 82% 100%, 18% 100%); opacity: 1; }
+
+.avatar-zhangfei {
+  border-radius: 3px 3px 8px 8px;
+  background:
+    linear-gradient(90deg, transparent 0 12%, #201811 12% 36%, transparent 36% 64%, #201811 64% 88%, transparent 88%) 50% 52% / 100% 50% no-repeat,
+    linear-gradient(90deg, transparent 0 25%, #b87852 25% 75%, transparent 75%) 50% 50% / 100% 45% no-repeat,
+    linear-gradient(90deg, transparent 0 6%, #626a72 6% 94%, transparent 94%) 50% 100% / 100% 39% no-repeat,
+    #454c52;
+}
+.avatar-zhangfei::before { left: 8%; top: 5%; width: 84%; height: 16%; background: #a84c35; clip-path: polygon(0 30%, 26% 5%, 50% 38%, 74% 5%, 100% 30%, 90% 100%, 10% 100%); }
+.avatar-zhangfei::after { left: 12%; top: 57%; width: 76%; height: 42%; background: #201811; clip-path: polygon(0 9%, 15% 0, 26% 15%, 38% 4%, 50% 19%, 62% 4%, 74% 15%, 85% 0, 100% 9%, 86% 66%, 70% 62%, 60% 100%, 50% 75%, 40% 100%, 30% 62%, 14% 66%); }
+.avatar-zhangfei .avatar-detail::before { left: 18%; top: 45%; width: 64%; height: 14%; background: linear-gradient(164deg, transparent 0 34%, #171311 35% 47%, transparent 48%) 0 0 / 50% 100% no-repeat, linear-gradient(196deg, transparent 0 34%, #171311 35% 47%, transparent 48%) 100% 0 / 50% 100% no-repeat; box-shadow: 0 8px 0 #d28d64; opacity: 1; }
+.avatar-zhangfei .avatar-detail::after { left: 15%; top: 82%; width: 70%; height: 8%; background: repeating-linear-gradient(90deg, #333a42 0 7px, #aeb6b5 7px 9px); clip-path: none; opacity: 1; }
+
+.avatar-zhaoyun {
+  border-radius: 7px 7px 3px 3px;
+  background:
+    linear-gradient(90deg, transparent 0 21%, #20262e 21% 29%, transparent 29% 71%, #20262e 71% 79%, transparent 79%) 50% 55% / 100% 41% no-repeat,
+    linear-gradient(90deg, transparent 0 29%, #d6a27a 29% 71%, transparent 71%) 50% 52% / 100% 42% no-repeat,
+    linear-gradient(90deg, transparent 0 9%, #4a80b9 9% 91%, transparent 91%) 50% 100% / 100% 38% no-repeat,
+    #385c83;
+}
+.avatar-zhaoyun::before { left: 18%; width: 64%; height: 30%; background: linear-gradient(90deg, #bdc8ca 0 34%, #3e88bd 34% 66%, #eef0e7 66%); clip-path: polygon(18% 100%, 21% 34%, 36% 34%, 46% 0, 54% 0, 64% 34%, 79% 34%, 82% 100%); }
+.avatar-zhaoyun::after { left: 28%; top: 64%; width: 44%; height: 12%; background: #e7e4d4; clip-path: polygon(0 0, 100% 0, 77% 100%, 23% 100%); }
+.avatar-zhaoyun .avatar-detail::before { left: 22%; top: 44%; width: 56%; height: 15%; background: linear-gradient(172deg, transparent 0 37%, #38454d 38% 50%, transparent 51%) 0 0 / 50% 100% no-repeat, linear-gradient(188deg, transparent 0 37%, #38454d 38% 50%, transparent 51%) 100% 0 / 50% 100% no-repeat; box-shadow: 0 8px 0 #f1c08f; opacity: 1; }
+.avatar-zhaoyun .avatar-detail::after { left: 28%; top: 77%; width: 44%; height: 10%; background: #d8e5e7; clip-path: polygon(50% 0, 100% 100%, 0 100%); opacity: 1; }
+
+.avatar-huangzhong {
+  border-radius: 8px 8px 6px 6px;
+  background:
+    linear-gradient(90deg, #d4c0a0 0 16%, transparent 16% 84%, #d4c0a0 84%) 50% 56% / 100% 43% no-repeat,
+    linear-gradient(90deg, transparent 0 28%, #c88e67 28% 72%, transparent 72%) 50% 50% / 100% 43% no-repeat,
+    linear-gradient(90deg, transparent 0 9%, #876c35 9% 91%, transparent 91%) 50% 100% / 100% 38% no-repeat,
+    #765f30;
+}
+.avatar-huangzhong::before { left: 22%; width: 56%; height: 24%; background: #9a7834; clip-path: polygon(8% 100%, 18% 34%, 35% 34%, 44% 0, 56% 0, 65% 34%, 82% 34%, 92% 100%); }
+.avatar-huangzhong::after { left: 21%; top: 59%; width: 58%; height: 40%; background: #d4c0a0; clip-path: polygon(0 0, 100% 0, 83% 55%, 65% 53%, 50% 100%, 35% 53%, 17% 55%); }
+.avatar-huangzhong .avatar-detail::before { left: 20%; top: 44%; width: 60%; height: 15%; background: linear-gradient(168deg, transparent 0 34%, #5e4127 35% 48%, transparent 49%) 0 0 / 50% 100% no-repeat, linear-gradient(192deg, transparent 0 34%, #5e4127 35% 48%, transparent 49%) 100% 0 / 50% 100% no-repeat; box-shadow: 0 8px 0 #e0ad7e; opacity: 1; }
+.avatar-huangzhong .avatar-detail::after { left: 20%; top: 79%; width: 60%; height: 10%; background: #f0e5c8; clip-path: polygon(12% 0, 88% 0, 69% 100%, 50% 65%, 31% 100%); opacity: 1; }
+
+.avatar-sunshang {
+  border-radius: 12px 12px 4px 4px;
+  background:
+    linear-gradient(90deg, #4c2727 0 24%, transparent 24% 76%, #4c2727 76%) 50% 46% / 100% 50% no-repeat,
+    linear-gradient(90deg, transparent 0 30%, #e0a67f 30% 70%, transparent 70%) 50% 48% / 100% 43% no-repeat,
+    linear-gradient(90deg, transparent 0 11%, #f0b55f 11% 89%, transparent 89%) 50% 100% / 100% 38% no-repeat,
+    #9b3e5a;
+}
+.avatar-sunshang::before { left: 7%; top: 0; width: 86%; height: 28%; background: #4c2727; clip-path: polygon(0 34%, 15% 0, 31% 22%, 50% 0, 69% 22%, 85% 0, 100% 34%, 88% 100%, 12% 100%); }
+.avatar-sunshang::after { left: 37%; top: 5%; width: 26%; height: 18%; background: #e2a442; clip-path: polygon(50% 0, 100% 45%, 70% 100%, 30% 100%, 0 45%); }
+.avatar-sunshang .avatar-detail::before { left: 24%; top: 44%; width: 52%; height: 14%; background: linear-gradient(169deg, transparent 0 34%, #4c2727 35% 47%, transparent 48%) 0 0 / 50% 100% no-repeat, linear-gradient(191deg, transparent 0 34%, #4c2727 35% 47%, transparent 48%) 100% 0 / 50% 100% no-repeat; box-shadow: 0 8px 0 #f3c29a; opacity: 1; }
+.avatar-sunshang .avatar-detail::after { left: 18%; top: 77%; width: 64%; height: 10%; background: linear-gradient(90deg, #f0b55f 0 22%, #a13e5b 22% 78%, #f0b55f 78%); clip-path: none; opacity: 1; }
+
+.avatar-caocao {
+  border-radius: 3px 3px 7px 7px;
+  background:
+    linear-gradient(90deg, transparent 0 19%, #26201b 19% 30%, transparent 30% 70%, #26201b 70% 81%, transparent 81%) 50% 54% / 100% 43% no-repeat,
+    linear-gradient(90deg, transparent 0 27%, #d09a71 27% 73%, transparent 73%) 50% 51% / 100% 43% no-repeat,
+    linear-gradient(90deg, transparent 0 8%, #3b415e 8% 92%, transparent 92%) 50% 100% / 100% 39% no-repeat,
+    #383449;
+}
+.avatar-caocao::before { left: 18%; width: 64%; height: 27%; background: #6d4891; clip-path: polygon(0 42%, 14% 0, 27% 40%, 40% 0, 50% 37%, 60% 0, 73% 40%, 86% 0, 100% 42%, 90% 100%, 10% 100%); }
+.avatar-caocao::after { left: 27%; top: 61%; width: 46%; height: 27%; background: #32231e; clip-path: polygon(0 0, 100% 0, 83% 49%, 68% 49%, 50% 100%, 32% 49%, 17% 49%); }
+.avatar-caocao .avatar-detail::before { left: 18%; top: 43%; width: 64%; height: 16%; background: linear-gradient(165deg, transparent 0 30%, #211a18 31% 45%, transparent 46%) 0 0 / 50% 100% no-repeat, linear-gradient(195deg, transparent 0 30%, #211a18 31% 45%, transparent 46%) 100% 0 / 50% 100% no-repeat; box-shadow: 0 8px 0 #edb17f; opacity: 1; }
+.avatar-caocao .avatar-detail::after { left: 30%; top: 76%; width: 40%; height: 8%; background: #8d55ad; clip-path: polygon(14% 0, 86% 0, 100% 100%, 0 100%); opacity: 1; }
+
+.avatar-xiahoudun {
+  border-radius: 4px 7px 3px 3px;
+  background:
+    linear-gradient(90deg, transparent 0 16%, #212026 16% 31%, transparent 31% 69%, #212026 69% 84%, transparent 84%) 50% 54% / 100% 44% no-repeat,
+    linear-gradient(90deg, transparent 0 27%, #bd805b 27% 73%, transparent 73%) 50% 51% / 100% 43% no-repeat,
+    linear-gradient(90deg, transparent 0 8%, #2a4a78 8% 92%, transparent 92%) 50% 100% / 100% 39% no-repeat,
+    #304b70;
+}
+.avatar-xiahoudun::before { left: 15%; width: 70%; height: 25%; background: #56759a; clip-path: polygon(0 47%, 20% 47%, 34% 0, 66% 0, 80% 47%, 100% 47%, 88% 100%, 12% 100%); }
+.avatar-xiahoudun::after { left: 20%; top: 53%; width: 60%; height: 13%; background: #201b1b; clip-path: polygon(0 18%, 100% 0, 91% 100%, 9% 100%); }
+.avatar-xiahoudun .avatar-detail::before { left: 17%; top: 43%; width: 66%; height: 18%; background: linear-gradient(90deg, #201b1b 0 45%, transparent 45% 56%, #d6a27a 56% 100%); box-shadow: 0 8px 0 #e0ad7c; opacity: 1; }
+.avatar-xiahoudun .avatar-detail::after { left: 22%; top: 76%; width: 56%; height: 9%; background: #aeb9c5; clip-path: polygon(0 0, 100% 0, 84% 100%, 16% 100%); opacity: 1; }
+
+.avatar-zhugeliang {
+  border-radius: 8px 8px 3px 3px;
+  background:
+    linear-gradient(90deg, transparent 0 22%, #2d2e2b 22% 31%, transparent 31% 69%, #2d2e2b 69% 78%, transparent 78%) 50% 54% / 100% 42% no-repeat,
+    linear-gradient(90deg, transparent 0 29%, #d9a47f 29% 71%, transparent 71%) 50% 51% / 100% 42% no-repeat,
+    linear-gradient(90deg, transparent 0 9%, #7aa09b 9% 91%, transparent 91%) 50% 100% / 100% 38% no-repeat,
+    #526f6b;
+}
+.avatar-zhugeliang::before { left: 19%; width: 62%; height: 31%; background: #d9d1bd; clip-path: polygon(4% 100%, 13% 21%, 30% 21%, 37% 0, 63% 0, 70% 21%, 87% 21%, 96% 100%); }
+.avatar-zhugeliang::after { left: 38%; top: 57%; width: 24%; height: 36%; background: #f0e7d0; clip-path: polygon(50% 0, 100% 32%, 75% 100%, 50% 83%, 25% 100%, 0 32%); }
+.avatar-zhugeliang .avatar-detail::before { left: 22%; top: 44%; width: 56%; height: 15%; background: linear-gradient(170deg, transparent 0 36%, #2d2927 37% 49%, transparent 50%) 0 0 / 50% 100% no-repeat, linear-gradient(190deg, transparent 0 36%, #2d2927 37% 49%, transparent 50%) 100% 0 / 50% 100% no-repeat; box-shadow: 0 8px 0 #f0be91; opacity: 1; }
+.avatar-zhugeliang .avatar-detail::after { left: 16%; top: 78%; width: 68%; height: 9%; background: #ece6d2; clip-path: polygon(0 0, 100% 0, 87% 100%, 13% 100%); opacity: 1; }
+
+.avatar-diaochan {
+  border-radius: 50% 50% 5px 5px;
+  background:
+    linear-gradient(90deg, #42223d 0 25%, transparent 25% 75%, #42223d 75%) 50% 48% / 100% 49% no-repeat,
+    linear-gradient(90deg, transparent 0 30%, #e2ab83 30% 70%, transparent 70%) 50% 50% / 100% 42% no-repeat,
+    linear-gradient(90deg, transparent 0 10%, #8c5bb2 10% 90%, transparent 90%) 50% 100% / 100% 38% no-repeat,
+    #744775;
+}
+.avatar-diaochan::before { left: 5%; top: 0; width: 90%; height: 29%; background: #42223d; clip-path: polygon(0 35%, 12% 0, 25% 22%, 38% 0, 50% 25%, 62% 0, 75% 22%, 88% 0, 100% 35%, 89% 100%, 11% 100%); }
+.avatar-diaochan::after { left: 38%; top: 2%; width: 24%; height: 18%; background: #e875ac; clip-path: polygon(50% 0, 100% 48%, 72% 100%, 28% 100%, 0 48%); }
+.avatar-diaochan .avatar-detail::before { left: 23%; top: 44%; width: 54%; height: 15%; background: linear-gradient(170deg, transparent 0 34%, #3a1e36 35% 47%, transparent 48%) 0 0 / 50% 100% no-repeat, linear-gradient(190deg, transparent 0 34%, #3a1e36 35% 47%, transparent 48%) 100% 0 / 50% 100% no-repeat; box-shadow: 0 8px 0 #f2c39d; opacity: 1; }
+.avatar-diaochan .avatar-detail::after { left: 16%; top: 78%; width: 68%; height: 10%; background: linear-gradient(90deg, #e875ac 0 20%, #8c5bb2 20% 80%, #e875ac 80%); clip-path: none; opacity: 1; }
+
+.avatar-lubu {
+  border-radius: 3px 3px 9px 9px;
+  background:
+    linear-gradient(90deg, transparent 0 15%, #251716 15% 29%, transparent 29% 71%, #251716 71% 85%, transparent 85%) 50% 53% / 100% 45% no-repeat,
+    linear-gradient(90deg, transparent 0 25%, #c9825b 25% 75%, transparent 75%) 50% 51% / 100% 44% no-repeat,
+    linear-gradient(90deg, transparent 0 7%, #962b2b 7% 93%, transparent 93%) 50% 100% / 100% 40% no-repeat,
+    #6d242b;
+}
+.avatar-lubu::before { left: 4%; top: 0; width: 92%; height: 33%; background: #be3335; clip-path: polygon(0 17%, 20% 42%, 28% 0, 42% 36%, 50% 9%, 58% 36%, 72% 0, 80% 42%, 100% 17%, 83% 100%, 17% 100%); }
+.avatar-lubu::after { left: 19%; top: 57%; width: 62%; height: 27%; background: #251716; clip-path: polygon(0 0, 100% 0, 84% 50%, 67% 50%, 50% 100%, 33% 50%, 16% 50%); }
+.avatar-lubu .avatar-detail::before { left: 15%; top: 42%; width: 70%; height: 18%; background: linear-gradient(165deg, transparent 0 31%, #3a1d1b 32% 46%, transparent 47%) 0 0 / 50% 100% no-repeat, linear-gradient(195deg, transparent 0 31%, #3a1d1b 32% 46%, transparent 47%) 100% 0 / 50% 100% no-repeat; box-shadow: 0 8px 0 #e4ac7c; opacity: 1; }
+.avatar-lubu .avatar-detail::after { left: 13%; top: 80%; width: 74%; height: 9%; background: #e1b34d; clip-path: polygon(0 0, 100% 0, 90% 100%, 10% 100%); opacity: 1; }
+
+/* Make the portrait frame itself part of the identity at small sizes. */
+.hero-card .pixel-avatar { width: 52px; height: 52px; }
+.hero-card .pixel-avatar::before { border-width: 2px; }
+/* Portrait facial anchors: two crisp eye pixels make each silhouette readable before color is considered. */
+.portrait-eyes { position: absolute; z-index: 4; left: 25%; top: 43%; width: 50%; height: 13%; pointer-events: none; }
+.portrait-eyes::before, .portrait-eyes::after { content: ""; position: absolute; top: 18%; width: 25%; height: 58%; background: #211814; box-shadow: 0 1px 0 #000a; }
+.portrait-eyes::before { left: 4%; }
+.portrait-eyes::after { right: 4%; }
+.avatar-liubei .portrait-eyes { top: 43%; }
+.avatar-liubei .portrait-eyes::before, .avatar-liubei .portrait-eyes::after { background: #35231b; }
+.avatar-guanyu .portrait-eyes { top: 42%; width: 58%; left: 21%; }
+.avatar-guanyu .portrait-eyes::before, .avatar-guanyu .portrait-eyes::after { top: 22%; height: 42%; background: #1b1211; }
+.avatar-guanyu .portrait-eyes::after { right: 4%; }
+.avatar-zhangfei .portrait-eyes { top: 44%; width: 62%; left: 19%; }
+.avatar-zhangfei .portrait-eyes::before, .avatar-zhangfei .portrait-eyes::after { top: 30%; height: 30%; background: #160f0c; }
+.avatar-zhaoyun .portrait-eyes { top: 43%; }
+.avatar-zhaoyun .portrait-eyes::before, .avatar-zhaoyun .portrait-eyes::after { top: 18%; height: 48%; background: #243b4b; }
+.avatar-huangzhong .portrait-eyes { top: 43%; width: 56%; left: 22%; }
+.avatar-huangzhong .portrait-eyes::before, .avatar-huangzhong .portrait-eyes::after { top: 20%; height: 42%; background: #5b412a; }
+.avatar-sunshang .portrait-eyes { top: 43%; width: 54%; left: 23%; }
+.avatar-sunshang .portrait-eyes::before, .avatar-sunshang .portrait-eyes::after { top: 16%; height: 48%; background: #4a1f2f; }
+.avatar-caocao .portrait-eyes { top: 42%; width: 58%; left: 21%; }
+.avatar-caocao .portrait-eyes::before, .avatar-caocao .portrait-eyes::after { top: 27%; height: 30%; background: #171416; }
+.avatar-xiahoudun .portrait-eyes { top: 41%; left: 17%; width: 66%; height: 18%; }
+.avatar-xiahoudun .portrait-eyes::before { left: 0; top: 0; width: 100%; height: 68%; background: #201b1b; }
+.avatar-xiahoudun .portrait-eyes::after { right: 7%; top: 18%; width: 18%; height: 46%; background: #e0ad7c; }
+.avatar-zhugeliang .portrait-eyes { top: 43%; }
+.avatar-zhugeliang .portrait-eyes::before, .avatar-zhugeliang .portrait-eyes::after { top: 19%; height: 42%; background: #2d2927; }
+.avatar-diaochan .portrait-eyes { top: 43%; width: 52%; left: 24%; }
+.avatar-diaochan .portrait-eyes::before, .avatar-diaochan .portrait-eyes::after { top: 14%; height: 48%; background: #3a1e36; }
+.avatar-lubu .portrait-eyes { top: 41%; width: 64%; left: 18%; }
+.avatar-lubu .portrait-eyes::before, .avatar-lubu .portrait-eyes::after { top: 25%; height: 34%; background: #271514; }
+
+/* Enemy preview portraits are intentionally bolder than roster thumbnails. */
+.enemy-preview-avatar .portrait-eyes { transform: scale(1.1); transform-origin: center; }
+/* One-pixel eye highlights keep the faces alive at 48px and above; Xiahou Dun's eyepatch stays opaque. */
+.portrait-eyes::before, .portrait-eyes::after { background-image: linear-gradient(#fff2cf 0 0); background-position: 55% 42%; background-repeat: no-repeat; background-size: 34% 30%; }
+.avatar-xiahoudun .portrait-eyes::before { background-image: none; }
+/* Per-hero accent rune: extra roster entries can share a visual family without sharing an identical card. */
+.portrait-rune { position: absolute; z-index: 5; right: 5%; bottom: 6%; width: 15%; height: 15%; background: var(--portrait-accent, #e5bd62); box-shadow: 0 0 0 1px #201b14aa; clip-path: polygon(50% 0, 100% 26%, 80% 100%, 20% 100%, 0 26%); opacity: .95; }
+.portrait-rune::before { content: ""; position: absolute; left: 37%; top: 18%; width: 26%; height: 66%; background: var(--portrait-tone, #4d4b3c); }
+.portrait-rune::after { content: ""; position: absolute; left: 18%; top: 43%; width: 64%; height: 14%; background: var(--portrait-tone, #4d4b3c); }
+.enemy-preview-avatar .portrait-rune { display: none; }

@@ -92,13 +92,38 @@ function drawMapDecoration(x, y, type) {
 }
 
 function drawHealthBar(unit, visualX = unit.x + unit.motionX + unit.kickX, visualY = unit.y + unit.motionY + unit.kickY) {
-  if (unit.dead) return;
-  const width = unit.type === "boss" ? 48 : unit.team === "ally" ? 36 : 28;
+  if (unit.dead || (unit.team === "enemy" && unit.type !== "boss")) return;
+  const boss = unit.type === "boss";
+  const width = boss ? 48 : 36;
   const x = Math.round(visualX - width / 2);
-  const y = Math.round(visualY - (unit.type === "boss" ? 54 : 40) * unit.scale);
+  // Minions stay visually clean. A boss bar sits above the crown; allied bars
+  // remain below the feet/mount baseline and never cover the paper-doll layers.
+  const y = boss ? Math.round(visualY - 54 * unit.scale) : Math.round(visualY + 8 * unit.scale);
   drawPixelRect(x - 1, y - 1, width + 2, 6, "#1a1714");
   drawPixelRect(x, y, width, 4, "#6d1d1b");
-  drawPixelRect(x, y, Math.ceil(width * clamp(unit.hp / unit.maxHp, 0, 1)), 4, unit.team === "ally" ? "#55a960" : "#cf4534");
+  drawPixelRect(x, y, Math.ceil(width * clamp(unit.hp / unit.maxHp, 0, 1)), 4, boss ? "#d7a63b" : "#55a960");
+}
+
+function drawSkillEnergyBar(unit, visualX, visualY) {
+  if (unit.dead || unit.team !== "ally") return;
+  const width = unit.type === "boss" ? 48 : unit.team === "ally" ? 36 : 28;
+  const x = Math.round(visualX - width / 2);
+  const healthOffset = (unit.type === "boss" ? 11 : 8) * unit.scale;
+  const y = Math.round(visualY + healthOffset + 7);
+  const attacksNeeded = 5;
+  const attackRatio = clamp((unit.attackCount || 0) / attacksNeeded, 0, 1);
+  const cooldownReady = (unit.skillCooldown || 0) <= 0;
+  const ready = attackRatio >= 1 && cooldownReady;
+  // During cooldown, retain a dim partial fill so players can see that attacks
+  // are counted but the ultimate is still locked by time.
+  const ratio = cooldownReady ? attackRatio : Math.min(0.84, attackRatio * 0.84);
+  const pulse = (Math.sin(runtime.elapsed * 8 + unit.x * 0.04) + 1) * 0.5;
+  const border = ready ? (pulse > 0.45 ? "#fff1a1" : "#d7a735") : "#171511";
+  const fill = ready ? "#f1c84d" : cooldownReady ? "#69b5c7" : "#6d6170";
+  drawPixelRect(x - 1, y - 2, width + 2, 7, border);
+  drawPixelRect(x, y, width, 3, "#2a241b");
+  drawPixelRect(x, y, Math.ceil(width * ratio), 3, fill);
+  if (ready) drawPixelRect(x + Math.max(0, Math.ceil(width * ratio) - 5), y, 5, 1, "#fff2a7");
 }
 
 function drawWeapon(unit, color) {
@@ -316,8 +341,21 @@ function drawMountVfx(mount, unit, walkCycle) {
   }
 }
 
+// Draw a connected two-part leg so the gait reads as one creature instead of
+// separate floating rectangles. The upper segment shares the body palette and
+// the lower segment carries the hoof, with opposite phases for front/rear legs.
+function drawMountLeg(x, phase, body, hoof, width = 5, length = 11) {
+  const shift = Math.round(phase * 2);
+  const lift = phase > 0.35 ? 1 : 0;
+  drawPixelRect(x + shift, -8 - lift, width, 7 + lift, body);
+  drawPixelRect(x + shift, -3 - lift, width, Math.max(5, length - 4 + lift), hoof);
+  drawPixelRect(x + shift + (phase > 0 ? 1 : 0), 3 - lift, Math.max(3, width - 1), 2, hoof);
+}
 function drawDetailedMount(mount, unit, heroId, walkCycle) {
-  const stride = unit.moving ? Math.round(walkCycle * 2) : 0;
+  // Freeze the gait while idle; otherwise legs and tail keep drifting apart from
+  // the body when the unit has reached its target.
+  const gait = unit.moving ? walkCycle : 0;
+  const stride = Math.round(gait * 2);
   const body = mount.body || "#8e8373";
   const light = mount.light || body;
   const mane = mount.mane || "#3a302b";
@@ -333,9 +371,9 @@ function drawDetailedMount(mount, unit, heroId, walkCycle) {
     drawPixelRect(20, -15, 5, 18, body);
     drawPixelRect(23, 0, 4, 6, light);
     drawPixelRect(7, -24, 10, 7, mane);
-    drawPixelRect(-18 + stride, -4, 6, 11, hoof);
-    drawPixelRect(-5 - stride, -3, 6, 10, hoof);
-    drawPixelRect(8 + stride, -4, 6, 11, hoof);
+    drawMountLeg(-18, gait, body, hoof, 6, 11);
+    drawMountLeg(-5, -gait, body, hoof, 6, 10);
+    drawMountLeg(8, gait, body, hoof, 6, 11);
     drawPixelRect(-13, -20, 25, 4, armor);
     drawPixelRect(-7, -24, 3, 4, ornament);
     drawPixelRect(1, -24, 3, 4, ornament);
@@ -344,10 +382,10 @@ function drawDetailedMount(mount, unit, heroId, walkCycle) {
     drawPixelRect(-8, -21, 12, 11, body);
     drawPixelRect(6, -27, 10, 9, light);
     drawPixelRect(14, -24, 8, 4, light);
-    drawPixelRect(-15 + stride, -5, 4, 11, hoof);
-    drawPixelRect(-5 - stride, -5, 4, 11, hoof);
-    drawPixelRect(4 + stride, -5, 4, 11, hoof);
-    drawPixelRect(15 - stride, -5, 4, 11, hoof);
+    drawMountLeg(-15, gait, body, hoof, 4, 11);
+    drawMountLeg(-5, -gait, body, hoof, 4, 11);
+    drawMountLeg(4, gait, body, hoof, 4, 11);
+    drawMountLeg(15, -gait, body, hoof, 4, 11);
     drawPixelRect(-8, -18, 17, 3, armor);
     drawPixelLine(9, -28, 5, -34, ornament, 2);
     drawPixelLine(12, -28, 16, -34, ornament, 2);
@@ -358,9 +396,9 @@ function drawDetailedMount(mount, unit, heroId, walkCycle) {
     drawPixelRect(-13, -22, 25, 8, light);
     drawPixelRect(13, -21, 11, 10, light);
     drawPixelRect(23, -19, 7, 4, ornament);
-    drawPixelRect(-18 + stride, -4, 7, 11, hoof);
-    drawPixelRect(-5 - stride, -4, 7, 11, hoof);
-    drawPixelRect(8 + stride, -4, 7, 11, hoof);
+    drawMountLeg(-18, gait, body, hoof, 7, 11);
+    drawMountLeg(-5, -gait, body, hoof, 7, 11);
+    drawMountLeg(8, gait, body, hoof, 7, 11);
     drawPixelRect(-13, -20, 27, 5, armor);
     drawPixelRect(-1, -24, 3, 5, ornament);
   } else if (species === "panther") {
@@ -369,9 +407,9 @@ function drawDetailedMount(mount, unit, heroId, walkCycle) {
     drawPixelRect(17, -23, 9, 7, light);
     drawPixelRect(18, -29, 4, 7, mane);
     drawPixelRect(24, -27, 4, 3, ornament);
-    drawPixelRect(-15 + stride, -5, 4, 10, hoof);
-    drawPixelRect(-4 - stride, -5, 4, 10, hoof);
-    drawPixelRect(7 + stride, -5, 4, 10, hoof);
+    drawMountLeg(-15, gait, body, hoof, 4, 10);
+    drawMountLeg(-4, -gait, body, hoof, 4, 10);
+    drawMountLeg(7, gait, body, hoof, 4, 10);
     drawPixelRect(-20, -15, 7, 3, mane);
     drawPixelLine(-21, -11, -29, -17 - stride, mane, 2);
     drawPixelRect(-10, -17, 18, 3, armor);
@@ -383,10 +421,10 @@ function drawDetailedMount(mount, unit, heroId, walkCycle) {
     drawPixelRect(23, -23, 7, 3, light);
     drawPixelRect(13, -30, 4, 7, mane);
     drawPixelRect(9, -27, 3, 8, mane);
-    drawPixelRect(-15 + stride, -4, 5, 11, hoof);
-    drawPixelRect(-3 - stride, -4, 5, 10, hoof);
-    drawPixelRect(7 + stride, -4, 5, 11, hoof);
-    drawPixelRect(18 - stride, -4, 5, 10, hoof);
+    drawMountLeg(-15, gait, body, hoof, 5, 11);
+    drawMountLeg(-3, -gait, body, hoof, 5, 10);
+    drawMountLeg(7, gait, body, hoof, 5, 11);
+    drawMountLeg(18, -gait, body, hoof, 5, 10);
     drawPixelRect(-10, -18, 20, 4, armor);
     drawPixelRect(-4, -21, 8, 3, ornament);
     drawPixelLine(21, -21, 27, -20, ornament, 1);
@@ -877,6 +915,119 @@ function drawHeroDetails(heroId, armorId, idleCycle, walkCycle) {
   ctx.restore();
 }
 
+// Compact pixel pass: extra 1-2px landmarks keep small battlefield sprites readable.
+function drawCompactHeroDetails(heroId, body, accent, armorId, accessoryId, idleCycle, unitScale) {
+  const compact = unitScale < 1.02;
+  const glint = idleCycle > 0.35 ? '#fff4b8' : '#e6d396';
+  ctx.save();
+  ctx.globalAlpha = compact ? 0.96 : 0.7;
+  ctx.lineJoin = 'miter';
+
+  // Symmetrical landmarks survive a small render size better than thin outlines.
+  drawPixelRect(-11, -25, 2, 2, accent);
+  drawPixelRect(9, -25, 2, 2, accent);
+  drawPixelRect(-2, -28, 4, 2, glint);
+  drawPixelRect(-7, -13, 3, 1, '#2a211b');
+  drawPixelRect(4, -13, 3, 1, '#2a211b');
+  drawPixelRect(-9, -8, 3, 1, accent);
+  drawPixelRect(6, -8, 3, 1, accent);
+
+  // Sparse face landmarks remain legible at 0.9x without becoming noisy.
+  drawPixelRect(-7, -33, 2, 1, '#fff0d2');
+  drawPixelRect(5, -33, 2, 1, '#fff0d2');
+  drawPixelRect(-1, -31, 2, 1, '#8b513d');
+
+  if (heroId === 'liubei') {
+    drawPixelRect(-6, -18, 12, 1, '#b58d3d');
+    drawPixelRect(-2, -24, 4, 4, '#4c9558');
+    drawPixelRect(-9, -31, 2, 3, '#f5eacb');
+    drawPixelRect(7, -31, 2, 3, '#f5eacb');
+  } else if (heroId === 'guanyu') {
+    drawPixelRect(-8, -21, 3, 1, '#78b47f');
+    drawPixelRect(5, -21, 3, 1, '#78b47f');
+    drawPixelRect(-2, -26, 4, 2, '#d34537');
+    drawPixelRect(-2, -15 + Math.round(idleCycle * 0.3), 4, 5, '#9d5945');
+  } else if (heroId === 'zhangfei') {
+    drawPixelRect(-9, -19, 18, 1, '#aeb6b5');
+    drawPixelRect(-10, -25, 2, 2, '#d9dedb');
+    drawPixelRect(8, -25, 2, 2, '#d9dedb');
+    drawPixelRect(-5, -10, 3, 2, '#efc66c');
+    drawPixelRect(2, -10, 3, 2, '#efc66c');
+  } else if (heroId === 'zhaoyun') {
+    drawPixelRect(-8, -22, 2, 1, '#f2f4ed');
+    drawPixelRect(6, -22, 2, 1, '#f2f4ed');
+    drawPixelRect(-2, -26, 4, 2, '#4d84b8');
+    drawPixelRect(-1, -51 + Math.round(idleCycle), 2, 3, '#59a1d1');
+  } else if (heroId === 'huangzhong') {
+    drawPixelRect(-8, -21, 16, 1, '#d7bc60');
+    drawPixelRect(-13, -24, 2, 7, '#6b492a');
+    drawPixelRect(-12, -18, 3, 2, glint);
+  } else if (heroId === 'sunshang' || heroId === 'diaochan') {
+    drawPixelRect(-8, -17, 16, 1, '#e8bd5c');
+    drawPixelRect(-11, -30, 2, 4, accent);
+    drawPixelRect(9, -30, 2, 4, accent);
+    drawPixelRect(-2, -47, 4, 2, glint);
+  } else if (heroId === 'caocao') {
+    drawPixelRect(-8, -19, 16, 1, '#b9914a');
+    drawPixelRect(-2, -25, 4, 5, '#8d55ad');
+    drawPixelRect(-10, -27, 2, 3, '#b9914a');
+    drawPixelRect(8, -27, 2, 3, '#b9914a');
+  } else if (heroId === 'xiahoudun') {
+    drawPixelRect(-9, -20, 18, 1, '#aab8c5');
+    drawPixelRect(4, -35, 5, 2, '#211d20');
+    drawPixelRect(4, -33, 3, 2, '#dc9e76');
+    drawPixelRect(-11, -27, 2, 2, '#d6e5ef');
+  } else if (heroId === 'zhugeliang') {
+    drawPixelRect(-8, -17, 16, 1, '#536e69');
+    drawPixelRect(3, -24, 3, 8, '#e6e0ce');
+    drawPixelRect(-2, -52, 4, 2, glint);
+  } else if (heroId === 'lubu') {
+    drawPixelRect(-9, -20, 18, 1, '#e3b34d');
+    drawPixelRect(-12, -27, 2, 6, '#f1c85c');
+    drawPixelRect(10, -27, 2, 6, '#f1c85c');
+    drawPixelRect(-2, -48, 4, 3, glint);
+  } else {
+    // Extra heroes inherit a base silhouette, so their accent becomes a signature sash.
+    drawPixelRect(-8, -17, 16, 1, accent);
+    drawPixelRect(-10, -24, 2, 2, body);
+    drawPixelRect(8, -24, 2, 2, accent);
+  }
+
+  // One compact marker per paper-doll slot keeps loadout identity visible in battle.
+  if (armorId === 'iron' || armorId === 'silver' || armorId === 'black-iron') {
+    drawPixelRect(-10, -23, 2, 4, '#d5d9d2');
+    drawPixelRect(8, -23, 2, 4, '#d5d9d2');
+  } else if (armorId === 'silk' || armorId === 'scholar' || armorId === 'cloud-robe') {
+    drawPixelRect(-8, -12, 2, 4, '#e8b9d7');
+    drawPixelRect(6, -12, 2, 4, '#e8b9d7');
+  } else if (armorId === 'crimson' || armorId === 'flame' || armorId === 'vermilion-mail') {
+    drawPixelRect(-10, -24, 2, 5, '#e3b34d');
+    drawPixelRect(8, -24, 2, 5, '#e3b34d');
+  } else if (armorId === 'mountain' || armorId === 'tiger-plate' || armorId === 'nine-dragon') {
+    drawPixelRect(-12, -27, 3, 5, glint);
+    drawPixelRect(9, -27, 3, 5, glint);
+  } else if (armorId === 'azure-mail' || armorId === 'ghost-cloak') {
+    drawPixelRect(-9, -18, 2, 5, '#80b7c9');
+    drawPixelRect(7, -18, 2, 5, '#80b7c9');
+  }
+
+  if (accessoryId === 'jade' || accessoryId === 'jade-pearl' || accessoryId === 'phoenix-jade') {
+    drawPixelRect(-1, -21 + Math.round(idleCycle), 2, 3, '#86dfb2');
+  } else if (accessoryId === 'dragon' || accessoryId === 'tiger-seal' || accessoryId === 'strategist-seal') {
+    drawPixelRect(5, -20 + Math.round(idleCycle), 3, 2, '#e4b84f');
+  } else if (accessoryId === 'war' || accessoryId === 'war-drum' || accessoryId === 'tiger-charm') {
+    drawPixelRect(-10, -20, 2, 3, '#d54d36');
+    drawPixelRect(8, -20, 2, 3, '#d54d36');
+  } else if (accessoryId === 'feather' || accessoryId === 'golden-feather') {
+    drawPixelRect(3, -25 + Math.round(idleCycle), 2, 7, '#e5e0ce');
+  } else if (accessoryId === 'star-map') {
+    drawPixelRect(-4, -21, 2, 2, '#9fd8ef');
+    drawPixelRect(1, -19, 2, 2, '#e6d396');
+  } else if (accessoryId === 'imperial-edict') {
+    drawPixelRect(-4, -20, 2, 5, '#f0e3bd');
+  }
+  ctx.restore();
+}
 function drawEnemyDetails(unit, idleCycle) {
   const metal = unit.type === 'boss' ? '#d7b255' : '#a8afb0';
   const shade = unit.type === 'boss' ? '#60201f' : '#3f3330';
@@ -971,12 +1122,16 @@ function drawUnit(unit) {
   const deathMax = unit.type === "boss" ? 0.9 : 0.58;
   const deathProgress = unit.dead ? 1 - unit.deathTime / deathMax : 0;
   ctx.save();
-  ctx.translate(unit.renderX, unit.renderY + bob);
+  // Snap only sub-1x sprites to half-pixels. Motion and health bars keep their
+  // smooth coordinates, while small silhouettes avoid shimmering on the canvas.
+  const spriteX = unit.scale < 1 ? Math.round(unit.renderX * 2) / 2 : unit.renderX;
+  const spriteY = unit.scale < 1 ? Math.round((unit.renderY + bob) * 2) / 2 : unit.renderY + bob;
+  ctx.translate(spriteX, spriteY);
 
   ctx.globalAlpha = unit.dead ? 0.2 * (1 - deathProgress) : 0.36;
   ctx.fillStyle = "#10120e";
   ctx.beginPath();
-  ctx.ellipse(0, 2, (unit.type === "boss" ? 24 : 16) * (1 + deathProgress * 0.35), unit.type === "boss" ? 8 : 5, 0, 0, Math.PI * 2);
+  ctx.ellipse(0, 2, (unit.type === "boss" ? 24 : 16) * unit.scale * (1 + deathProgress * 0.35), (unit.type === "boss" ? 8 : 5) * unit.scale, 0, 0, Math.PI * 2);
   ctx.fill();
   ctx.globalAlpha = unit.dead ? clamp(unit.deathTime / deathMax * 1.35, 0, 1) : 1;
 
@@ -998,6 +1153,7 @@ function drawUnit(unit) {
     drawAccessory(visualId, loadout?.accessory, idleCycle);
     drawHeroHead(visualId, idleCycle);
     drawHeroDetails(visualId, loadout?.armor, idleCycle, unit.moving ? walkCycle : 0);
+    drawCompactHeroDetails(visualId, body, accent, loadout?.armor, loadout?.accessory, idleCycle, unit.scale);
   } else {
     drawEnemyBody(unit, body, accent, idleCycle);
     drawEnemyDetails(unit, idleCycle);
@@ -1015,7 +1171,11 @@ function drawUnit(unit) {
   }
   drawWeapon(unit, accent);
   ctx.restore();
-  if (!unit.dead) drawHealthBar(unit, unit.renderX, unit.renderY + bob);
+  if (!unit.dead) {
+    const barY = unit.renderY + bob + unit.kickY;
+    drawHealthBar(unit, unit.renderX + unit.kickX, barY);
+    drawSkillEnergyBar(unit, unit.renderX + unit.kickX, barY);
+  }
 }
 
 function drawEffects() {
@@ -1126,11 +1286,11 @@ function drawEffects() {
   for (const number of runtime.numbers) {
     ctx.globalAlpha = clamp(number.life / number.maxLife * 1.5, 0, 1);
     const numberProgress = 1 - number.life / number.maxLife;
-    const popScale = numberProgress < 0.22 ? 0.65 + numberProgress / 0.22 * 0.55 : 1.2 - (numberProgress - 0.22) * 0.25;
-    ctx.font = "bold " + Math.round(number.size * popScale) + "px Microsoft JhengHei";
+    const popScale = numberProgress < 0.2 ? 0.72 + numberProgress / 0.2 * 0.28 : 1.04 - (numberProgress - 0.2) * 0.18;
+    ctx.font = (number.size >= 24 ? "800 " : "700 ") + Math.round(number.size * popScale) + "px ui-monospace, Consolas, monospace";
     ctx.textAlign = "center";
-    ctx.lineWidth = 3;
-    ctx.strokeStyle = "#25140d";
+    ctx.lineWidth = number.size >= 24 ? 3 : 2;
+    ctx.strokeStyle = number.size >= 24 ? "#3a170f" : "#25140d";
     ctx.strokeText(number.value, number.x, number.y);
     ctx.fillStyle = number.color;
     ctx.fillText(number.value, number.x, number.y);
@@ -1140,14 +1300,16 @@ function drawEffects() {
 
 function drawBattleTitle() {
   const chapter = chapterForStage();
+  const stageConfig = stageDefinition(activeStageNumber());
+  const stageName = stageConfig?.name || chapter.stage;
   ctx.save();
   ctx.globalAlpha = 0.17;
   ctx.translate(195, 326);
   ctx.rotate(-0.1);
-  ctx.font = "bold 54px DFKai-SB, KaiTi, serif";
+  ctx.font = stageName.length > 8 ? "bold 43px DFKai-SB, KaiTi, serif" : "bold 54px DFKai-SB, KaiTi, serif";
   ctx.textAlign = "center";
   ctx.fillStyle = "#151810";
-  ctx.fillText(chapter.stage, 0, 0);
+  ctx.fillText(stageName, 0, 0);
   ctx.restore();
 }
 
