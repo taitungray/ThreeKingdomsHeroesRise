@@ -9,6 +9,8 @@ param(
 $ErrorActionPreference = "Stop"
 $projectRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 Set-Location $projectRoot
+. (Join-Path $PSScriptRoot "use-android-jdk.ps1")
+Use-AndroidJdk
 
 function Require-Command([string]$name) {
   if (-not (Get-Command $name -ErrorAction SilentlyContinue)) {

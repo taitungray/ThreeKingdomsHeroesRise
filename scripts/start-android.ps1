@@ -7,6 +7,8 @@ param(
 $ErrorActionPreference = "Stop"
 $projectRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 Set-Location $projectRoot
+. (Join-Path $PSScriptRoot "use-android-jdk.ps1")
+Use-AndroidJdk
 
 if (-not (Get-Command node -ErrorAction SilentlyContinue) -or -not (Get-Command npx -ErrorAction SilentlyContinue)) {
   throw "Node.js or npx is missing. Install Node.js LTS first."

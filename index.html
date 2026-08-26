@@ -103,7 +103,12 @@
 
   <script src="js/admob-config.js"></script>
   <script src="js/admob.js"></script>
-  <script src="game.js"></script>
+  <script src="data/game-data.js"></script>
+<script src="js/game/game-core.js"></script>
+  <script src="js/game/game-combat.js"></script>
+  <script src="js/game/game-render.js"></script>
+  <script src="js/game/game-ui.js"></script>
+  <script src="js/game/game-main.js"></script>
   <script>
     if ("serviceWorker" in navigator && location.protocol !== "file:") {
       window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}), { once: true });

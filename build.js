@@ -43,6 +43,7 @@ fs.mkdirSync(output, { recursive: true });
   "privacy.html"
 ].forEach(copyFileIfPresent);
 copyDirectoryIfPresent("assets");
+copyDirectoryIfPresent("data");
 copyDirectoryIfPresent("js");
 
 const adConfig = isRelease

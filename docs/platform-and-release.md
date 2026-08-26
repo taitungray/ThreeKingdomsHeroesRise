@@ -2,7 +2,7 @@
 
 ## 架構
 
-- 根目錄 index.html、styles.css、game.js 是唯一的 Web 原始碼入口。
+- 根目錄 index.html、styles.css 與 `js/game/` 是 Web 原始碼入口；`game.js` 僅保留相容性標記。
 - node build.js 將 Web 檔案複製到 www/；Capacitor 只讀取 www/。
 - package.json 固定 Capacitor 6 與 AdMob plugin 版本範圍。首次建立 Android wrapper 時執行 npm install、npx cap add android，之後用 npx cap sync android。
 - manifest.json 與 sw.js 支援瀏覽器安裝和離線載入；Service Worker 不攔截外部網域。
@@ -20,9 +20,10 @@
 
 1. 確認 capacitor.config.json 的 application ID、名稱與商店帳號一致。
 2. 執行 SETUP_ANDROID.bat 或 npm run setup:android，建立 Capacitor Android wrapper；再設定自己的簽名檔與 Gradle secrets。
+   Android 建置腳本會優先使用 Android Studio 內建或系統已安裝的 JDK 17，只影響目前打包程序，不修改全域 `JAVA_HOME`。
 3. 以發行環境設定廣告 ID，執行 npm run build:release 和 npx cap sync android。
 4. npm run start:android 或 START_ANDROID_APP.bat 會同步 Web、安裝並啟動連接中的 Android 裝置／模擬器；npm run start:android:studio 只開啟 Android 專案資料夾。
-5. 使用 scripts/build-release.ps1、打包APK.bat 或 npm run build:android 產生 AAB，並在 builds/ 同時保存 APK（除非使用 SkipApk）。腳本不建立預設密碼金鑰，也不包含任何憑證。
+5. `打包APK.bat` 提供兩種模式：測試 APK 會使用 Google 官方測試廣告與 Android debug signing，只供本機安裝測試；正式版本則呼叫 `scripts/build-release.ps1` 產生 AAB，並在 `builds/` 同時保存 APK（除非使用 SkipApk）。`npm run build:apk:debug` 可直接建立測試 APK，`npm run build:android` 建立正式版本。
 6. 未提供正式 AdMob ID、Android wrapper 或簽名設定時，腳本會明確停止並提示，不會偷偷使用參考專案設定。
 7. 上架前完成隱私政策、Data safety、內容分級、廣告聲明、測試軌與 Play App Signing。
 

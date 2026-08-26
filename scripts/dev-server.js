@@ -64,6 +64,15 @@ const server = http.createServer((request, response) => {
   serveFrom(response, file);
 });
 
+server.on("error", (error) => {
+  if (error.code === "EADDRINUSE") {
+    console.error(`連接埠 ${port} 已被占用，伺服器無法啟動。`);
+  } else {
+    console.error("本機伺服器啟動失敗：" + error.message);
+  }
+  process.exitCode = 1;
+});
+
 server.listen(port, "127.0.0.1", () => {
   console.log("三國：群英再起 dev server: http://127.0.0.1:" + port + "/");
   console.log("Serving " + (fs.existsSync(webRoot) ? webRoot : fallbackRoot));

@@ -474,6 +474,7 @@ button:focus-visible { outline: 3px solid #fff0a0; outline-offset: 2px; }
 .campaign-card { min-height: 78px; padding-left: 80px; overflow: hidden; }
 .campaign-card::before { content: attr(data-number); position: absolute; left: -7px; top: -19px; width: 78px; height: 95px; color: #e4cf9d; background: #43503d; font-family: "Times New Roman", serif; font-size: 42px; font-weight: 700; line-height: 105px; text-align: center; transform: rotate(-8deg); }
 .campaign-card.locked { filter: grayscale(.8) brightness(.75); }
+.campaign-card.active { border-color: #a25724; box-shadow: inset 0 0 0 1px #fff0be, 0 0 0 2px #a2572444, 0 3px 4px #332a1d66; }
 .campaign-card .stage-stars { color: #a25724; letter-spacing: 2px; }
 .progress-track { height: 10px; margin-top: 7px; border: 1px solid #4b3c29; background: #6e644f; }
 .progress-track i { display: block; height: 100%; background: linear-gradient(90deg, #9b382e, #df714d); }

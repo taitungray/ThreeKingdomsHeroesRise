@@ -4,7 +4,7 @@
 
 ## 1. Source of truth
 
-- Web 原始碼只有根目錄 index.html、styles.css、game.js、js/、assets/。
+- Web 原始碼包含根目錄 index.html、styles.css、`js/game/`、`data/`、assets/；`game.js` 僅為相容性標記。
 - www/ 是 build.js 產物，不直接手改。
 - capacitor.config.json、manifest.json、sw.js、package.json 是平台設定來源。
 - docs/ui-display-rules.md 是 UI 權威；docs/platform-and-release.md 是發布權威；docs/accessibility-wcag.md 是無障礙權威。
@@ -22,7 +22,7 @@
 
 ## 3. 單檔原型的邊界
 
-目前 game.js 是可玩的原型，暫不進行一次性大拆檔。新增內容應用清楚的常數、render 函式、action 名稱與 helper 區隔，避免把資料、畫面與事件再互相複製。
+執行邏輯已拆成 `js/game/` 的 core、combat、render、ui、main 五個模組。新增內容應放進對應邊界，避免把資料、畫面與事件再互相複製。
 
 - HEROES、紙娃娃、戰法與章節資料集中維護。
 - 存檔只透過 loadSave、persist 與明確的版本 migration。
@@ -48,7 +48,7 @@
 
 ## 6. 修改與驗證
 
-- JS：node --check game.js、node --check 受影響的 JS。
+- JS：對 `js/game/*.js` 與 `game.js` 執行 `node --check`，再跑 `npm test`。
 - 設定：解析 package.json、manifest.json、capacitor.config.json。
 - UI：至少檢查 390×720；若使用者要求視覺評審，才啟動瀏覽器、截圖與比較。
 - Build：需要同步產物時執行 node build.js；release 只在使用者要求時執行。
