@@ -6,6 +6,7 @@ const path = require("node:path");
 const vm = require("node:vm");
 
 const root = path.resolve(__dirname, "..");
+const { runDocChecks } = require("./check-docs");
 function collectFiles(directory) {
   return fs.readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
     const absolute = path.join(directory, entry.name);
@@ -64,7 +65,7 @@ const gameSource = runtimeModules.map((file) => {
   assert.ok(fs.existsSync(modulePath), `runtime module missing: ${file}`);
   return fs.readFileSync(modulePath, "utf8");
 }).join("\n");
-for (const marker of ["function spawnResourceDrops", "function updateResourceDrops", "function drawResourceDrops", "runtime.drops", "function roleAdvantage", "function targetPriorityScore", "function damageSummary", "function heroSkillCost", "function drawWeatherOverlay", "function damageStatsHtml", "data-action=\"hero-skill\"", "function startStage", "function enemyGeneralById", "function showEnemyPreview", "enemyPreviewList", "enemyPreviewLabel", "waveGeneralIndex", "classList.add(\"show\", \"persistent\")", "function activeStageNumber", "function stageDefinition", "function waveCleared", "function partyDefeated", "skillCooldown", "function showOfflineReward", "function renderAchievements", "function renderCollection", "function renderEvents", "function upgradeHeroStar", "function breakthroughHero", "function renderFrameSection", "function heroProgression", "function renderDungeons", "function challengeTower", "function sweepStage", "function refineHeroEquipment", "function refillStamina", "function drawCompactHeroDetails", "const spriteX = unit.scale < 1", "const gait = unit.moving ? walkCycle : 0", "function drawMountLeg", "function drawSkillEnergyBar", "const y = Math.round(visualY +", "const ALLY_UNIT_SCALE = 0.88", "const ENEMY_UNIT_SCALE = 0.82", "const BOSS_UNIT_SCALE = 1.30", "function directionIndex", "attackSpritePath", "const useAttackSprite", "const attackPaths", "attackFrame", "function directionLocalAngle", "function drawAttackPose", "function characterAnimationState", "function applyCombatBodyMotion", "function drawCombatBodySprite", "const actionTransform = Boolean(unit.action && !useAttackSprite)", "unit.type !== \"boss\"", "const boss = unit.type === \"boss\""]) {
+for (const marker of ["function spawnResourceDrops", "function updateResourceDrops", "function drawResourceDrops", "runtime.drops", "function roleAdvantage", "function targetPriorityScore", "function damageSummary", "function heroSkillCost", "function drawWeatherOverlay", "function damageStatsHtml", "data-action=\"hero-skill\"", "function startStage", "function enemyGeneralById", "function showEnemyPreview", "enemyPreviewList", "enemyPreviewLabel", "waveGeneralIndex", "runtime.enemyPreviewTimer = setTimeout", "function beginWaveTransition", "showTransition && !boss", "playSpeed", "function drawWaveTransitionOverlay", "function toggleRailDrawer", "stageCompactLabel", "waveChip", "rightRailDrawer", "function activeStageNumber", "function stageDefinition", "function waveCleared", "function partyDefeated", "skillCooldown", "function showOfflineReward", "function renderAchievements", "function renderCollection", "function renderEvents", "function upgradeHeroStar", "function breakthroughHero", "function renderFrameSection", "function heroProgression", "function renderDungeons", "function challengeTower", "function sweepStage", "function refineHeroEquipment", "function refillStamina", "function drawCompactHeroDetails", "function drawHealthBar", "const spriteX = unit.scale < 1", "const gait = unit.moving ? walkCycle : 0", "function drawMountLeg", "function drawSkillEnergyBar", "const y = Math.round(visualY +", "const ALLY_UNIT_SCALE = 1.22", "const ENEMY_UNIT_SCALE = 1.12", "const BOSS_UNIT_SCALE = 1.68", "function directionIndex", "attackSpritePath", "const useAttackSprite", "const attackPaths", "attackFrame", "function directionLocalAngle", "function drawAttackPose", "function characterAnimationState", "function applyCombatBodyMotion", "function drawCombatBodySprite", "const actionTransform = Boolean(unit.action && !useAttackSprite)", "unit.type !== \"boss\"", "const boss = unit.type === \"boss\""]) {
   assert.ok(gameSource.includes(marker), `game loop marker missing: ${marker}`);
 }
 assert.ok(fs.statSync(path.join(root, "game.js")).size < 2000, "legacy game.js should stay a small compatibility marker");
@@ -80,6 +81,12 @@ assert.equal(attackManifest.assets.length, requiredAttackIds.length, "every comb
 assert.ok(requiredAttackIds.every((id) => attackManifest.assets.some((asset) => asset.id === id)), "attack sprite manifest must cover heroes, enemy types and bosses");
 assert.ok(attackManifest.assets.every((asset) => fs.existsSync(path.join(root, asset.path))), "declared attack sprite assets must exist");
 assert.ok(fs.existsSync(path.join(root, "assets", "characters", "equipment-manifest.json")), "equipment asset manifest missing");
+const combatWeaponManifestPath = path.join(root, "assets", "characters", "combat-weapon-manifest.json");
+assert.ok(fs.existsSync(combatWeaponManifestPath), "combat weapon asset manifest missing");
+const combatWeaponManifest = JSON.parse(fs.readFileSync(combatWeaponManifestPath, "utf8"));
+assert.deepEqual(combatWeaponManifest.anchor, [32, 54], "combat weapons must share the hand anchor");
+assert.equal(combatWeaponManifest.assets.length, 9, "combat weapon set must cover every combat weapon type");
+assert.ok(combatWeaponManifest.assets.every((asset) => fs.existsSync(path.join(root, asset.path))), "declared combat weapon assets must exist");
 assert.ok(fs.existsSync(path.join(root, "assets", "backgrounds", "terrain-manifest.json")), "terrain asset manifest missing");
 assert.ok(fs.existsSync(path.join(root, "assets", "vfx", "vfx-manifest.json")), "VFX asset manifest missing");
 assert.ok(fs.readdirSync(path.join(root, "assets", "characters")).filter((file) => file.startsWith("mount-") && file.endsWith(".webp")).length >= 14, "mount sprite assets must cover the mount pool");
@@ -98,6 +105,19 @@ const styleSource = fs.readFileSync(path.join(root, "styles.css"), "utf8");
 for (const marker of ["Character portrait pass: distinct facial silhouettes", ".portrait-eyes::before", ".avatar-xiahoudun .portrait-eyes::before", ".portrait-rune"]) {
   assert.ok(styleSource.includes(marker), "portrait style marker missing: " + marker);
 }
+assert.ok(styleSource.includes("left: 50%") && styleSource.includes("transform: translate(-50%, 0)"), "dialogue and toast must stay horizontally centered");
+assert.ok(styleSource.includes("margin-inline: auto") && styleSource.includes("bottom: auto"), "boss banner must center without top/bottom stretch");
+assert.ok(!styleSource.includes("top: -4px; right: -4px"), "rail alert dots must stay inside the game frame");
+assert.ok(gameSource.includes("showTransition && !boss"), "boss spawn must not stack a second wave title over the banner");
+assert.ok(gameSource.includes("Boss arrival owns the single central narrative slot") && gameSource.includes('runtime.dialogueTimer = 0'), "boss spawn must clear dialogue before showing its banner");
+assert.ok(!gameSource.includes("navigator.vibrate"), "browser vibration must stay removed from the game runtime");
+assert.ok(gameSource.includes("const ATTACK_SPRITES_APPROVED = false") && gameSource.includes("ATTACK_SPRITES_APPROVED && Boolean(unit.action && attackSprite)"), "failed attack sheets must stay quarantined from runtime rendering");
+assert.ok(gameSource.includes("Restore the unit-local translate/scale before drawing world-space bars"), "drawUnit must restore its local Canvas transform before drawing HUD bars");
+assert.ok(gameSource.includes("playSpeed") && !gameSource.includes('toFixed(1) + "K"'), "speed HUD and resource counts must stay whole numbers");
+assert.ok(gameSource.includes("entryY + delta * 420") && gameSource.includes("spawnWait"), "enemy entry must descend toward targetY and spawning must have a watchdog");
+assert.ok(gameSource.includes("runtime.hitStop = 0"), "hitStop must not throttle the combat simulation");
+assert.ok(gameSource.includes("Battle loop frame failed"), "battle loop must recover from frame errors instead of hard-stopping");
+assert.ok(styleSource.includes("flex-wrap: nowrap") && styleSource.includes("overflow: hidden"), "stage meta must stay inside the top HUD");
 
 const indexSource = fs.readFileSync(path.join(root, "index.html"), "utf8");
 const dataPosition = indexSource.indexOf("data/game-data.js");
@@ -117,6 +137,17 @@ assert.ok(indexSource.includes('id="doubleOffline"') && indexSource.includes('id
 assert.ok(fs.existsSync(path.join(root, "docs", "reference-analysis.md")), "reference analysis document missing");
 assert.ok(fs.existsSync(path.join(root, "docs", "architecture.md")), "architecture document missing");
 assert.ok(fs.existsSync(path.join(root, "docs", "game-completion-plan.md")), "completion plan document missing");
+for (const requiredDoc of ["current-game-spec.md", "issues-and-prevention.md", "qa-test-matrix.md", "reference-integration-audit.md", "combat-character-render-contract.md"]) {
+  assert.ok(fs.existsSync(path.join(root, "docs", requiredDoc)), `authority document missing: ${requiredDoc}`);
+}
 
 assert.ok(indexSource.includes('data-panel="events"') && indexSource.includes('id="eventDot"'), "events panel hooks missing");
+assert.ok(!gameSource.includes("DAILY RATIONS") && !gameSource.includes("LOCAL GHOST LADDER") && !gameSource.includes("CUSTOM LOADOUT"), "panel copy must stay Traditional Chinese, not English eyebrows");
+assert.ok(gameSource.includes("今日軍務") && gameSource.includes("panel-action") && gameSource.includes('weekly ? "週" : "日"'), "daily sheet must use readable Chinese task cards and 44px claim actions");
+assert.ok(!styleSource.includes("linear-gradient(135deg, #d9c28f0b") && !styleSource.includes("transparent 25% 50%, #5b47291a"), "command sheets must not draw a diagonal X texture");
+assert.ok(styleSource.includes("--type-body") && styleSource.includes(".panel-action"), "panel type scale and claim actions must be defined");
+assert.ok(!indexSource.includes("FIRST MARCH"), "tutorial eyebrow must use Traditional Chinese");
+assert.ok(indexSource.includes("rail-drawer-head") && indexSource.includes("軍務") && indexSource.includes("id=\"railDrawerClose\""), "more-menu must be a command list, not a second icon column");
+assert.ok(styleSource.includes("Native mobile-game HUD") && styleSource.includes(".rail-drawer-list"), "native HUD restyle markers missing");
+runDocChecks();
 console.log(`Smoke test passed: ${data.heroes.length} heroes, ${data.stages.length} stages, ${data.paperDollSlots.length} paper-doll slots.`);

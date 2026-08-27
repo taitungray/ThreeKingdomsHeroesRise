@@ -61,8 +61,11 @@ window.THREE_KINGDOMS_DATA = {
     { id: "mount", label: "坐騎", choices: [
       { id: "foot", name: "步戰", bonus: "無額外加成", stats: {}, className: "paper-mount-foot" },
       { id: "grey", name: "灰影馬", bonus: "速度 +3", stats: { speed: 3 }, className: "paper-mount-grey" },
-      { id: "redhare", name: "赤兔馬", bonus: "速度 +8", stats: { speed: 8 }, className: "paper-mount-redhare" },
-      { id: "jadelion", name: "玉獅子", bonus: "生命 +28", stats: { hp: 28 }, className: "paper-mount-jadelion" }
+      { id: "whitehorse", name: "白龍駒", bonus: "速度 +5", stats: { speed: 5 }, className: "paper-mount-whitehorse" },
+      { id: "blackhorse", name: "踏雪烏騅", bonus: "攻擊 +4", stats: { atk: 4 }, className: "paper-mount-blackhorse" },
+      { id: "hex-mark", name: "的盧寶馬", bonus: "生命 +24", stats: { hp: 24 }, className: "paper-mount-hex-mark" },
+      { id: "redhare", name: "赤兔神駒", bonus: "速度 +8", stats: { speed: 8 }, className: "paper-mount-redhare" },
+      { id: "jadelion", name: "夜照玉獅子", bonus: "生命 +28", stats: { hp: 28 }, className: "paper-mount-jadelion" }
     ]},
     { id: "accessory", label: "飾品", choices: [
       { id: "jade", name: "青玉佩", bonus: "生命 +10", stats: { hp: 10 }, className: "paper-accessory-jade" },
@@ -72,7 +75,18 @@ window.THREE_KINGDOMS_DATA = {
     ]}
   ],
   paperDollDefaults: {
-    liubei: { weapon: "twin", armor: "oath", mount: "foot", accessory: "jade" }, guanyu: { weapon: "guandao", armor: "oath", mount: "redhare", accessory: "dragon" }, zhangfei: { weapon: "serpent", armor: "iron", mount: "foot", accessory: "war" }, zhaoyun: { weapon: "lance", armor: "iron", mount: "grey", accessory: "jade" }, huangzhong: { weapon: "bow", armor: "iron", mount: "foot", accessory: "war" }, sunshang: { weapon: "bow", armor: "silk", mount: "grey", accessory: "jade" }, caocao: { weapon: "twin", armor: "silk", mount: "grey", accessory: "dragon" }, xiahoudun: { weapon: "guandao", armor: "iron", mount: "redhare", accessory: "war" }, zhugeliang: { weapon: "fan", armor: "silk", mount: "foot", accessory: "feather" }, diaochan: { weapon: "rings", armor: "silk", mount: "foot", accessory: "jade" }, lubu: { weapon: "halberd", armor: "crimson", mount: "redhare", accessory: "war" }, locked: { weapon: "twin", armor: "oath", mount: "foot", accessory: "jade" }
+    liubei: { weapon: "twin", armor: "oath", mount: "hex-mark", accessory: "jade" },
+    guanyu: { weapon: "guandao", armor: "oath", mount: "redhare", accessory: "dragon" },
+    zhangfei: { weapon: "serpent", armor: "iron", mount: "blackhorse", accessory: "war" },
+    zhaoyun: { weapon: "lance", armor: "iron", mount: "whitehorse", accessory: "jade" },
+    huangzhong: { weapon: "bow", armor: "iron", mount: "grey", accessory: "war" },
+    sunshang: { weapon: "bow", armor: "silk", mount: "whitehorse", accessory: "jade" },
+    caocao: { weapon: "twin", armor: "silk", mount: "blackhorse", accessory: "dragon" },
+    xiahoudun: { weapon: "guandao", armor: "iron", mount: "redhare", accessory: "war" },
+    zhugeliang: { weapon: "fan", armor: "silk", mount: "jadelion", accessory: "feather" },
+    diaochan: { weapon: "rings", armor: "silk", mount: "whitehorse", accessory: "jade" },
+    lubu: { weapon: "halberd", armor: "crimson", mount: "redhare", accessory: "war" },
+    locked: { weapon: "twin", armor: "oath", mount: "grey", accessory: "jade" }
   },
   tactics: [
     { id: "snake", name: "鋒矢陣", sigil: "鋒", desc: "中排武將攻擊提高，適合快速突破。", base: 0.08, cost: 70 },

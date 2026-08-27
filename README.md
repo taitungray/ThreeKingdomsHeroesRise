@@ -14,12 +14,14 @@ py -3 -m http.server 4173 --bind 127.0.0.1
 
 若要使用已移植的開發腳本：
 
+```powershell
 npm install
 npm run dev
+```
 
 `npm run build` 會把根目錄 Web 原始碼同步到 Capacitor 的 `www/`；不會建立 Android APK/AAB。
 
-`npm test` 會檢查資料表、關卡波次、紙娃娃槽位、核心循環入口與建置載入順序。
+`npm test` 會檢查資料表、關卡波次、紙娃娃槽位、核心循環入口、文件連結與建置載入順序。`npm run test:combat-assets` 另檢查戰鬥圖集的尺寸、alpha、每格有效像素與兵器 manifest；它是戰鬥資產發布 gate，不以檔案存在冒充畫面正確。需要真實瀏覽器戰鬥回歸時執行 `npm run test:combat-browser`；同步 `www/` 後再執行 `npm run test:combat-browser:www` 驗證打包產物。
 
 也可以直接雙擊 START_APP.bat，它會同步 Web 產物、啟動本機伺服器並開啟瀏覽器。
 
@@ -41,9 +43,9 @@ npm run dev
 - capacitor.config.json、manifest.json、sw.js 與 www/ 已準備好直式 Android/PWA 包裝。
 - js/admob.js 只提供使用者主動觸發的 rewarded ad 接口；開發環境固定用 Google 測試 ID，尚未啟用正式廣告。
 - 正式版請先閱讀 docs/platform-and-release.md、docs/cloud-auth-setup.md、docs/ads-integration.md 與 docs/google-play-submission.md，填入自己的 Firebase、application ID、AdMob ID、publisher line、隱私政策 URL 與簽名設定。
-- UI 與後續製作必須遵守 docs/ui-display-rules.md、docs/production-rules.md；需要截圖或畫面驗收時使用 docs/visual-qa.md。
+- UI 與後續製作必須遵守 `docs/ui-display-rules.md`、`docs/production-rules.md`；目前可驗證狀態與發布阻擋見 `docs/current-game-spec.md`，測試矩陣見 `docs/qa-test-matrix.md`，需要截圖或畫面驗收時使用 `docs/visual-qa.md`。
 - 不會從 IncenseAshes 複製 Firebase 憑證、keystore、upload certificate、正式廣告 ID 或商店素材。
 
 先使用 SETUP_ANDROID.bat／npm run setup:android 建立 Android wrapper，再使用 START_ANDROID_APP.bat／npm run start:android 啟動裝置或模擬器；打包APK.bat／npm run build:android 會輸出到 builds/。
 
-所有角色、像素圖形、場景與 UI 都由程式與 CSS 原創繪製，未使用參考遊戲的商標或素材。
+專案包含自製 WebP、Canvas 與 CSS 資產，未使用參考遊戲的商標或素材。現有戰鬥角色與兵器仍須通過逐狀態視覺驗收；README 不宣稱尚未驗證的資產已具發布品質。

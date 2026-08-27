@@ -1,5 +1,7 @@
 # 三國：群英再起完整遊戲完成計畫
 
+> **文件層級：歷史完成計畫，非目前完成證明。** 下方 ✅ 代表當時有對應程式或項目，不代表已通過目前的功能、視覺、實機與發布 gate。現況請見 [`current-game-spec.md`](current-game-spec.md) 與 [`qa-test-matrix.md`](qa-test-matrix.md)。
+
 ## 目前專案盤點
 
 ### 已存在

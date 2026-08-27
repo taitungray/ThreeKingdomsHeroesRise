@@ -1,5 +1,7 @@
 # 三國：群英再起 — 全局美術與系統優化總體執行綱領 (Master Optimization Roadmap)
 
+> **文件層級：歷史計畫，非目前完成證明。** 其中 `[x]` 只表示當時曾實作或宣告；目前發布判定以 [`current-game-spec.md`](current-game-spec.md)、[`issues-and-prevention.md`](issues-and-prevention.md) 與 [`qa-test-matrix.md`](qa-test-matrix.md) 為準。2026-08-28 戰鬥角色／兵器視覺 gate 仍為 FAIL。
+
 > **建立日期**：2026-08-27  
 > **目標**：將專案從「純代碼繪製的原型 Demo」全方位升級為「商業級精品國風像素三國放置 RPG」。  
 > **核心指導文件**：

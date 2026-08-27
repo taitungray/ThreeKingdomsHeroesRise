@@ -5,8 +5,10 @@ const fs = require("fs");
 const path = require("path");
 
 const projectRoot = path.resolve(__dirname, "..");
-const webRoot = path.join(projectRoot, "www");
-const fallbackRoot = projectRoot;
+const builtWebRoot = path.join(projectRoot, "www");
+const serveBuiltOutput = process.argv.includes("--www");
+const webRoot = serveBuiltOutput ? builtWebRoot : projectRoot;
+const fallbackRoot = serveBuiltOutput ? projectRoot : null;
 const portIndex = process.argv.indexOf("--port");
 const port = Number(portIndex >= 0 ? process.argv[portIndex + 1] : process.env.PORT) || 8788;
 const mime = {
@@ -45,7 +47,7 @@ const server = http.createServer((request, response) => {
     return;
   }
   const primary = safeResolve(webRoot, request.url);
-  const fallback = safeResolve(fallbackRoot, request.url);
+  const fallback = fallbackRoot ? safeResolve(fallbackRoot, request.url) : null;
   const file = primary && fs.existsSync(primary) && fs.statSync(primary).isFile()
     ? primary
     : fallback && fs.existsSync(fallback) && fs.statSync(fallback).isFile()
@@ -75,5 +77,5 @@ server.on("error", (error) => {
 
 server.listen(port, "127.0.0.1", () => {
   console.log("三國：群英再起 dev server: http://127.0.0.1:" + port + "/");
-  console.log("Serving " + (fs.existsSync(webRoot) ? webRoot : fallbackRoot));
+  console.log("Serving " + webRoot + (serveBuiltOutput ? " (built www with source fallback)" : " (source)"));
 });

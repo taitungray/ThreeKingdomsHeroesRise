@@ -46,37 +46,33 @@ function updateHud() {
   const needed = 90 + save.level * 35;
   setHudText("expText", Math.floor(save.exp) + "/" + needed);
   setHudStyle("expFill", "width", clamp((save.exp / needed) * 100, 0, 100) + "%");
-  const chapter = chapterForStage();
-  setHudText("chapterLabel", chapter.name);
   const stage = activeStageNumber();
   const stageConfig = stageDefinition(stage);
   const chapterStage = ((stage - 1) % STAGES_PER_CHAPTER) + 1;
   const chapterNumber = Math.floor((stage - 1) / STAGES_PER_CHAPTER) + 1;
-  setHudText("stageLabel", chapterNumber + "-" + chapterStage);
-  setHudText("stageName", stageConfig?.name || "關卡 " + stage);
-  setHudText("stagePowerLabel", "推薦戰力 " + formatNumber(Math.round(2300 + (stage - 1) * 320)));
-  if ($("enemyPreviewStage")) setHudText("enemyPreviewStage", stageConfig?.name || "關卡 " + stage);
-  setHudText("waveLabel", runtime.bossActive ? "首領戰" : "第 " + (runtime.waveClears + 1) + " 波");
+  const stageTitle = stageConfig?.name || "關卡 " + stage;
+  setHudText("stageCompactLabel", chapterNumber + "-" + chapterStage);
+  if ($("enemyPreviewStage")) setHudText("enemyPreviewStage", stageTitle);
   const living = runtime.enemies.reduce((count, enemy) => count + (enemy.dead ? 0 : 1), 0);
-  setHudText("enemyCount", "敵軍 " + living);
+  const waveText = runtime.bossActive ? "首領戰" : "第 " + (runtime.waveClears + 1) + " 波";
+  setHudText("waveChip", waveText + " · 敵 " + living);
   setHudText("bossProgress", Math.min(runtime.waveClears, 3) + " / 3");
   const bossDisabled = runtime.waveClears < 3 || runtime.bossActive || runtime.spawning;
   setHudProperty("bossButton", "disabled", bossDisabled);
   setHudAttribute("bossButton", "aria-label", runtime.bossActive ? "首領戰進行中" : runtime.waveClears < 3 ? "完成三波後挑戰關卡首領" : runtime.spawning ? "首領正在準備" : "挑戰關卡首領");
-  const auto = Boolean(runtime.auto);
-  if (runtime.hudCache.auto !== auto) {
-    runtime.hudCache.auto = auto;
-    $("autoButton").classList.toggle("active", auto);
+  const bossReady = !bossDisabled;
+  if (runtime.hudCache.bossReady !== bossReady) {
+    runtime.hudCache.bossReady = bossReady;
+    $("bossButton")?.classList.toggle("ready", bossReady);
   }
-  setHudText("autoButton", auto ? "自動" : "手動");
-  setHudAttribute("autoButton", "aria-pressed", auto);
-  setHudText("speedButton", "×" + runtime.timeScale);
-  setHudAttribute("speedButton", "aria-valuetext", "戰鬥速度 ×" + runtime.timeScale);
+  setHudText("speedButton", "×" + runtime.playSpeed);
+  setHudAttribute("speedButton", "aria-valuetext", "戰鬥速度 ×" + runtime.playSpeed);
   setHudProperty("mailDot", "hidden", Boolean(save.mailClaimed));
   const dailyReady = DAILY_TASKS.some((task) => (save.daily.progress[task.id] || 0) >= task.target && !save.daily.claimed.includes(task.id)) || (save.checkin.day < 7 && !save.checkin.claimed.includes(save.checkin.day + 1));
   setHudProperty("dailyDot", "hidden", !dailyReady);
   const eventReady = LOCAL_EVENTS.some((event) => eventProgress(event.id) >= event.target && !save.eventState.claimed.includes(event.id));
   setHudProperty("eventDot", "hidden", !eventReady);
+  setHudProperty("railMoreDot", "hidden", !eventReady);
 }
 
 function enemyPreviewAvatarHtml(general) {
@@ -113,9 +109,28 @@ function showEnemyPreview(stage = activeStageNumber(), wave = null) {
   if (phaseLabel) phaseLabel.textContent = bossWave ? "\u9996\u9818\u6575\u5c07" : "\u672c\u6ce2\u6575\u5c07";
   preview.dataset.wave = bossWave ? "boss" : String(currentWave);
   preview.dataset.general = selected?.id || "";
-  preview.classList.add("show", "persistent");
+  preview.classList.add("show");
+  preview.classList.remove("persistent");
   clearTimeout(runtime.enemyPreviewTimer);
-  runtime.enemyPreviewTimer = null;
+  runtime.enemyPreviewTimer = setTimeout(() => {
+    preview.classList.remove("show");
+    runtime.enemyPreviewTimer = null;
+  }, 2000);
+}
+
+function toggleRailDrawer(forceOpen) {
+  const drawer = $("rightRailDrawer");
+  const button = $("railMoreButton");
+  if (!drawer || !button) return;
+  const open = typeof forceOpen === "boolean" ? forceOpen : drawer.hidden;
+  drawer.hidden = !open;
+  button.setAttribute("aria-expanded", open ? "true" : "false");
+  button.classList.toggle("open", open);
+  $("battleScreen")?.classList.toggle("drawer-open", open);
+}
+
+function closeRailDrawer() {
+  toggleRailDrawer(false);
 }
 function showDialogue(name, text, avatarClass) {
   const portrait = $("dialoguePortrait");
@@ -210,7 +225,7 @@ function paperDollHtml(hero) {
       '<i class="slot-mark slot-mark-' + slot.id + '" aria-hidden="true"></i><span>' + slot.label + '</span><b>' + item.name + '</b><small>' + item.bonus + '</small><em>點擊輪換</em></button>';
   }).join("");
   return '<section class="paper-doll-panel">' +
-    '<div class="paper-doll-heading"><div><span class="eyebrow">CUSTOM LOADOUT</span><h3>紙娃娃配置</h3></div><span class="paper-doll-hint">點裝備槽切換外觀</span></div>' +
+    '<div class="paper-doll-heading"><div><span class="eyebrow">外觀配置</span><h3>紙娃娃</h3></div><span class="paper-doll-hint">點裝備槽切換外觀</span></div>' +
     '<div class="paper-doll-board"><div class="paper-doll-stage">' + avatarHtml(hero, true) + '<span class="paper-doll-rune">' + hero.role + '</span></div><div class="paper-slot-grid">' + slots + '</div></div>' +
     '<p class="paper-doll-note">裝備會立刻套用到戰場、編隊與武將卡。<strong>當前加成：' + equipmentBonusLabel(hero.id) + '</strong></p>' +
     '</section>';
@@ -432,10 +447,10 @@ const UI_TEXT = {
   close: "\u56de\u5230\u8ecd\u5e9c"
 };
 
-function rewardHtml(reward = {}) {
+function rewardHtml(reward = {}, compact = false) {
   const labels = { gold: "\u9285\u9322", food: "\u7ce7\u8349", jade: "\u7389\u74a7", shards: "\u540d\u5c07\u788e\u7247", exp: "EXP" };
   const icons = { gold: "res-coin", food: "res-food", jade: "res-jade", shards: "res-shard", exp: "res-exp" };
-  return Object.entries(reward).filter(([, value]) => value && value !== true).map(([key, value]) => '<span><i class="' + (icons[key] || "res-coin") + '"></i><b>' + formatNumber(value) + '</b> ' + (labels[key] || key) + '</span>').join("");
+  return Object.entries(reward).filter(([, value]) => value && value !== true).map(([key, value]) => '<span class="reward-chip" title="' + (labels[key] || key) + '"><i class="' + (icons[key] || "res-coin") + '"></i><b>' + formatNumber(value) + '</b>' + (compact ? "" : " " + (labels[key] || key)) + '</span>').join("");
 }
 
 function currentArmyPower() {
@@ -451,16 +466,18 @@ function renderTask(task, state, weekly = false) {
   const progress = Math.min(task.target, state.progress[task.id] || 0);
   const claimed = state.claimed.includes(task.id);
   const complete = progress >= task.target;
-  return '<article class="task-card ' + (complete ? "complete" : "") + '"><div class="task-icon">' + (weekly ? "W" : "D") + '</div><div class="task-copy"><strong>' + task.name + '</strong><small>' + task.desc + '</small><div class="progress-track"><i style="width:' + (progress / task.target * 100) + '%"></i></div><em>' + progress + ' / ' + task.target + '</em></div><button class="' + (complete && !claimed ? "seal-button" : "stone-button") + ' compact-button" type="button" data-action="daily-task-claim" data-task="' + task.id + '" data-weekly="' + weekly + '"' + (!complete || claimed ? " disabled" : "") + '>' + (claimed ? UI_TEXT.claimed : UI_TEXT.claim) + '</button></article>';
+  const ready = complete && !claimed;
+  const cardClass = "task-card" + (complete ? " complete" : "") + (claimed ? " claimed" : "") + (ready ? " ready" : "");
+  return '<article class="' + cardClass + '"><div class="task-icon" aria-hidden="true">' + (weekly ? "週" : "日") + '</div><div class="task-copy"><strong>' + task.name + '</strong><small>' + task.desc + '</small><div class="task-progress"><div class="progress-track"><i style="width:' + (progress / task.target * 100) + '%"></i></div><em>' + progress + ' / ' + task.target + '</em></div><div class="task-reward">' + rewardHtml(task.reward, true) + '</div></div><button class="' + (ready ? "seal-button" : "stone-button") + ' panel-action" type="button" data-action="daily-task-claim" data-task="' + task.id + '" data-weekly="' + weekly + '"' + (!complete || claimed ? " disabled" : "") + '>' + (claimed ? UI_TEXT.claimed : UI_TEXT.claim) + '</button></article>';
 }
 
 function renderDaily() {
   ensureCycleState();
   const checkinDay = Math.min(7, save.checkin.day + 1);
   const checkinClaimed = save.checkin.claimed.includes(checkinDay);
-  const checkins = CHECKIN_REWARDS.map((reward, index) => '<div class="checkin-day ' + (index + 1 === checkinDay ? "today" : "") + ' ' + (save.checkin.claimed.includes(index + 1) ? "claimed" : "") + '"><b>' + (index + 1) + '</b><span>' + rewardHtml(reward) + '</span></div>').join("");
+  const checkins = CHECKIN_REWARDS.map((reward, index) => '<div class="checkin-day ' + (index + 1 === checkinDay ? "today" : "") + ' ' + (save.checkin.claimed.includes(index + 1) ? "claimed" : "") + '"><b>第' + (index + 1) + '天</b><span>' + rewardHtml(reward, true) + '</span></div>').join("");
   const adDisabled = Boolean(save.daily.adClaimed || save.adFree);
-  setPanel(UI_TEXT.daily, '<section class="daily-head"><div><span class="eyebrow">DAILY RATIONS</span><h3>\u4eca\u65e5\u8ecd\u52d9</h3><p>\u6bcf\u65e5 00:00 \u91cd\u7f6e\uff0c\u6bcf\u9031\u9031\u4e00\u66f4\u65b0</p><small class="pass-status">' + (save.monthlyPassUntil > Date.now() ? "PASS ACTIVE" : "") + '</small></div><button class="stone-button compact-button" type="button" data-action="ad-daily"' + (adDisabled ? " disabled" : "") + '>\u770b\u5ee3\u544a\u9818\u8ecd\u7ce7</button></section>' +
+  setPanel(UI_TEXT.daily, '<section class="daily-head"><div><h3>今日軍務</h3><p>每日 00:00 重置，每週週一更新</p>' + (save.monthlyPassUntil > Date.now() ? '<p class="pass-status">月卡生效中</p>' : "") + '</div><button class="stone-button panel-action" type="button" data-action="ad-daily"' + (adDisabled ? " disabled" : "") + '>看廣告領軍糧</button></section>' +
     '<p class="section-caption">\u65e5\u5e38\u4efb\u52d9</p><div class="task-list">' + DAILY_TASKS.map((task) => renderTask(task, save.daily)).join("") + '</div>' +
     '<p class="section-caption">\u9031\u5e38\u6311\u6230</p><div class="task-list">' + WEEKLY_TASKS.map((task) => renderTask(task, save.weekly, true)).join("") + '</div>' +
     '<p class="section-caption">\u4e03\u65e5\u7c3d\u5230 \u00b7 \u7b2c ' + checkinDay + ' \u5929</p><div class="checkin-grid">' + checkins + '</div><button class="seal-button wide-button" type="button" data-action="checkin-claim"' + (checkinClaimed || checkinDay > 7 ? " disabled" : "") + '>' + (checkinClaimed ? UI_TEXT.claimed : "\u9818\u53d6\u7b2c " + checkinDay + " \u5929\u8ecd\u8cc7") + '</button>');
@@ -472,7 +489,7 @@ function renderShop() {
     const cost = Object.entries(item.cost || {}).map(([key, value]) => (value ? '<span><i class="' + (key === "jade" ? "res-jade" : "res-coin") + '"></i>' + formatNumber(value) + '</span>' : "")).join("");
     const bought = Boolean(save.shopPurchases[item.id]);
     const label = native ? (window.TaoyuanIAP?.isAvailable?.() ? "\u958b\u5556\u8cfc\u8cb7" : "\u539f\u751f\u7248\u958b\u653e") : bought ? UI_TEXT.claimed : UI_TEXT.claim;
-    return '<article class="shop-card rarity-' + item.tone + '"><div class="shop-icon">' + (item.tone === "legend" ? "\u2605" : "\u25c6") + '</div><div><h3>' + item.name + '</h3><p>' + item.desc + '</p><small>' + (native ? "\u9700\u5546\u5e97\u4ea4\u6613" : cost || "\u514d\u8cbb") + '</small></div><button class="' + (native || bought ? "stone-button" : "seal-button") + ' compact-button" type="button" data-action="shop-buy" data-shop="' + item.id + '"' + (bought ? " disabled" : "") + '>' + label + '</button></article>';
+    return '<article class="shop-card rarity-' + item.tone + '"><div class="shop-icon">' + (item.tone === "legend" ? "\u2605" : "\u25c6") + '</div><div><h3>' + item.name + '</h3><p>' + item.desc + '</p><small>' + (native ? "\u9700\u5546\u5e97\u4ea4\u6613" : cost || "\u514d\u8cbb") + '</small></div><button class="' + (native || bought ? "stone-button" : "seal-button") + ' panel-action" type="button" data-action="shop-buy" data-shop="' + item.id + '"' + (bought ? " disabled" : "") + '>' + label + '</button></article>';
   }).join("");
   setPanel(UI_TEXT.shop, '<p class="section-caption">\u8ecd\u9700\u6240\u53d6\u5f97\uff0c\u4e0d\u8a2d\u865b\u5047\u6c38\u4e45\u8cb7\u8ce3\u3002</p><div class="shop-list">' + cards + '</div><p class="panel-footnote">\u539f\u751f\u5546\u5e97\u5546\u54c1\u672a\u914d\u7f6e\u6b63\u5f0f SKU \u6642\u6703\u81ea\u52d5\u4fdd\u6301\u505c\u7528\u3002</p>');
 }
@@ -481,9 +498,9 @@ function renderArena() {
   const power = currentArmyPower();
   const cards = ARENA_OPPONENTS.map((opponent) => {
     const challenged = save.arena.claimed.includes(opponent.id);
-    return '<article class="arena-card ' + (challenged ? "cleared" : "") + '"><div class="arena-badge">VS</div><div><h3>' + opponent.name + '</h3><p>\u8a55\u4f30\u6230\u529b <strong>' + formatNumber(opponent.power) + '</strong></p><small>\u6211\u65b9\u6230\u529b ' + formatNumber(power) + '</small></div><button class="' + (challenged ? "stone-button" : "seal-button") + ' compact-button" type="button" data-action="arena-challenge" data-opponent="' + opponent.id + '"' + (challenged ? " disabled" : "") + '>' + (challenged ? "\u5df2\u6311\u6230" : UI_TEXT.battle) + '</button></article>';
+    return '<article class="arena-card ' + (challenged ? "cleared" : "") + '"><div class="arena-badge">戰</div><div><h3>' + opponent.name + '</h3><p>\u8a55\u4f30\u6230\u529b <strong>' + formatNumber(opponent.power) + '</strong></p><small>\u6211\u65b9\u6230\u529b ' + formatNumber(power) + '</small></div><button class="' + (challenged ? "stone-button" : "seal-button") + ' panel-action" type="button" data-action="arena-challenge" data-opponent="' + opponent.id + '"' + (challenged ? " disabled" : "") + '>' + (challenged ? "\u5df2\u6311\u6230" : UI_TEXT.battle) + '</button></article>';
   }).join("");
-  setPanel(UI_TEXT.arena, '<section class="arena-banner"><span class="eyebrow">LOCAL GHOST LADDER</span><h3>\u6f14\u6b66\u5e73\u53f0</h3><p>\u4e0d\u9023\u7dda\u4e5f\u53ef\u8207\u6b77\u53f2\u5f71\u5b50\u4ea4\u624b\uff0c\u6bcf\u9031\u91cd\u7f6e\u6311\u6230\u6b21\u6578\u3002</p></section><div class="arena-list">' + cards + '</div>');
+  setPanel(UI_TEXT.arena, '<section class="arena-banner"><span class="eyebrow">本機影武</span><h3>\u6f14\u6b66\u5e73\u53f0</h3><p>\u4e0d\u9023\u7dda\u4e5f\u53ef\u8207\u6b77\u53f2\u5f71\u5b50\u4ea4\u624b\uff0c\u6bcf\u9031\u91cd\u7f6e\u6311\u6230\u6b21\u6578\u3002</p></section><div class="arena-list">' + cards + '</div>');
 }
 
 function damageStatsHtml(rows = []) {
@@ -492,24 +509,35 @@ function damageStatsHtml(rows = []) {
   return '<div class="settlement-stats-title">本場傷害</div><div class="settlement-stats-list">' + rows.map((row) => '<span><b>' + row.name + '</b><i><em style="width:' + Math.round(row.value / max * 100) + '%"></em></i><small>' + formatNumber(row.value) + '</small></span>').join("") + '</div>';
 }
 
-function showSettlement(result) {
-  const modal = $("settlementModal");
-  if (!modal || !result) return;
+function autoAdvanceAfterBattle(result) {
+  if (!result) return;
   const win = result.type === "win";
-  $("settlementTitle").textContent = win ? "\u6230\u529f\u544a\u6377" : "\u6574\u8ecd\u518d\u6230";
-  $("settlementSubtitle").textContent = win ? (result.progressed ? "\u7b2c " + result.stage + " \u95dc\u9996\u9818\u5df2\u64ca\u7834" : "\u9996\u9818\u91cd\u6253\u6210\u529f") : "\u5168\u8ecd\u6682\u9000\uff0c\u95dc\u5361\u9032\u5ea6\u4e0d\u53d7\u5f71\u97ff";
-  $("settlementLoot").innerHTML = rewardHtml(result.reward || {}) || '<span class="empty-loot">\u672c\u6b21\u672a\u7372\u5f97\u8cc7\u6e90</span>';
-  const stats = $("settlementStats");
-  if (stats) stats.innerHTML = damageStatsHtml(result.damage || []);
-  const unlock = $("settlementUnlock");
-  unlock.hidden = !result.newlyUnlocked;
-  unlock.textContent = result.newlyUnlocked ? "\u540d\u5c07\u52a0\u5165\uff1a" + result.newlyUnlocked : "";
-  $("settlementPrimary").textContent = win ? UI_TEXT.continue : UI_TEXT.retry;
-  $("settlementSecondary").textContent = win ? UI_TEXT.retry : UI_TEXT.close;
-  $("settlementPrimary").dataset.settlementAction = win ? "continue" : "retry";
-  $("settlementSecondary").dataset.settlementAction = win ? "retry" : "close";
-  modal.hidden = false;
+  if (win) {
+    if (result.newlyUnlocked) toast("名將來投：" + result.newlyUnlocked);
+    else if (result.progressed) toast("推進至第 " + (runtime.nextStageAfterSettlement || save.stage) + " 關");
+    else toast("首領重打成功");
+  } else {
+    toast("全軍暫退，重整再戰");
+  }
   window.TaoyuanAudio?.sfx?.(win ? "reward" : "cancel");
+  const nextStage = win
+    ? (runtime.nextStageAfterSettlement || save.stage)
+    : (result.stage || activeStageNumber());
+  scheduleGameTimer(() => {
+    runtime.battleResult = null;
+    runtime.spawning = false;
+    runtime.enemies = [];
+    runtime.projectiles = [];
+    clearResourceDrops();
+    runtime.waveClears = 0;
+    runtime.bossActive = false;
+    startStage(nextStage, win ? "新戰場" : "重新整軍");
+  }, win ? 1500 : 1800);
+}
+
+function showSettlement(result) {
+  // Idle loop: skip confirmation and keep pushing the campaign forward.
+  autoAdvanceAfterBattle(result);
 }
 
 function closeSettlement(action) {
@@ -638,15 +666,14 @@ function renderSettings() {
   const accountType = activeUser?.guest ? "訪客軍府 · 本機存檔" : "Google 帳號 · 雲端同步";
   const cloudStatus = window.TaoyuanCloud?.getStatusText?.() || (activeUser?.guest ? "訪客存檔不會上傳" : "等待雲端連線");
   const accountHtml = activeUser
-    ? '<section class="auth-account-card"><div class="auth-account-mark">府</div><div class="auth-account-copy"><strong>' + accountLabel + '</strong><small>' + accountType + '</small><small id="cloudSaveStatus">' + cloudStatus + '</small></div><div class="auth-account-actions"><button class="stone-button compact-button" type="button" data-action="auth-switch">切換帳號</button><button class="stone-button compact-button" type="button" data-action="auth-logout">登出</button></div></section>'
-    : '<section class="auth-account-card"><div class="auth-account-mark">府</div><div class="auth-account-copy"><strong>尚未登入</strong><small>使用 Google 登入以啟用雲端存檔</small><small id="cloudSaveStatus">' + cloudStatus + '</small></div><button class="seal-button compact-button" type="button" data-action="auth-switch">登入</button></section>';
+    ? '<section class="auth-account-card"><div class="auth-account-mark">府</div><div class="auth-account-copy"><strong>' + accountLabel + '</strong><small>' + accountType + '</small><small id="cloudSaveStatus">' + cloudStatus + '</small></div><div class="auth-account-actions"><button class="stone-button panel-action" type="button" data-action="auth-switch">切換帳號</button><button class="stone-button panel-action" type="button" data-action="auth-logout">登出</button></div></section>'
+    : '<section class="auth-account-card"><div class="auth-account-mark">府</div><div class="auth-account-copy"><strong>尚未登入</strong><small>使用 Google 登入以啟用雲端存檔</small><small id="cloudSaveStatus">' + cloudStatus + '</small></div><button class="seal-button panel-action" type="button" data-action="auth-switch">登入</button></section>';
   setPanel("\u8ecd\u52d9\u8a2d\u5b9a", accountHtml + '<div class="setting-list">' +
     '<button class="setting-item" type="button" data-action="setting-toggle" data-setting="music"><span><strong>背景音樂</strong><br><small>桃園軍府主題旋律，首次觸碰後播放</small></span><i class="toggle ' + (save.music ? "on" : "") + '"></i></button>' +
     '<button class="setting-item" type="button" data-action="setting-toggle" data-setting="sound"><span><strong>\u97f3\u6548</strong><br><small>\u653b\u64ca\u3001\u6280\u80fd\u8207\u6309\u9215\u56de\u994b</small></span><i class="toggle ' + (save.sound ? "on" : "") + '"></i></button>' +
     '<button class="setting-item" type="button" data-action="setting-toggle" data-setting="effects"><span><strong>\u6230\u9b25\u7279\u6548</strong><br><small>\u5200\u5149\u3001\u6cd5\u8853\u8207\u9023\u64ca\u8868\u73fe</small></span><i class="toggle ' + (save.effects ? "on" : "") + '"></i></button>' +
-    '<button class="setting-item" type="button" data-action="setting-toggle" data-setting="vibration"><span><strong>\u89f8\u611f\u632f\u52d5</strong><br><small>\u50c5\u5728\u88dd\u7f6e\u652f\u63f4\u6642\u555f\u7528</small></span><i class="toggle ' + (save.vibration ? "on" : "") + '"></i></button>' +
     '<button class="setting-item" type="button" data-action="notification-request"><span><strong>\u8ecd\u60c5\u901a\u77e5</strong><br><small>\u76ee\u524d\u72c0\u614b\uff1a' + (save.notifications ? "\u5df2\u958b\u555f" : "\u672a\u958b\u555f") + '</small></span><b>\u8a2d\u5b9a</b></button>' +
-    '<div class="setting-item"><span><strong>\u73a9\u5bb6\u540d\u7a31</strong><br><small>\u5c40\u90e8\u5b58\u6a94\uff0c\u4e0d\u4e0a\u50b3</small></span><button class="stone-button compact-button" type="button" data-action="rename-player">\u4fee\u6539</button></div>' +
+    '<div class="setting-item"><span><strong>\u73a9\u5bb6\u540d\u7a31</strong><br><small>\u5c40\u90e8\u5b58\u6a94\uff0c\u4e0d\u4e0a\u50b3</small></span><button class="stone-button panel-action" type="button" data-action="rename-player">\u4fee\u6539</button></div>' +
     '<div class="setting-item"><span><strong>\u904b\u884c\u6a21\u5f0f</strong><br><small>\u80cc\u666f\u56de\u6536\u52d5\u756b\uff0c\u4fdd\u8b77\u4f4e\u968e\u88dd\u7f6e</small></span><b>H5 SAFE</b></div>' +
     '</div><button class="setting-item" type="button" data-action="quality-toggle"><span><strong>\u756b\u9762\u54c1\u8cea</strong><br><small>\u4f4e\u529f\u8017\u6a21\u5f0f\u6703\u6e1b\u5c11\u7279\u6548\u7e6a\u88fd</small></span><b>' + (save.renderQuality === "low" ? "LOW" : "HIGH") + '</b></button><p class="section-caption">\u5b58\u6a94\u8207 App</p><button class="stone-button" type="button" data-action="report-issue">\u554f\u984c\u56de\u5831</button> <button class="stone-button" type="button" data-action="save-now">\u7acb\u5373\u4fdd\u5b58</button> <button class="stone-button" type="button" data-action="restore-purchases">\u6062\u5fa9\u8cfc\u8cb7</button> <button class="seal-button" type="button" data-action="reset-save">\u91cd\u7f6e\u9032\u5ea6</button>');
   $("panelContent").insertAdjacentHTML("beforeend", '<p class="panel-footnote">BUILD ' + APP_VERSION + '</p><button class="stone-button wide-button" type="button" data-action="version-check">\u6aa2\u67e5\u7248\u672c</button>');
@@ -659,7 +686,7 @@ function renderMail() {
 
 function renderRank() {
   const power = currentArmyPower();
-  setPanel("\u7fa4\u96c4\u6392\u884c", '<div class="arena-banner"><span class="eyebrow">LOCAL PROFILE</span><h3>\u672c\u6a5f\u8ecd\u5e9c</h3><p>\u76ee\u524d\u70ba\u96e2\u7dda\u7248\uff0c\u4e0d\u6703\u628a\u865b\u69cb\u540d\u6b21\u7576\u6210\u771f\u5be6\u6392\u540d\u3002</p></div><table class="rank-table"><thead><tr><th>\u8ecd\u5e9c</th><th>\u73a9\u5bb6</th><th>\u6230\u529b</th></tr></thead><tbody><tr class="you"><td>LOCAL</td><td>' + (save.playerName || "\u7384\u5fb7") + '</td><td>' + formatNumber(power) + '</td></tr></tbody></table><button class="seal-button wide-button" type="button" data-action="arena-open">\u524d\u5f80\u6f14\u6b66\u5e73\u53f0</button>');
+  setPanel("\u7fa4\u96c4\u6392\u884c", '<div class="arena-banner"><span class="eyebrow">離線軍府</span><h3>\u672c\u6a5f\u8ecd\u5e9c</h3><p>\u76ee\u524d\u70ba\u96e2\u7dda\u7248\uff0c\u4e0d\u6703\u628a\u865b\u69cb\u540d\u6b21\u7576\u6210\u771f\u5be6\u6392\u540d\u3002</p></div><table class="rank-table"><thead><tr><th>\u8ecd\u5e9c</th><th>\u73a9\u5bb6</th><th>\u6230\u529b</th></tr></thead><tbody><tr class="you"><td>本機</td><td>' + (save.playerName || "\u7384\u5fb7") + '</td><td>' + formatNumber(power) + '</td></tr></tbody></table><button class="seal-button wide-button" type="button" data-action="arena-open">\u524d\u5f80\u6f14\u6b66\u5e73\u53f0</button>');
 }
 
 function achievementData() {
@@ -716,7 +743,7 @@ function renderAchievements() {
     const isClaimed = claimed.includes(achievement.id);
     const actionClass = complete && !isClaimed ? "seal-button" : "stone-button";
     const actionText = isClaimed ? "已領取" : complete ? "領取" : "未達成";
-    return '<article class="achievement-item ' + (complete ? "complete" : "") + '"><div><h3>' + achievement.name + '</h3><p>' + achievement.desc + '</p><div class="progress-track"><i style="width:' + Math.round(progress / achievement.target * 100) + '%"></i></div><small>' + progress + ' / ' + achievement.target + ' · ' + achievement.reward + '</small></div><button class="' + actionClass + ' compact-button" type="button" data-action="achievement-claim" data-achievement="' + achievement.id + '"' + (!complete || isClaimed ? " disabled" : "") + '>' + actionText + '</button></article>';
+    return '<article class="achievement-item ' + (complete ? "complete" : "") + '"><div><h3>' + achievement.name + '</h3><p>' + achievement.desc + '</p><div class="progress-track"><i style="width:' + Math.round(progress / achievement.target * 100) + '%"></i></div><small>' + progress + ' / ' + achievement.target + ' · ' + achievement.reward + '</small></div><button class="' + actionClass + ' panel-action" type="button" data-action="achievement-claim" data-achievement="' + achievement.id + '"' + (!complete || isClaimed ? " disabled" : "") + '>' + actionText + '</button></article>';
   }).join("");
   setPanel("成就", '<p class="section-caption">完成征戰目標，領取額外軍資。</p><div class="achievement-summary">已領取 ' + claimedCount + ' / ' + achievements.length + '</div><div class="achievement-list">' + cards + '</div>');
 }
@@ -751,12 +778,12 @@ function renderCollection() {
   const titles = TITLES.map((title) => {
     const unlocked = titleUnlocked(title);
     const equipped = save.equippedTitle === title.id;
-    return '<article class="collection-card title-card ' + (unlocked ? "active" : "locked") + '"><strong>' + title.name + '</strong><small>' + title.desc + '</small><button class="' + (equipped || !unlocked ? "stone-button" : "seal-button") + ' compact-button" type="button" data-action="title-equip" data-title="' + title.id + '"' + ((!unlocked || equipped) ? " disabled" : "") + '>' + (equipped ? "\u5df2\u88dd\u5099" : unlocked ? "\u88dd\u5099" : "\u672a\u89e3\u9396") + '</button></article>';
+    return '<article class="collection-card title-card ' + (unlocked ? "active" : "locked") + '"><strong>' + title.name + '</strong><small>' + title.desc + '</small><button class="' + (equipped || !unlocked ? "stone-button" : "seal-button") + ' panel-action" type="button" data-action="title-equip" data-title="' + title.id + '"' + ((!unlocked || equipped) ? " disabled" : "") + '>' + (equipped ? "\u5df2\u88dd\u5099" : unlocked ? "\u88dd\u5099" : "\u672a\u89e3\u9396") + '</button></article>';
   }).join("");
   const treasures = TREASURES.map((treasure) => {
     const unlocked = campaignClears() >= treasure.unlock;
     const equipped = save.equippedTreasure === treasure.id;
-    return '<article class="collection-card treasure-card ' + (unlocked ? "active" : "locked") + '"><strong>' + treasure.name + '</strong><small>' + treasure.desc + '</small><button class="' + (equipped || !unlocked ? "stone-button" : "seal-button") + ' compact-button" type="button" data-action="treasure-equip" data-treasure="' + treasure.id + '"' + ((!unlocked || equipped) ? " disabled" : "") + '>' + (equipped ? "\u5df2\u914d\u88c5" : unlocked ? "\u914d\u88c5" : "\u7b2c " + treasure.unlock + " \u95dc") + '</button></article>';
+    return '<article class="collection-card treasure-card ' + (unlocked ? "active" : "locked") + '"><strong>' + treasure.name + '</strong><small>' + treasure.desc + '</small><button class="' + (equipped || !unlocked ? "stone-button" : "seal-button") + ' panel-action" type="button" data-action="treasure-equip" data-treasure="' + treasure.id + '"' + ((!unlocked || equipped) ? " disabled" : "") + '>' + (equipped ? "\u5df2\u914d\u88c5" : unlocked ? "\u914d\u88c5" : "\u7b2c " + treasure.unlock + " \u95dc") + '</button></article>';
   }).join("");
   setPanel("\u5716\u9451\u8207\u7fa9\u7d50", '<p class="section-caption">\u9663\u71df\u52e2\u529b</p><div class="collection-factions">' + counts + '</div><p class="section-caption">\u7de3\u5206\u7d44\u5408</p><div class="collection-list">' + bonds + '</div><p class="section-caption">\u7a31\u865f</p><div class="collection-list">' + titles + '</div><p class="section-caption">\u5bf6\u7269\u795e\u5668</p><div class="collection-list">' + treasures + '</div>');
   $("panelContent").insertAdjacentHTML("beforeend", renderFrameSection());
@@ -768,7 +795,7 @@ function renderTower() {
   const required = TOWER_CONFIG.basePower + (nextFloor - 1) * TOWER_CONFIG.powerStep;
   const cost = TOWER_CONFIG.stamina || 4;
   const power = currentArmyPower();
-  setPanel(TOWER_CONFIG.name || "\u554f\u5929\u6a13", '<section class="mode-banner"><span class="eyebrow">ENDLESS LOCAL MODE</span><h3>' + (TOWER_CONFIG.name || "\u554f\u5929\u6a13") + '</h3><p>\u5df2\u901a\u95dc ' + (save.tower?.best || 0) + ' \u5c64\uff0c\u4e0b\u5c64\u5efa\u8b70\u6230\u529b ' + formatNumber(required) + '\u3002</p><div class="mode-stats"><span>\u6211\u65b9 <b>' + formatNumber(power) + '</b></span><span>\u9ad4\u529b <b>' + stamina.current + ' / ' + stamina.max + '</b></span></div></section><button class="seal-button wide-button" type="button" data-action="tower-challenge"' + (stamina.current < cost ? " disabled" : "") + '>\u6311\u6230\u7b2c ' + nextFloor + ' \u5c64 \u00b7 \u6d88\u8017 ' + cost + ' \u9ad4\u529b</button><p class="panel-footnote">\u6bcf\u5c64\u53ea\u8a08\u5165\u6700\u9ad8\u9032\u5ea6\uff0c\u5931\u6557\u53ef\u91cd\u65b0\u6311\u6230\u3002</p>');
+  setPanel(TOWER_CONFIG.name || "\u554f\u5929\u6a13", '<section class="mode-banner"><span class="eyebrow">無盡本機模式</span><h3>' + (TOWER_CONFIG.name || "\u554f\u5929\u6a13") + '</h3><p>\u5df2\u901a\u95dc ' + (save.tower?.best || 0) + ' \u5c64\uff0c\u4e0b\u5c64\u5efa\u8b70\u6230\u529b ' + formatNumber(required) + '\u3002</p><div class="mode-stats"><span>\u6211\u65b9 <b>' + formatNumber(power) + '</b></span><span>\u9ad4\u529b <b>' + stamina.current + ' / ' + stamina.max + '</b></span></div></section><button class="seal-button wide-button" type="button" data-action="tower-challenge"' + (stamina.current < cost ? " disabled" : "") + '>\u6311\u6230\u7b2c ' + nextFloor + ' \u5c64 \u00b7 \u6d88\u8017 ' + cost + ' \u9ad4\u529b</button><p class="panel-footnote">\u6bcf\u5c64\u53ea\u8a08\u5165\u6700\u9ad8\u9032\u5ea6\uff0c\u5931\u6557\u53ef\u91cd\u65b0\u6311\u6230\u3002</p>');
 }
 
 function renderDungeons() {
@@ -776,9 +803,9 @@ function renderDungeons() {
   const cards = DAILY_DUNGEONS.map((dungeon) => {
     const claimed = Boolean(save.dungeons?.claimed?.[dungeon.id]);
     const winPower = currentArmyPower() >= dungeon.power;
-    return '<article class="mode-card ' + (claimed ? "cleared" : "") + '"><div class="mode-icon">\u65e5</div><div><h3>' + dungeon.name + '</h3><p>' + dungeon.desc + '</p><small>\u5efa\u8b70\u6230\u529b ' + formatNumber(dungeon.power) + ' \u00b7 ' + rewardHtml(dungeon.reward) + '</small></div><button class="' + (claimed ? "stone-button" : "seal-button") + ' compact-button" type="button" data-action="dungeon-challenge" data-dungeon="' + dungeon.id + '"' + (claimed || stamina.current < dungeon.cost ? " disabled" : "") + '>' + (claimed ? "\u5df2\u5b8c\u6210" : winPower ? "\u6311\u6230" : "\u53ef\u8a66\u6230") + '<br><small>' + dungeon.cost + '\u9ad4\u529b</small></button></article>';
+    return '<article class="mode-card ' + (claimed ? "cleared" : "") + '"><div class="mode-icon">\u65e5</div><div><h3>' + dungeon.name + '</h3><p>' + dungeon.desc + '</p><small>\u5efa\u8b70\u6230\u529b ' + formatNumber(dungeon.power) + ' \u00b7 ' + rewardHtml(dungeon.reward, true) + '</small></div><button class="' + (claimed ? "stone-button" : "seal-button") + ' panel-action" type="button" data-action="dungeon-challenge" data-dungeon="' + dungeon.id + '"' + (claimed || stamina.current < dungeon.cost ? " disabled" : "") + '>' + (claimed ? "\u5df2\u5b8c\u6210" : winPower ? "\u6311\u6230" : "\u53ef\u8a66\u6230") + '<br><small>' + dungeon.cost + '\u9ad4\u529b</small></button></article>';
   }).join("");
-  setPanel("\u65e5\u5e38\u526f\u672c", '<section class="mode-banner"><span class="eyebrow">DAILY DUNGEONS</span><h3>\u4eca\u65e5\u7279\u8a13</h3><p>\u6bcf 5 \u5206\u9418\u56de\u5fa9 1 \u9ede\u9ad4\u529b\uff0c\u6bcf\u65e5\u5404\u526f\u672c\u9650\u9818 1 \u6b21\u3002</p><div class="mode-stats"><span>\u9ad4\u529b <b>' + stamina.current + ' / ' + stamina.max + '</b></span><span>\u4e0b\u6b21\u56de\u5fa9 <b>\u81ea\u52d5</b></span></div></section><div class="mode-list">' + cards + '</div>');
+  setPanel("\u65e5\u5e38\u526f\u672c", '<section class="mode-banner"><span class="eyebrow">每日特訓</span><h3>\u4eca\u65e5\u7279\u8a13</h3><p>\u6bcf 5 \u5206\u9418\u56de\u5fa9 1 \u9ede\u9ad4\u529b\uff0c\u6bcf\u65e5\u5404\u526f\u672c\u9650\u9818 1 \u6b21\u3002</p><div class="mode-stats"><span>\u9ad4\u529b <b>' + stamina.current + ' / ' + stamina.max + '</b></span><span>\u4e0b\u6b21\u56de\u5fa9 <b>\u81ea\u52d5</b></span></div></section><div class="mode-list">' + cards + '</div>');
 }
 
 function sweepStage(stage = Math.max(1, save.stage - 1)) {
@@ -860,7 +887,7 @@ function renderFrameSection() {
   const frames = AVATAR_FRAMES.map((frame) => {
     const unlocked = avatarFrameUnlocked(frame);
     const equipped = save.equippedFrame === frame.id;
-    return '<article class="collection-card frame-card ' + (unlocked ? "active" : "locked") + '"><strong>' + frame.name + '</strong><small>' + frame.desc + '</small><button class="' + (equipped || !unlocked ? "stone-button" : "seal-button") + ' compact-button" type="button" data-action="frame-equip" data-frame="' + frame.id + '"' + ((!unlocked || equipped) ? " disabled" : "") + '>' + (equipped ? "\u5df2\u88dd\u5099" : unlocked ? "\u88dd\u5099" : "\u7b2c " + frame.unlockStage + " \u95dc") + '</button></article>';
+    return '<article class="collection-card frame-card ' + (unlocked ? "active" : "locked") + '"><strong>' + frame.name + '</strong><small>' + frame.desc + '</small><button class="' + (equipped || !unlocked ? "stone-button" : "seal-button") + ' panel-action" type="button" data-action="frame-equip" data-frame="' + frame.id + '"' + ((!unlocked || equipped) ? " disabled" : "") + '>' + (equipped ? "\u5df2\u88dd\u5099" : unlocked ? "\u88dd\u5099" : "\u7b2c " + frame.unlockStage + " \u95dc") + '</button></article>';
   }).join("");
   return '<p class="section-caption">\u982d\u50cf\u6846</p><div class="collection-list">' + frames + '</div>';
 }
@@ -876,9 +903,9 @@ function renderEvents() {
     const progress = Math.min(event.target, eventProgress(event.id));
     const claimed = save.eventState.claimed.includes(event.id);
     const percent = Math.round(progress / event.target * 100);
-    return '<article class="mode-card event-card ' + (claimed ? "cleared" : "") + '"><div class="mode-icon">\u671f</div><div><h3>' + event.name + '</h3><p>' + event.desc + '</p><div class="progress-track"><i style="width:' + percent + '%"></i></div><small>' + progress + ' / ' + event.target + '　' + rewardHtml(event.reward) + '</small></div><button class="' + (claimed || progress < event.target ? "stone-button" : "seal-button") + ' compact-button" type="button" data-action="event-claim" data-event="' + event.id + '"' + (claimed || progress < event.target ? " disabled" : "") + '>' + (claimed ? "\u5df2\u9818" : "\u9818\u53d6") + '</button></article>';
+    return '<article class="mode-card event-card ' + (claimed ? "cleared" : "") + '"><div class="mode-icon">\u671f</div><div><h3>' + event.name + '</h3><p>' + event.desc + '</p><div class="progress-track"><i style="width:' + percent + '%"></i></div><small>' + progress + ' / ' + event.target + '　' + rewardHtml(event.reward, true) + '</small></div><button class="' + (claimed || progress < event.target ? "stone-button" : "seal-button") + ' panel-action" type="button" data-action="event-claim" data-event="' + event.id + '"' + (claimed || progress < event.target ? " disabled" : "") + '>' + (claimed ? "\u5df2\u9818" : "\u9818\u53d6") + '</button></article>';
   }).join("");
-  setPanel("\u9650\u6642\u6d3b\u52d5", '<section class="mode-banner"><span class="eyebrow">LIMITED LOCAL EVENT</span><h3>\u6843\u5712\u7fa9\u52c7\u9031</h3><p>\u6bcf\u9031\u66f4\u65b0\uff0c\u9032\u5ea6\u53ea\u4fdd\u7559\u65bc\u672c\u6a5f\u3002</p></section><div class="mode-list">' + cards + '</div>');
+  setPanel("\u9650\u6642\u6d3b\u52d5", '<section class="mode-banner"><span class="eyebrow">限時本機活動</span><h3>\u6843\u5712\u7fa9\u52c7\u9031</h3><p>\u6bcf\u9031\u66f4\u65b0\uff0c\u9032\u5ea6\u53ea\u4fdd\u7559\u65bc\u672c\u6a5f\u3002</p></section><div class="mode-list">' + cards + '</div>');
 }
 
 function upgradeHeroStar(heroId) {
@@ -963,9 +990,10 @@ function handlePanelAction(button) {
     const currentIndex = Math.max(0, slot.choices.findIndex((choice) => choice.id === loadout[slot.id]));
     const next = slot.choices[(currentIndex + 1) % slot.choices.length];
     loadout[slot.id] = next.id;
+    resetAllies();
     persist();
     beep(460, .07, "triangle", .025);
-    toast(heroById(heroId).name + "\u66f4\u63db\u300c" + next.name + "\u300d");
+    toast(heroById(heroId).name + "更換「" + next.name + "」");
     renderHeroDetail(heroId);
   } else if (action === "equipment-refine") refineHeroEquipment(button.dataset.hero);
   else if (action === "hero-star") upgradeHeroStar(button.dataset.hero);

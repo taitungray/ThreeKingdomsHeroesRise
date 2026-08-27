@@ -35,19 +35,19 @@
       <canvas id="battleCanvas" width="390" height="720" aria-label="像素武將自動戰鬥場景"></canvas>
 
       <header class="top-hud">
-        <button class="lord-card" id="profileButton" type="button" aria-label="查看主公資訊">
+        <button class="lord-card compact" id="profileButton" type="button" aria-label="查看主公資訊" aria-expanded="false">
           <span class="pixel-avatar avatar-liubei portrait-asset portrait-asset-liubei" aria-hidden="true"><i></i></span>
           <span class="lord-info">
             <strong id="lordName">劉玄德</strong>
-            <span class="level-line"><b id="lordLevel">Lv.1</b><span class="exp-track"><i id="expFill"></i></span><small id="expText">0/100</small></span>
-            <em id="armyTitle">義勇軍</em>
+            <span class="level-line"><b id="lordLevel">Lv.1</b><span class="exp-track lord-exp-detail"><i id="expFill"></i></span><small id="expText" class="lord-exp-detail">0/100</small></span>
+            <em id="armyTitle" class="lord-exp-detail">義勇軍</em>
           </span>
         </button>
 
         <div class="battle-meta">
-          <button id="autoButton" class="metal-button active" type="button" aria-pressed="true">自動戰鬥</button>
           <button id="speedButton" class="speed-button" type="button" aria-label="切換戰鬥速度" aria-valuetext="戰鬥速度 ×1">×1</button>
-          <p class="stage-meta"><span id="chapterLabel">&#x95dc;&#x5361;</span><b id="stageLabel">1-1</b><strong id="stageName">&#x6843;&#x5712;&#x521d;&#x9663; 1</strong><small id="stagePowerLabel"></small></p>
+          <p class="stage-meta"><strong id="stageCompactLabel">桃園初陣 1-1</strong><span id="waveChip" class="wave-chip">第 1 波 · 敵 4</span></p>
+          <span id="comboMeter" class="combo-meter top-combo" hidden>&#x9023;&#x64ca; <b id="comboValue">0</b></span>
         </div>
       </header>
 
@@ -55,8 +55,16 @@
         <button type="button" data-panel="settings"><i class="icon-gear"></i><span>設定</span></button>
         <button type="button" data-panel="mail"><i class="icon-mail"></i><span>軍件</span><b class="alert-dot" id="mailDot"></b></button>
         <button type="button" data-panel="daily"><i class="icon-calendar"></i><span>&#x65e5;&#x52d9;</span><b class="alert-dot" id="dailyDot"></b></button>
-        <button type="button" data-panel="events"><i class="icon-flag"></i><span>&#x6d3b;&#x52d5;</span><b class="alert-dot" id="eventDot"></b></button>
         <button type="button" data-panel="shop"><i class="icon-shop"></i><span>&#x884c;&#x5546;</span></button>
+        <button id="railMoreButton" class="rail-more" type="button" aria-expanded="false" aria-controls="rightRailDrawer"><i class="icon-menu"></i><span>更多</span><b class="alert-dot" id="railMoreDot" hidden></b></button>
+      </aside>
+      <aside id="rightRailDrawer" class="right-rail-drawer" hidden aria-label="更多軍務">
+        <header class="rail-drawer-head">
+          <strong>軍務</strong>
+          <button id="railDrawerClose" type="button">收起</button>
+        </header>
+        <div class="rail-drawer-list">
+        <button type="button" data-panel="events"><i class="icon-flag"></i><span>&#x6d3b;&#x52d5;</span><b class="alert-dot" id="eventDot"></b></button>
         <button type="button" data-panel="arena"><i class="icon-arena"></i><span>&#x6f14;&#x6b66;</span></button>
         <button type="button" data-panel="collection"><i class="icon-book"></i><span>&#x5716;&#x9451;</span></button>
         <button type="button" data-panel="tower"><i class="icon-tower"></i><span>&#x554f;&#x5929;</span></button>
@@ -64,18 +72,15 @@
         <button type="button" data-panel="rank"><i class="icon-rank"></i><span>排行</span></button>
         <button type="button" data-panel="achievement"><i class="icon-medal"></i><span>成就</span></button>
         <button type="button" data-panel="record"><i class="icon-scroll"></i><span>戰報</span></button>
+        </div>
       </aside>
 
-      <div class="stage-stamp" aria-live="polite">
-        <span id="waveLabel">&#x7b2c; 1 &#x6ce2;</span>
-        <strong id="enemyCount">&#x6575;&#x8ecd; 4</strong>
-        <span id="comboMeter" class="combo-meter" hidden>&#x9023;&#x64ca; <b id="comboValue">0</b></span>
+      <div class="battle-info-lane">
+        <section id="enemyPreview" class="enemy-preview" aria-live="polite" aria-label="&#x672c;&#x6ce2;&#x6575;&#x5c07;">
+          <header><span id="enemyPreviewLabel">&#x672c;&#x6ce2;&#x6575;&#x5c07;</span><b id="enemyPreviewStage">&#x6843;&#x5712;&#x521d;&#x9663; 1</b></header>
+          <div id="enemyPreviewList" class="enemy-preview-list"></div>
+        </section>
       </div>
-
-      <section id="enemyPreview" class="enemy-preview" aria-live="polite" aria-label="&#x672c;&#x6ce2;&#x6575;&#x5c07;">
-        <header><span id="enemyPreviewLabel">&#x672c;&#x6ce2;&#x6575;&#x5c07;</span><b id="enemyPreviewStage">&#x6843;&#x5712;&#x521d;&#x9663; 1</b></header>
-        <div id="enemyPreviewList" class="enemy-preview-list"></div>
-      </section>
 
       <div id="dialogueBox" class="dialogue-box" aria-live="polite">
         <span id="dialoguePortrait" class="pixel-avatar avatar-zhangfei"><i></i></span>
@@ -148,7 +153,7 @@
     <div id="tutorialLayer" class="modal-backdrop" hidden>
       <section class="tutorial-modal" role="dialog" aria-modal="true" aria-labelledby="tutorialTitle">
         <span class="tutorial-mark">桃</span>
-        <p class="eyebrow">FIRST MARCH</p>
+        <p class="eyebrow">桃園初陣</p>
         <h2 id="tutorialTitle"></h2>
         <p id="tutorialBody"></p>
         <label id="tutorialNameWrap" class="tutorial-name" hidden><span>&#x4e3b;&#x516c;</span><input id="tutorialName" maxlength="10" value="&#x7121;&#x540d;" autocomplete="nickname"></label>
@@ -173,6 +178,7 @@
   <script src="js/auth.js"></script>
   <script>
     (async function bootTaoyuanGame() {
+      const bust = "20260828f";
       const scripts = [
         "js/audio.js",
         "data/game-data.js",
@@ -186,7 +192,7 @@
       ];
       const loadScript = (source) => new Promise((resolve, reject) => {
         const script = document.createElement("script");
-        script.src = source;
+        script.src = source + (source.includes("?") ? "&" : "?") + "v=" + bust;
         script.onload = resolve;
         script.onerror = () => reject(new Error("無法載入 " + source));
         document.body.appendChild(script);
@@ -204,7 +210,16 @@
       }
     }());
     if ("serviceWorker" in navigator && location.protocol !== "file:") {
-      window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}), { once: true });
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("sw.js?v=20260828f").catch(() => {});
+        navigator.serviceWorker.addEventListener("message", (event) => {
+          if (event.data?.type !== "TK_SW_UPDATED") return;
+          const key = "tk_sw_reloaded_" + (event.data.cache || "v7");
+          if (sessionStorage.getItem(key)) return;
+          sessionStorage.setItem(key, "1");
+          location.reload();
+        });
+      }, { once: true });
     }
   </script></body>
 </html>

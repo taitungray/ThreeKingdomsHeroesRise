@@ -1,10 +1,12 @@
 /* Combat: units, waves, damage, skills and progression */
 "use strict";
 
-// Battlefield sprite scale: all units are smaller, while bosses retain hierarchy.
-const ALLY_UNIT_SCALE = 0.88;
-const ENEMY_UNIT_SCALE = 0.82;
-const BOSS_UNIT_SCALE = 1.30;
+// Battlefield sprite scale: baseline readable size; bosses keep ceremonial bulk.
+const ALLY_UNIT_SCALE = 1.22;
+const ENEMY_UNIT_SCALE = 1.12;
+const BOSS_UNIT_SCALE = 1.68;
+const ENEMY_SPAWN_Y = 175;
+const BOSS_SPAWN_Y = 205;
 
 // Keep battlefield poses in eight stable directions so an attack reads as a
 // directional action instead of a left/right mirrored idle sprite.
@@ -38,8 +40,8 @@ function buildTerrain() {
 }
 
 function formationPoint(slot) {
-  const columns = [105, 195, 285];
-  const rows = [366, 420, 474];
+  const columns = [95, 195, 295];
+  const rows = [355, 422, 488];
   return { x: columns[slot % 3], y: rows[Math.floor(slot / 3)] };
 }
 
@@ -173,7 +175,7 @@ function healUnit(target, amount, source) {
   if (!target || target.dead) return;
   const hero = source?.hero;
   const bonus = hero?.id === "liubei" || source?.hero?.id === "liubei" ? .04 : 0;
-  const healed = Math.min(target.maxHp - target.hp, amount * (1 + bonus));
+  const healed = Math.round(Math.min(target.maxHp - target.hp, amount * (1 + bonus)));
   if (healed <= 0) return;
   target.hp += healed;
   target.hpLag = Math.max(target.hp, target.hpLag || target.maxHp);
@@ -188,7 +190,6 @@ function registerCombatHit(target, critical) {
   save.stats.highestCombo = Math.max(save.stats.highestCombo || 0, runtime.combo);
   if (runtime.combo >= 8 && runtime.combo % 4 === 0) {
     addEffect("combo", target.x, target.y - 44, "#f5d276", { radius: 36, life: .42 });
-    vibrate(critical ? [14, 18, 14] : 12);
   }
 }
 
@@ -259,6 +260,28 @@ function resetAllies() {
     .map((id, index) => makeAlly(id, save.positions[id] ?? (index + 3), index));
 }
 
+function beginWaveTransition(label) {
+  runtime.waveTransition = { life: 0.55, maxLife: 0.55, label: label || "" };
+  runtime.flash = 0.15;
+  runtime.flashColor = "#0a0c0a";
+}
+
+function updateWaveTransition(delta) {
+  if (!runtime.waveTransition) return;
+  runtime.waveTransition.life -= delta;
+  if (runtime.waveTransition.life <= 0) runtime.waveTransition = null;
+}
+
+function updateEnemyEntry(delta) {
+  for (const enemy of runtime.enemies) {
+    if (!Number.isFinite(enemy.entryY) || !Number.isFinite(enemy.targetY)) continue;
+    if (enemy.entryY >= enemy.targetY) continue;
+    enemy.entryY = Math.min(enemy.targetY, enemy.entryY + delta * 420);
+    enemy.y = enemy.entryY;
+    enemy.renderY = enemy.entryY;
+  }
+}
+
 function makeEnemy(index, boss = false) {
   const stage = activeStageNumber();
   const config = stageDefinition(stage);
@@ -278,7 +301,9 @@ function makeEnemy(index, boss = false) {
   const maxHp = Math.round((boss ? (config?.bossHp || 680) : profile.hp + Math.random() * 18) * stagePower);
   const lanes = [78, 132, 190, 248, 309];
   const spawnX = lanes[index % lanes.length] + (Math.random() - 0.5) * 24;
-  const spawnY = 184 + Math.floor(index / lanes.length) * 44 + Math.random() * 16;
+  const targetY = (boss ? BOSS_SPAWN_Y : ENEMY_SPAWN_Y) + Math.floor(index / lanes.length) * 44 + Math.random() * 16;
+  const entryFromTop = runtime.entryUnits;
+  const spawnY = entryFromTop ? -28 - index * 8 : targetY;
   return {
     id: "enemy-" + Date.now() + "-" + index,
     team: "enemy",
@@ -286,6 +311,8 @@ function makeEnemy(index, boss = false) {
     enemyGeneralId: boss ? config?.bossGeneral || enemyGeneralId : enemyGeneralId,
     x: spawnX,
     y: spawnY,
+    targetY,
+    entryY: entryFromTop ? spawnY : targetY,
     renderX: spawnX,
     renderY: spawnY,
     hp: maxHp,
@@ -328,22 +355,32 @@ function makeEnemy(index, boss = false) {
   };
 }
 
-function spawnWave(boss = false) {
+function spawnWave(boss = false, showTransition = true) {
   runtime.spawning = false;
   runtime.bossActive = boss;
   runtime.enemies = [];
   if (runtime.allies.length === 0 || runtime.allies.every((unit) => unit.dead)) resetAllies();
   const config = stageDefinition();
+  const waveNumber = boss ? 4 : runtime.waveClears + 1;
+  if (showTransition && !boss) beginWaveTransition("第 " + waveNumber + " 波");
+  runtime.entryUnits = true;
   const count = boss ? 1 + Math.min(4, activeStageNumber()) : config?.enemyCount || 4 + Math.min(7, activeStageNumber() + runtime.waveClears);
   for (let i = 0; i < count; i += 1) runtime.enemies.push(makeEnemy(i, boss && i === 0));
-  showEnemyPreview(activeStageNumber(), boss ? 4 : runtime.waveClears + 1);
+  runtime.entryUnits = false;
+  showEnemyPreview(activeStageNumber(), waveNumber);
   if (boss) {
     const chapter = chapterForStage();
     $("bossName").textContent = enemyGeneralById(config?.bossGeneral)?.name || chapter.boss;
-    $("bossBanner").classList.remove("show");
-    void $("bossBanner").offsetWidth;
-    $("bossBanner").classList.add("show");
-    showDialogue("關羽", "兄長，敵將已現身。關某請戰！", "avatar-guanyu");
+    // Boss arrival owns the single central narrative slot. Clear dialogue first
+    // so the banner, preview and bottom dialogue never stack over the battle.
+    $("dialogueBox")?.classList.remove("show");
+    runtime.dialogueTimer = 0;
+    const banner = $("bossBanner");
+    banner.classList.remove("show");
+    banner.setAttribute("aria-hidden", "false");
+    void banner.offsetWidth;
+    banner.classList.add("show");
+    scheduleGameTimer(() => banner.setAttribute("aria-hidden", "true"), 1800);
     addLog("遭遇首領「" + chapter.boss + "」。");
     beep(95, 0.3, "sawtooth", 0.04);
     window.TaoyuanAudio?.sfx?.("boss");
@@ -390,16 +427,18 @@ function nearestTarget(unit, targets) {
 }
 
 function addNumber(x, y, value, critical = false, heal = false) {
+  const spreadX = (Math.random() - 0.5) * 30;
+  const spreadY = (Math.random() - 0.5) * 10;
   runtime.numbers.push({
-    x,
-    y,
+    x: x + spreadX,
+    y: y - 8 + spreadY,
     value: (heal ? "+" : "") + Math.round(value),
-    life: 0.72,
-    maxLife: 0.72,
+    life: critical ? 0.9 : 0.75,
+    maxLife: critical ? 0.9 : 0.75,
     color: heal ? "#88e899" : critical ? "#ffe16b" : "#fff1da",
-    // Damage needs to read instantly on a small mobile canvas. Keep crits
-    // clearly dominant while leaving normal hits compact enough for stacks.
-    size: critical ? 24 : 16
+    size: critical ? 28 : 17,
+    angle: critical ? (Math.random() - 0.5) * 0.28 : (Math.random() - 0.5) * 0.12,
+    pop: critical ? 1.18 : 1
   });
 }
 
@@ -419,7 +458,6 @@ function addEffect(type, x, y, color = "#fff", options = {}) {
   effect.facing = options.facing || 1;
   runtime.effects.push(effect);
 }
-
 function spawnResourceDrops(x, y, reward = {}) {
   const entries = [
     { kind: "gold", amount: reward.gold },
@@ -446,9 +484,21 @@ function spawnResourceDrops(x, y, reward = {}) {
 }
 
 function updateResourceDrops(delta) {
+  const flyTargets = { gold: 48, food: 138, jade: 228, shards: 318 };
   for (const drop of runtime.drops) {
     drop.age += delta;
-    drop.life -= delta;
+    if (drop.life <= 0.45 && !drop.flying) {
+      drop.flying = true;
+      drop.flyTargetX = flyTargets[drop.kind] || 48;
+      drop.flyTargetY = 688;
+    }
+    if (drop.flying) {
+      drop.x += (drop.flyTargetX - drop.x) * Math.min(1, delta * 7);
+      drop.y += (drop.flyTargetY - drop.y) * Math.min(1, delta * 7);
+      drop.life -= delta * 1.6;
+    } else {
+      drop.life -= delta;
+    }
   }
   runtime.drops = runtime.drops.filter((drop) => drop.life > 0);
 }
@@ -482,7 +532,7 @@ function applyDamage(attacker, target, multiplier = 1, criticalChanceBase = 0.12
   const defense = effectiveDefense(target);
   const lowHealthReduction = target.hero?.id === "dianwei" && target.hp / target.maxHp < .5 ? .85 : 1;
   const wardReduction = hasStatus(target, "ward") ? 0.94 : 1;
-  const damage = Math.max(2, (attacker.atk * finalMultiplier - defense * 0.58) * variance * (critical ? 1.72 : 1) * lowHealthReduction * wardReduction * roleMultiplier);
+  const damage = Math.max(2, Math.round((attacker.atk * finalMultiplier - defense * 0.58) * variance * (critical ? 1.72 : 1) * lowHealthReduction * wardReduction * roleMultiplier));
   if (!context.status && damage > 0) {
     const sourceId = attacker.hero?.id || attacker.enemyGeneralId || attacker.type || "enemy";
     runtime.damageStats[sourceId] = (runtime.damageStats[sourceId] || 0) + damage;
@@ -495,7 +545,6 @@ function applyDamage(attacker, target, multiplier = 1, criticalChanceBase = 0.12
     addEffect("guard", target.x, target.y - 18, "#e9c05c", { radius: 38, life: .55 });
     showDialogue(target.hero.name, "\u71d5\u4eba\u5c1a\u5728\uff01", target.hero.avatar);
     toast(target.hero.name + "\u89f8\u767c\u4e0d\u5c48\uff0c\u88ab\u52d5\u4fdd\u7559 1 \u5175\u529b");
-    vibrate([18, 30, 18]);
     return;
   }
   target.hp -= damage;
@@ -516,11 +565,12 @@ function applyDamage(attacker, target, multiplier = 1, criticalChanceBase = 0.12
     addEffect("impact", target.x, target.y - 14, critical ? "#fff08b" : "#f7d8ad", { radius: critical ? 34 : 19, life: critical ? 0.3 : 0.18, angle: knockAngle });
     registerCombatHit(target, critical);
   }
-  runtime.hitStop = Math.max(runtime.hitStop, critical ? 0.055 : finalMultiplier > 1.25 ? 0.04 : 0.018);
+  if (!context.status) {
+    runtime.hitStop = Math.max(runtime.hitStop, critical ? 0.045 : finalMultiplier > 1.25 ? 0.028 : 0.012);
+  }
   if (critical) {
     runtime.shake = Math.max(runtime.shake, 5);
     addEffect("shockwave", target.x, target.y - 10, "#ffd769", { radius: 42, life: 0.34 });
-    vibrate(critical ? [10, 15, 10] : 8);
   }
   if (attacker.hero?.id === "zhurong" && critical) applyStatus(target, "burn", 4, 8, attacker);
   if (attacker.hero?.id === "zhuran" && context.skill) applyStatus(target, "burn", 6, 8, attacker);
@@ -572,9 +622,6 @@ function useHeroSkill(unit, target) {
   runtime.shake = Math.max(runtime.shake, 6);
   runtime.flash = 0.13;
   runtime.flashColor = unit.hero.accent;
-  const skillTimeScale = runtime.timeScale;
-  runtime.timeScale = Math.min(runtime.timeScale, .72);
-  scheduleGameTimer(() => { runtime.timeScale = skillTimeScale; }, 250);
   const hero = unit.hero;
   const skillFactor = 1 + (heroSkillLevel(hero.id) - 1) * .12;
   const spec = SKILL_SPECS[hero.id] || { tone: hero.role === "\u8b00\u58eb" ? "thunder" : "slash", color: hero.accent };
@@ -660,7 +707,6 @@ function useHeroSkill(unit, target) {
   }
   beep(hero.role === "\u8b00\u58eb" ? 540 : 170, 0.12, "sawtooth", 0.035);
   window.TaoyuanAudio?.sfx?.("skill");
-  vibrate(hero.id === "lubu" || hero.id === "zhangfei" ? [18, 30, 18] : 18);
 }
 
 function attack(unit, target) {
@@ -790,6 +836,18 @@ function updateAction(unit, delta) {
 
 function updateUnit(unit, targets, delta) {
   if (unit.dead) return;
+  if (!Number.isFinite(unit.x) || !Number.isFinite(unit.y)) {
+    unit.x = clamp(Number(unit.x) || 195, 35, 350);
+    unit.y = clamp(Number(unit.y) || (unit.team === "ally" ? 420 : ENEMY_SPAWN_Y), 112, 575);
+  }
+  if (!Number.isFinite(unit.speed) || unit.speed <= 0) unit.speed = unit.team === "ally" ? 22 : 13;
+  // Entering enemies stay on the drop path until they reach the lane.
+  if (unit.team === "enemy" && Number.isFinite(unit.entryY) && Number.isFinite(unit.targetY) && unit.entryY < unit.targetY - 0.5) {
+    tickUnitStatuses(unit, delta);
+    unit.cooldown -= delta * attackSpeedMultiplier(unit);
+    unit.hitFlash = Math.max(0, unit.hitFlash - delta);
+    return;
+  }
   tickUnitStatuses(unit, delta);
   if (unit.dead) return;
   unit.cooldown -= delta * attackSpeedMultiplier(unit);
@@ -798,8 +856,8 @@ function updateUnit(unit, targets, delta) {
   unit.attackPose = Math.max(0, unit.attackPose - delta);
   unit.hitStun = Math.max(0, unit.hitStun - delta);
   const kickDecay = Math.exp(-delta * 15);
-  unit.kickX *= kickDecay;
-  unit.kickY *= kickDecay;
+  unit.kickX = Number.isFinite(unit.kickX) ? unit.kickX * kickDecay : 0;
+  unit.kickY = Number.isFinite(unit.kickY) ? unit.kickY * kickDecay : 0;
   unit.moving = 0;
   if (unit.hitStun > 0 || hasStatus(unit, "stun")) return;
   if (updateAction(unit, delta)) return;
@@ -807,6 +865,7 @@ function updateUnit(unit, targets, delta) {
   const target = selected.target;
   const distance = selected.distance;
   if (!target) return;
+  if (!Number.isFinite(target.x) || !Number.isFinite(target.y)) return;
   const targetAngle = Math.atan2(target.y - unit.y, target.x - unit.x);
   setUnitDirection(unit, targetAngle);
   if (distance > unit.range) {
@@ -924,16 +983,12 @@ function waveCleared() {
     recordTaskProgress("daily-battle");
     save.battlePass.xp = (save.battlePass.xp || 0) + 1;
     addLog("\u6e05\u527f\u7b2c " + runtime.waveClears + " \u6ce2\u6575\u8ecd\u3002");
+    beginWaveTransition("第 " + runtime.waveClears + " 波");
     if (runtime.waveClears >= 3) {
       updateHud();
-      if (runtime.auto) {
-        scheduleGameTimer(() => spawnWave(true), 1600);
-      } else {
-        runtime.spawning = false;
-        toast("\u9996\u9818\u5df2\u51fa\u73fe\uff0c\u9ede\u64ca\u300c\u95dc\u5361\u9996\u9818\u300d\u8fce\u6230");
-      }
+      scheduleGameTimer(() => spawnWave(true, false), 700);
     } else {
-      scheduleGameTimer(() => spawnWave(false), 1050);
+      scheduleGameTimer(() => spawnWave(false, false), 450);
     }
   }
 }
@@ -963,25 +1018,37 @@ function gainExp(amount) {
 
 function updateGame(rawDelta) {
   // A wider cap keeps auto-battle moving in throttled WebViews without allowing huge tab-resume jumps.
-  const frameDelta = Math.min(0.1, rawDelta);
-  runtime.renderDelta = frameDelta || 1 / 60;
-  const delta = frameDelta * runtime.timeScale;
+  const frameDelta = Math.min(0.1, rawDelta || 1 / 60);
+  runtime.renderDelta = frameDelta;
+  const playSpeed = Math.max(1, Number(runtime.playSpeed) || 1);
+  runtime.playSpeed = playSpeed;
+  runtime.timeScale = playSpeed;
+  runtime.auto = true;
+  runtime.hitStop = 0;
+  const delta = frameDelta * playSpeed;
   runtime.elapsed += delta;
   if (runtime.comboTimer > 0) runtime.comboTimer = Math.max(0, runtime.comboTimer - delta);
   else runtime.combo = 0;
-  if (runtime.hitStop > 0) {
-    runtime.hitStop = Math.max(0, runtime.hitStop - frameDelta);
-    updateEffects(frameDelta * 0.16);
-    updateResourceDrops(frameDelta * 0.16);
-    return;
+
+  // Wave handoff watchdog: never leave the field frozen waiting on a missing timer.
+  if (runtime.spawning && !runtime.battleResult) {
+    runtime.spawnWait = (runtime.spawnWait || 0) + frameDelta;
+    if (runtime.spawnWait > 1.1) {
+      runtime.spawnWait = 0;
+      spawnWave(runtime.waveClears >= 3 && !runtime.bossActive, false);
+    }
+  } else {
+    runtime.spawnWait = 0;
   }
-  if (runtime.auto && !runtime.spawning) {
-    for (const ally of runtime.allies) updateUnit(ally, runtime.enemies, delta);
-    for (const enemy of runtime.enemies) updateUnit(enemy, runtime.allies, delta);
-  }
+
+  // Keep AI alive even during wave handoff so the battle never looks hard-locked.
+  for (const ally of runtime.allies) updateUnit(ally, runtime.enemies, delta);
+  for (const enemy of runtime.enemies) updateUnit(enemy, runtime.allies, delta);
   updateProjectiles(delta);
   updateEffects(delta);
   updateResourceDrops(delta);
+  updateWaveTransition(frameDelta);
+  updateEnemyEntry(delta);
   waveCleared();
   partyDefeated();
   if (runtime.dialogueTimer > 0) {

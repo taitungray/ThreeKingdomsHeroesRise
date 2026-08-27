@@ -1,5 +1,7 @@
 # 三國：群英再起 — 專案全面評估報告
 
+> **文件層級：2026-08-27 歷史評估。** 百分比是當時的主觀盤點，不能作為目前品質或發布證明；程式、截圖或測試與本表衝突時，以 [`current-game-spec.md`](current-game-spec.md) 和 [`issues-and-prevention.md`](issues-and-prevention.md) 為準。
+
 > 評估日期：2026-08-27  
 > 範圍：全部 JS 模組（~120KB）、HTML、CSS（77KB）、data、docs、配置檔  
 > 對照：도원결의（방치형 삼국지）、少年三國志、放置少女、AFK Arena 等同類放置 RPG

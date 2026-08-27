@@ -7,8 +7,13 @@
   "scripts": {
     "start": "node serve-local.js 8788",
     "dev": "node scripts/dev-server.js --port 8788",
+    "dev:www": "node scripts/dev-server.js --port 8788 --www",
     "build": "node build.js",
     "test": "node scripts/smoke-test.js",
+    "test:docs": "node scripts/check-docs.js",
+    "test:combat-assets": "node scripts/check-combat-assets.js",
+    "test:combat-browser": "node scripts/browser-combat-freeze.js",
+    "test:combat-browser:www": "node scripts/browser-combat-freeze.js --www",
     "build:release": "node build.js --release",
     "build:android": "powershell -ExecutionPolicy Bypass -File scripts/build-release.ps1",
     "build:apk": "powershell -ExecutionPolicy Bypass -File scripts/build-release.ps1",

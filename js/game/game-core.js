@@ -58,18 +58,18 @@ const PAPER_DOLL_SLOTS_FALLBACK = [
 const PAPER_DOLL_SLOTS = GAME_DATA.paperDollSlots || PAPER_DOLL_SLOTS_FALLBACK;
 
 const PAPER_DOLL_DEFAULTS_FALLBACK = {
-  liubei: { weapon: "twin", armor: "oath", mount: "foot", accessory: "jade" },
+  liubei: { weapon: "twin", armor: "oath", mount: "hex-mark", accessory: "jade" },
   guanyu: { weapon: "guandao", armor: "oath", mount: "redhare", accessory: "dragon" },
-  zhangfei: { weapon: "serpent", armor: "iron", mount: "foot", accessory: "war" },
-  zhaoyun: { weapon: "lance", armor: "iron", mount: "grey", accessory: "jade" },
-  huangzhong: { weapon: "bow", armor: "iron", mount: "foot", accessory: "war" },
-  sunshang: { weapon: "bow", armor: "silk", mount: "grey", accessory: "jade" },
-  caocao: { weapon: "twin", armor: "silk", mount: "grey", accessory: "dragon" },
+  zhangfei: { weapon: "serpent", armor: "iron", mount: "blackhorse", accessory: "war" },
+  zhaoyun: { weapon: "lance", armor: "iron", mount: "whitehorse", accessory: "jade" },
+  huangzhong: { weapon: "bow", armor: "iron", mount: "grey", accessory: "war" },
+  sunshang: { weapon: "bow", armor: "silk", mount: "whitehorse", accessory: "jade" },
+  caocao: { weapon: "twin", armor: "silk", mount: "blackhorse", accessory: "dragon" },
   xiahoudun: { weapon: "guandao", armor: "iron", mount: "redhare", accessory: "war" },
-  zhugeliang: { weapon: "fan", armor: "silk", mount: "foot", accessory: "feather" },
-  diaochan: { weapon: "rings", armor: "silk", mount: "foot", accessory: "jade" },
+  zhugeliang: { weapon: "fan", armor: "silk", mount: "jadelion", accessory: "feather" },
+  diaochan: { weapon: "rings", armor: "silk", mount: "whitehorse", accessory: "jade" },
   lubu: { weapon: "halberd", armor: "crimson", mount: "redhare", accessory: "war" },
-  locked: { weapon: "twin", armor: "oath", mount: "foot", accessory: "jade" }
+  locked: { weapon: "twin", armor: "oath", mount: "grey", accessory: "jade" }
 };
 
 const PAPER_DOLL_DEFAULTS = GAME_DATA.paperDollDefaults || PAPER_DOLL_DEFAULTS_FALLBACK;
@@ -187,7 +187,6 @@ const defaultSave = () => ({
   sound: true,
   music: true,
   effects: true,
-  vibration: true,
   notifications: false,
   lastSeen: Date.now(),
   heroSort: "power",
@@ -239,7 +238,12 @@ function loadSave() {
       heroLevels: { ...fresh.heroLevels, ...(stored.heroLevels || {}) },
       positions: { ...fresh.positions, ...(stored.positions || {}) },
       tactics: { ...fresh.tactics, ...(stored.tactics || {}) },
-      equipment: Object.fromEntries(HEROES.map((hero) => [hero.id, { ...fresh.equipment[hero.id], ...((stored.equipment || {})[hero.id] || {}) }]))
+      equipment: Object.fromEntries(HEROES.map((hero) => {
+        const base = fresh.equipment[hero.id] || {};
+        const saved = (stored.equipment || {})[hero.id] || {};
+        const mount = (saved.mount && saved.mount !== "foot") ? saved.mount : base.mount;
+        return [hero.id, { ...base, ...saved, mount }];
+      }))
     };
   } catch {
     return fresh;
@@ -401,13 +405,18 @@ function awardResources(reward = {}) {
   }
 }
 
-function vibrate(pattern = 22) {
-  if (!save.vibration || typeof navigator === "undefined" || !navigator.vibrate) return;
-  try { navigator.vibrate(pattern); } catch {}
-}
-
 function scheduleGameTimer(callback, delay) {
-  const timer = setTimeout(() => { runtime.timers.delete(timer); callback(); }, delay);
+  const timer = setTimeout(() => {
+    runtime.timers.delete(timer);
+    try {
+      callback();
+    } catch (error) {
+      console.error("Scheduled game timer failed", error);
+      if (runtime.spawning && !runtime.battleResult) {
+        runtime.spawning = false;
+      }
+    }
+  }, delay);
   runtime.timers.add(timer);
   return timer;
 }
@@ -431,7 +440,9 @@ const runtime = {
   waveClears: 0,
   bossActive: false,
   spawning: false,
+  spawnWait: 0,
   auto: true,
+  playSpeed: 1,
   timeScale: 1,
   lastTime: performance.now(),
   elapsed: 0,
@@ -451,6 +462,8 @@ const runtime = {
   hudTimerId: 0,
   persistTimerId: 0,
   rafId: 0,
+  loopWatchId: 0,
+  loopPulse: 0,
   backgrounded: false,
   heroFilter: "all",
   heroSort: save.heroSort || "power",
@@ -460,7 +473,10 @@ const runtime = {
   log: ["義軍於涿郡整軍出發。"],
   audio: null,
   ambientTimerId: 0,
-  renderDelta: 1 / 60
+  renderDelta: 1 / 60,
+  enemyPreviewTimer: 0,
+  waveTransition: null,
+  entryUnits: false
 };
 
 function takeEffectRecord() {
@@ -571,9 +587,9 @@ function isUnlocked(hero) {
 }
 
 function formatNumber(value) {
-  if (value >= 1000000) return (value / 1000000).toFixed(1) + "M";
-  if (value >= 10000) return (value / 1000).toFixed(1) + "K";
-  return Math.floor(value).toLocaleString("zh-TW");
+  const amount = Math.round(Number(value) || 0);
+  if (amount >= 1000000) return Math.round(amount / 1000000) + "M";
+  return amount.toLocaleString("zh-TW");
 }
 
 function clamp(value, min, max) {
