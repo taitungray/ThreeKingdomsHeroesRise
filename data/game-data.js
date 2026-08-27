@@ -3,16 +3,16 @@
 // Content is kept outside the runtime rules so new heroes, stages and rewards can
 // be tuned without changing the canvas or UI code.
 const ENEMY_GENERALS = [
-  { id: "zhangjiao", name: "\u5f35\u89d2", title: "\u592a\u5e73\u9053\u4e3b", avatar: "avatar-zhugeliang", role: "\u5996\u8853", color: "#8c6a92", accent: "#e3c36b" },
-  { id: "dongzhuo", name: "\u8463\u5353", title: "\u897f\u6dbc\u66b4\u541b", avatar: "avatar-lubu", role: "\u66b4\u541b", color: "#7b3b34", accent: "#e0a44e" },
-  { id: "lvbu", name: "\u5442\u5e03", title: "\u5929\u4e0b\u7121\u96d9", avatar: "avatar-lubu", role: "\u98db\u5c07", color: "#9c2d31", accent: "#f0c65e" },
-  { id: "yuanshao", name: "\u8881\u7d39", title: "\u6cb3\u5317\u76df\u4e3b", avatar: "avatar-caocao", role: "\u8ecd\u7565", color: "#75624f", accent: "#e5c887" },
-  { id: "yanliang", name: "\u984f\u826f", title: "\u6cb3\u5317\u731b\u5c07", avatar: "avatar-zhangfei", role: "\u731b\u5c07", color: "#684d48", accent: "#d99355" },
-  { id: "wenchou", name: "\u6587\u919c", title: "\u9435\u9a0e\u5148\u92d2", avatar: "avatar-xiahoudun", role: "\u9435\u9a0e", color: "#3e536e", accent: "#d9bd72" },
-  { id: "taishici", name: "\u592a\u53f2\u6148", title: "\u6c5f\u6771\u795e\u5c04", avatar: "avatar-huangzhong", role: "\u795e\u5c04", color: "#466b69", accent: "#e4c975" },
-  { id: "menghuo", name: "\u5b5f\u7372", title: "\u5357\u4e2d\u883b\u738b", avatar: "avatar-zhangfei", role: "\u883b\u738b", color: "#496956", accent: "#d89a54" },
-  { id: "zhurong", name: "\u795d\u878d", title: "\u5357\u4e2d\u706b\u795e", avatar: "avatar-diaochan", role: "\u706b\u5203", color: "#a25347", accent: "#f1c263" },
-  { id: "simayi", name: "\u53f8\u99ac\u61ff", title: "\u51a5\u754c\u8b00\u4e3b", avatar: "avatar-caocao", role: "\u9b3c\u8b00", color: "#42465b", accent: "#b497d8" }
+  { id: "zhangjiao", name: "\u5f35\u89d2", title: "\u592a\u5e73\u9053\u4e3b", avatar: "avatar-zhugeliang", portrait: "assets/characters/portrait-zhugeliang-v1.webp", role: "\u5996\u8853", color: "#8c6a92", accent: "#e3c36b" },
+  { id: "dongzhuo", name: "\u8463\u5353", title: "\u897f\u6dbc\u66b4\u541b", avatar: "avatar-lubu", portrait: "assets/characters/portrait-lubu-v1.webp", role: "\u66b4\u541b", color: "#7b3b34", accent: "#e0a44e" },
+  { id: "lvbu", name: "\u5442\u5e03", title: "\u5929\u4e0b\u7121\u96d9", avatar: "avatar-lubu", portrait: "assets/characters/portrait-lubu-v1.webp", role: "\u98db\u5c07", color: "#9c2d31", accent: "#f0c65e" },
+  { id: "yuanshao", name: "\u8881\u7d39", title: "\u6cb3\u5317\u76df\u4e3b", avatar: "avatar-caocao", portrait: "assets/characters/portrait-yuanshao-v1.webp", role: "\u8ecd\u7565", color: "#75624f", accent: "#e5c887" },
+  { id: "yanliang", name: "\u984f\u826f", title: "\u6cb3\u5317\u731b\u5c07", avatar: "avatar-zhangfei", portrait: "assets/characters/portrait-zhangfei-v1.webp", role: "\u731b\u5c07", color: "#684d48", accent: "#d99355" },
+  { id: "wenchou", name: "\u6587\u919c", title: "\u9435\u9a0e\u5148\u92d2", avatar: "avatar-xiahoudun", portrait: "assets/characters/portrait-xiahoudun-v1.webp", role: "\u9435\u9a0e", color: "#3e536e", accent: "#d9bd72" },
+  { id: "taishici", name: "\u592a\u53f2\u6148", title: "\u6c5f\u6771\u795e\u5c04", avatar: "avatar-huangzhong", portrait: "assets/characters/portrait-taishici-v1.webp", role: "\u795e\u5c04", color: "#466b69", accent: "#e4c975" },
+  { id: "menghuo", name: "\u5b5f\u7372", title: "\u5357\u4e2d\u883b\u738b", avatar: "avatar-zhangfei", portrait: "assets/characters/portrait-menghuo-v1.webp", role: "\u883b\u738b", color: "#496956", accent: "#d89a54" },
+  { id: "zhurong", name: "\u795d\u878d", title: "\u5357\u4e2d\u706b\u795e", avatar: "avatar-diaochan", portrait: "assets/characters/portrait-zhurong-v1.webp", role: "\u706b\u5203", color: "#a25347", accent: "#f1c263" },
+  { id: "simayi", name: "\u53f8\u99ac\u61ff", title: "\u51a5\u754c\u8b00\u4e3b", avatar: "avatar-caocao", portrait: "assets/characters/portrait-simayi-v1.webp", role: "\u9b3c\u8b00", color: "#42465b", accent: "#b497d8" }
 ];
 const ENEMY_GENERAL_SETS = [
   ["zhangjiao", "yanliang", "taishici"], ["dongzhuo", "wenchou", "yuanshao"], ["yuanshao", "taishici", "simayi"],

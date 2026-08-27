@@ -37,7 +37,7 @@ button:focus-visible { outline: 3px solid #fff0a0; outline-offset: 2px; }
   position: relative;
   width: min(100vw, 430px);
   height: 100dvh;
-  min-height: 560px;
+  min-height: 0;
   margin: 0 auto;
   overflow: hidden;
   background: #596849;
@@ -55,8 +55,8 @@ button:focus-visible { outline: 3px solid #fff0a0; outline-offset: 2px; }
   box-shadow: inset 0 0 18px #0009;
 }
 .battle-screen, #battleCanvas { width: 100%; height: 100%; }
-.battle-screen { position: relative; overflow: hidden; }
-#battleCanvas { display: block; image-rendering: pixelated; background: #637058; }
+.battle-screen { position: relative; overflow: hidden; background: #637058; }
+#battleCanvas { display: block; image-rendering: pixelated; background: #637058; object-fit: contain; object-position: center; }
 
 .top-hud {
   position: absolute;
@@ -678,6 +678,56 @@ button { touch-action: manipulation; }
   .paper-slot > small, .paper-slot > em { font-size: 7px; }
 }
 
+/* Ultra-narrow embeds keep the two top controls in separate columns. */
+@media (max-width: 320px) and (orientation: portrait) {
+  .top-hud {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 100px;
+    gap: 4px;
+    height: 67px;
+  }
+  .lord-card {
+    width: auto;
+    min-width: 0;
+    height: 52px;
+    padding-left: 42px;
+  }
+  .lord-card > .pixel-avatar { width: 37px; height: 37px; top: 6px; }
+  .lord-card::after { left: 39px; top: 6px; bottom: 6px; }
+  .lord-info { width: auto; min-width: 0; }
+  .lord-info > strong { margin-bottom: 0; font-size: 12px; line-height: 14px; }
+  .level-line { gap: 2px; font-size: 8px; }
+  .level-line small { width: 27px; font-size: 7px; }
+  .exp-track { width: 36px; height: 6px; }
+  .lord-info em { margin-top: 0; font-size: 8px; }
+  .battle-meta { grid-template-columns: minmax(0, 1fr) 28px; gap: 3px; min-width: 0; width: 100px; }
+  .metal-button { min-width: 0; padding: 0 3px; font-size: 9px; }
+  .speed-button { width: 28px; }
+  .battle-meta p.stage-meta { padding: 1px 3px 2px; }
+  .stage-meta span { display: none; }
+  .stage-meta strong { max-width: 94px; font-size: 8px; line-height: 10px; }
+  .stage-meta b { font-size: 11px !important; line-height: 12px !important; }
+  .stage-stamp { top: 77px; left: 6px; }
+  .enemy-preview { top: 106px; left: 6px; right: 45px; }
+  .enemy-preview header { padding-inline: 5px; font-size: 10px; }
+  .enemy-preview-card { grid-template-columns: 25px minmax(0, 1fr); gap: 3px; padding: 2px; }
+  .enemy-preview-avatar { width: 25px !important; height: 25px !important; }
+  .enemy-preview-card strong { font-size: 9px; line-height: 11px; }
+  .enemy-preview-card small { font-size: 7px; line-height: 8px; }
+  .dialogue-box { left: 8px; right: 47px; bottom: calc(119px + var(--safe-bottom)); padding-left: 45px; }
+  .dialogue-box > .pixel-avatar { width: 37px; height: 37px; }
+  .dialogue-box p { font-size: 10px; }
+  .right-rail { top: 77px; right: 3px; }
+  .boss-banner { left: 0; width: 100%; }
+  .boss-banner strong { font-size: clamp(18px, 8vw, 27px); letter-spacing: .08em; }
+}
+
+@media (orientation: landscape) and (max-height: 540px) {
+  .game-app { height: 100dvh; min-height: 0; }
+  .rotate-hint { padding: 12px; }
+  .rotate-hint i { width: 36px; height: 56px; }
+  .rotate-hint p { margin: 8px 0 0; font-size: 11px; line-height: 1.35; }
+}
 /* Character portrait pass: distinct facial silhouettes survive at card and detail sizes. */
 .avatar-liubei {
   border-radius: 8px 8px 3px 3px;
@@ -1354,4 +1404,8 @@ button { touch-action: manipulation; }
   .auth-brand h1 { font-size: 22px; }
   .auth-account-card { align-items: flex-start; flex-wrap: wrap; }
   .auth-account-actions { width: 100%; justify-content: flex-end; }
+}
+@media (max-width: 430px) {
+  .game-app { box-shadow: none; }
+  .game-app::before { border-width: 2px; box-shadow: inset 0 0 10px #0006; }
 }

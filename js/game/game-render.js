@@ -1372,10 +1372,57 @@ function drawStatusBadges(unit, x, y) {
   ctx.restore();
 }
 
+function characterAnimationState(unit) {
+  if (unit.dead) return "death";
+  if (unit.hitFlash > 0) return "hit";
+  if (unit.action?.skill) return "skill";
+  if (unit.action) return "attack";
+  return unit.moving ? "walk" : "idle";
+}
+
+// Combat-body WebP files are the identity layer. This motion pass gives every
+// character a readable loop even when a state-specific sprite sheet is not
+// needed: breathing, gait, recoil, skill focus and collapse all share the same
+// timing contract as the directional attack sheets.
+function applyCombatBodyMotion(unit, state, walkCycle, idleCycle, deathProgress) {
+  if (state === "idle") {
+    const breathe = idleCycle * 0.5;
+    ctx.translate(0, breathe * 0.6);
+    ctx.scale(1 + breathe * 0.014, 1 - breathe * 0.022);
+  } else if (state === "walk") {
+    const stride = walkCycle;
+    const lift = Math.abs(stride);
+    ctx.translate(stride * 1.35, -lift * 0.85);
+    ctx.rotate(stride * 0.026);
+    ctx.scale(1 + stride * 0.012, 1 - lift * 0.045);
+  } else if (state === "hit") {
+    const recoil = clamp((Number(unit.hitFlash) || 0) / 0.2, 0, 1);
+    ctx.translate(-Math.cos(unit.hitAngle || 0) * recoil * 1.8, -recoil * 0.8);
+    ctx.rotate(Math.sin(unit.hitAngle || 0) * recoil * 0.06);
+    ctx.scale(1 - recoil * 0.07, 1 + recoil * 0.085);
+  } else if (state === "skill") {
+    const pose = attackPoseProgress(unit);
+    const focus = Math.sin((unit.action?.elapsed || 0) * 18) * pose;
+    ctx.translate(0, -pose * 0.8);
+    ctx.scale(1 + pose * 0.035 + focus * 0.006, 1 - pose * 0.045);
+  } else if (state === "death") {
+    ctx.translate(0, deathProgress * 1.4);
+    ctx.scale(1 + deathProgress * 0.04, 1 - deathProgress * 0.12);
+  }
+}
+
+function drawCombatBodySprite(unit, image, state, walkCycle, idleCycle, deathProgress) {
+  if (!image) return;
+  ctx.save();
+  applyCombatBodyMotion(unit, state, walkCycle, idleCycle, deathProgress);
+  ctx.drawImage(image, -16, -38, 32, 38);
+  ctx.restore();
+}
 function drawUnit(unit) {
   if (unit.dead && unit.deathTime <= 0) return;
   const walkCycle = Math.sin(runtime.elapsed * 15 + unit.x * 0.08);
   const idleCycle = Math.sin(runtime.elapsed * 3.2 + unit.x * 0.03);
+  const animationState = characterAnimationState(unit);
   const heroId = unit.team === "ally" ? unit.hero.id : "enemy";
   const visualId = unit.team === "ally" ? (unit.hero.visual || heroId) : "enemy";
   const loadout = unit.team === "ally" ? heroLoadout(heroId) : null;
@@ -1438,7 +1485,7 @@ function drawUnit(unit) {
     ctx.drawImage(attackSprite, column * 64, row * 64, 64, 64, -32, -64, 64, 64);
   } else if (unit.team === "ally") {
     const spriteImage = spritePromise;
-    if (spriteImage) ctx.drawImage(spriteImage, -16, -38, 32, 38);
+    if (spriteImage) drawCombatBodySprite(unit, spriteImage, animationState, walkCycle, idleCycle, deathProgress);
     else {
     drawHeroBack(visualId, accent, unit.moving ? walkCycle : 0, idleCycle);
     drawHeroBody(visualId, body, accent);
@@ -1449,8 +1496,17 @@ function drawUnit(unit) {
     drawCompactHeroDetails(visualId, body, accent, loadout?.armor, loadout?.accessory, idleCycle, unit.scale);
     }
   } else {
-    if (bossSprite) ctx.drawImage(bossSprite, -32, -70, 64, 72);
-    else drawEnemyBody(unit, body, accent, idleCycle);
+    if (bossSprite) {
+      ctx.save();
+      applyCombatBodyMotion(unit, animationState, walkCycle, idleCycle, deathProgress);
+      ctx.drawImage(bossSprite, -32, -70, 64, 72);
+      ctx.restore();
+    } else {
+      ctx.save();
+      applyCombatBodyMotion(unit, animationState, walkCycle, idleCycle, deathProgress);
+      drawEnemyBody(unit, body, accent, idleCycle);
+      ctx.restore();
+    }
     drawEnemyDetails(unit, idleCycle);
   }
   drawAttackPose(unit, accent, useAttackSprite);

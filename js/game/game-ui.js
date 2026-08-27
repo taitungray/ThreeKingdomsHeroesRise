@@ -81,7 +81,9 @@ function updateHud() {
 
 function enemyPreviewAvatarHtml(general) {
   const avatar = general?.avatar || "avatar-locked";
-  return '<span class="pixel-avatar ' + avatar + ' enemy-preview-avatar"><i></i><span class="portrait-eyes" aria-hidden="true"></span><span class="avatar-detail" aria-hidden="true"></span></span>';
+  const portraitClass = general?.portrait ? " portrait-asset" : "";
+  const portraitStyle = general?.portrait ? " style=\"background-image:url(\x27" + general.portrait + "\x27)\"" : "";
+  return '<span class="pixel-avatar ' + avatar + portraitClass + ' enemy-preview-avatar"' + portraitStyle + '><i></i><span class="portrait-eyes" aria-hidden="true"></span><span class="avatar-detail" aria-hidden="true"></span></span>';
 }
 
 function showEnemyPreview(stage = activeStageNumber(), wave = null) {
@@ -140,10 +142,10 @@ function avatarHtml(hero, large = false) {
   const loadoutClasses = hero.id ? " " + paperDollClasses(hero.id) : "";
   const frameClass = hero.id ? " avatar-frame-" + (save.equippedFrame || "plain") : "";
   const portraitKey = hero.portraitKey || hero.id;
-  const portraitAssetClass = hero.portrait && !large ? " portrait-asset portrait-asset-" + portraitKey : "";
+  const portraitAssetClass = hero.portrait ? " portrait-asset portrait-asset-" + portraitKey : "";
   const heroData = hero.id ? ' data-hero="' + hero.id + '"' : "";
   const paperLayer = hero.id ? '<b class="paper-layer" aria-hidden="true"></b><em class="mount-mark" aria-hidden="true"></em>' : "";
-  const portraitStyle = hero.accent ? ' style="--portrait-tone:' + hero.color + ';--portrait-accent:' + hero.accent + (hero.portrait && !large ? ';background-image:url("' + hero.portrait + '")' : "") + '"' : (hero.portrait && !large ? ' style="background-image:url("' + hero.portrait + '")"' : "");
+  const portraitStyle = hero.accent ? ' style="--portrait-tone:' + hero.color + ';--portrait-accent:' + hero.accent + (hero.portrait ? ';background-image:url(\x27' + hero.portrait + '\x27)' : "") + '"' : (hero.portrait ? ' style="background-image:url(\x27' + hero.portrait + '\x27)"' : "");
   return '<span class="pixel-avatar ' + hero.avatar + portraitAssetClass + loadoutClasses + frameClass + (large ? " large" : "") + '"' + heroData + portraitStyle + '><i></i><span class="portrait-eyes" aria-hidden="true"></span><span class="portrait-rune" aria-hidden="true"></span><span class="avatar-detail" aria-hidden="true"></span>' + paperLayer + '</span>';
 }
 

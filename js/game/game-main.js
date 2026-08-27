@@ -56,8 +56,17 @@ $("claimOffline").addEventListener("click", () => {
 
 canvas.addEventListener("pointerdown", (event) => {
   const rect = canvas.getBoundingClientRect();
-  const x = (event.clientX - rect.left) / rect.width * canvas.width;
-  const y = (event.clientY - rect.top) / rect.height * canvas.height;
+  // CSS object-fit keeps the fixed 390×720 world undistorted. Map input into
+  // the displayed content box instead of treating the letterbox as gameplay.
+  const scale = Math.min(rect.width / canvas.width, rect.height / canvas.height);
+  const contentWidth = canvas.width * scale;
+  const contentHeight = canvas.height * scale;
+  const offsetX = (rect.width - contentWidth) / 2;
+  const offsetY = (rect.height - contentHeight) / 2;
+  const x = (event.clientX - rect.left - offsetX) / scale;
+  const y = (event.clientY - rect.top - offsetY) / scale;
+  if (x < 0 || x > canvas.width || y < 0 || y > canvas.height) return;
+
   addEffect("ring", x, y, "#d9d29e", { radius: 24, life: .3 });
   if (!runtime.auto) {
     const ally = runtime.allies.find((unit) => !unit.dead && Math.hypot(unit.x - x, unit.y - y) < 34);
