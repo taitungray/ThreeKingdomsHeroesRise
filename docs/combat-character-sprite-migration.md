@@ -107,3 +107,10 @@ function drawUnit(unit) {
 | **渲染效能 / 發熱** | 每幀計算數百幾何矩形，CPU 發熱 | **GPU 紋理快取加速，每幀 < 0.1ms** |
 | **代碼檔案大小** | `game-render.js` 52KB (1343 行) | **精簡至 ~15KB (300 行以內)** |
 | **美術升級與替換** | 需懂 JS 代碼並手動調座標 | **美術直接出 PNG 覆蓋即可，無需改代碼** |
+
+
+## 實際落地結果補充（2026-08-27）
+
+- 方案 A 已接入：body、武器與坐騎以拆件合成，Boss 使用獨立大圖，全部使用 nearest-neighbor 與 foot-center anchor。
+- `game-render.js` 的 `drawUnit` 已改由 `TaoyuanAssets` 管理圖片載入、快取與 fallback，同一套渲染尺寸適用於不同角色。
+- 50 名武將皆已有 combat body path，圖片核心渲染與程式降級可同時運作。

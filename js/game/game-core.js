@@ -85,6 +85,54 @@ const TACTICS_FALLBACK = [
 ];
 
 const TACTICS = GAME_DATA.tactics || TACTICS_FALLBACK;
+const DAILY_TASKS = GAME_DATA.dailyTasks || [];
+const WEEKLY_TASKS = GAME_DATA.weeklyTasks || [];
+const CHECKIN_REWARDS = GAME_DATA.checkinRewards || [];
+const SHOP_ITEMS = GAME_DATA.shopItems || [];
+const ARENA_OPPONENTS = GAME_DATA.arenaOpponents || [];
+const TUTORIAL_STEPS = GAME_DATA.tutorialSteps || [];
+const STORY_BEATS = GAME_DATA.storyBeats || [];
+const SKILL_SPECS = GAME_DATA.skillSpecs || {};
+const FACTION_BY_HERO = GAME_DATA.factionByHero || {};
+const FACTIONS = GAME_DATA.factions || {};
+const BONDS = GAME_DATA.bonds || [];
+const DAILY_DUNGEONS = GAME_DATA.dailyDungeons || [];
+const TREASURES = GAME_DATA.treasures || [];
+const TITLES = GAME_DATA.titles || [];
+const TOWER_CONFIG = GAME_DATA.tower || { name: "Tower", basePower: 2700, powerStep: 260, stamina: 4 };
+const AVATAR_FRAMES = GAME_DATA.avatarFrames || [];
+const ANNOUNCEMENTS = GAME_DATA.announcements || [];
+const LOCAL_EVENTS = GAME_DATA.localEvents || [];
+const APP_VERSION = GAME_DATA.appVersion || "0.1.0-local";
+
+function localDateKey(time = Date.now()) {
+  const date = new Date(time);
+  return [date.getFullYear(), String(date.getMonth() + 1).padStart(2, "0"), String(date.getDate()).padStart(2, "0")].join("-");
+}
+
+function localWeekKey(time = Date.now()) {
+  const date = new Date(time);
+  const first = new Date(date.getFullYear(), 0, 1);
+  return date.getFullYear() + "-W" + String(Math.ceil((((date - first) / 86400000) + first.getDay() + 1) / 7)).padStart(2, "0");
+}
+
+function localMonthKey(time = Date.now()) {
+  const date = new Date(time);
+  return date.getFullYear() + "-" + String(date.getMonth() + 1).padStart(2, "0");
+}
+
+function createDailyState(time = Date.now()) {
+  return { date: localDateKey(time), progress: Object.fromEntries(DAILY_TASKS.map((task) => [task.id, 0])), claimed: [], adClaimed: false };
+}
+
+function createWeeklyState(time = Date.now()) {
+  return { week: localWeekKey(time), progress: Object.fromEntries(WEEKLY_TASKS.map((task) => [task.id, 0])), claimed: [] };
+}
+
+function createCheckinState(time = Date.now()) {
+  return { month: localMonthKey(time), day: 0, claimed: [] };
+}
+
 
 const CHAPTERS_FALLBACK = [
   { name: "黃巾之亂", stage: "鉅鹿野外", boss: "黃巾渠帥", base: "#697258", path: "#9b8f6a" },
@@ -99,15 +147,25 @@ const CHAPTERS = GAME_DATA.chapters || CHAPTERS_FALLBACK;
 const STAGES_PER_CHAPTER = Math.max(1, Math.ceil((GAME_DATA.stages?.length || CHAPTERS.length * 2) / CHAPTERS.length));
 
 const SAVE_KEY = "taoyuan-qunying-v2";
+const EFFECT_POOL_SIZE = 160;
+
+function createEffectRecord() {
+  return { type: "", x: 0, y: 0, color: "#fff", life: 0, maxLife: 0, radius: 0, angle: 0, scale: 1, facing: 1 };
+}
+
 const defaultSave = () => ({
-  version: 2,
+  version: 3,
   gold: 860,
   food: 320,
   jade: 12,
+  shards: 24,
   level: 1,
   exp: 0,
   stage: 1,
   maxStage: 1,
+  playerName: "\u7384\u5fb7",
+  tutorialStep: 0,
+  tutorialDone: false,
   heroLevels: Object.fromEntries(HEROES.map((hero) => [hero.id, 1])),
   formation: ["liubei", "guanyu", "zhangfei", "zhaoyun"],
   positions: { liubei: 7, guanyu: 3, zhangfei: 5, zhaoyun: 4 },
@@ -115,20 +173,67 @@ const defaultSave = () => ({
   equipment: createEquipmentDefaults(),
   mailClaimed: false,
   achievementClaimed: [],
+  daily: createDailyState(),
+  weekly: createWeeklyState(),
+  checkin: createCheckinState(),
+  stageStars: {},
+  stats: { battles: 0, wins: 0, losses: 0, kills: 0, skills: 0, bosses: 0, highestCombo: 0 },
+  shopPurchases: {},
+  adClaims: { offline: 0, daily: 0 },
+  adFree: false,
+  monthlyPassUntil: 0,
+  arena: { wins: 0, attempts: 0, claimed: [], week: localWeekKey() },
+  battlePass: { xp: 0, claimed: [] },
   sound: true,
   effects: true,
-  lastSeen: Date.now()
+  vibration: true,
+  notifications: false,
+  lastSeen: Date.now(),
+  heroSort: "power",
+  renderQuality: "high",
+  stamina: { current: 20, max: 20, lastAt: Date.now() },
+  tower: { floor: 0, best: 0 },
+  dungeons: { date: localDateKey(), claimed: {} },
+  equippedTitle: "volunteer",
+  equippedTreasure: "peach-jade",
+  equipmentRefine: Object.fromEntries(HEROES.map((hero) => [hero.id, 0])),
+  heroProgress: Object.fromEntries(HEROES.map((hero) => [hero.id, { stars: 1, breakthrough: 0, shards: 0 }])),
+  skillLevels: Object.fromEntries(HEROES.map((hero) => [hero.id, 1])),
+  equippedFrame: "plain",
+  eventState: { period: localWeekKey(), progress: Object.fromEntries(LOCAL_EVENTS.map((event) => [event.id, 0])), claimed: [] }
 });
 
 function loadSave() {
   const fresh = defaultSave();
   try {
     const stored = JSON.parse(localStorage.getItem(SAVE_KEY) || "null");
-    if (!stored || stored.version !== 2) return fresh;
+    if (!stored || ![2, 3].includes(stored.version)) return fresh;
     return {
       ...fresh,
       ...stored,
+      version: 3,
       maxStage: Math.max(stored.maxStage || 1, stored.stage || 1),
+      daily: { ...fresh.daily, ...(stored.daily || {}), progress: { ...fresh.daily.progress, ...((stored.daily || {}).progress || {}) } },
+      weekly: { ...fresh.weekly, ...(stored.weekly || {}), progress: { ...fresh.weekly.progress, ...((stored.weekly || {}).progress || {}) } },
+      checkin: { ...fresh.checkin, ...(stored.checkin || {}) },
+      stats: { ...fresh.stats, ...(stored.stats || {}) },
+      adClaims: { ...fresh.adClaims, ...(stored.adClaims || {}) },
+      monthlyPassUntil: stored.monthlyPassUntil || fresh.monthlyPassUntil,
+      arena: { ...fresh.arena, ...(stored.arena || {}) },
+      heroSort: stored.heroSort || fresh.heroSort,
+      renderQuality: stored.renderQuality || fresh.renderQuality,
+      battlePass: { ...fresh.battlePass, ...(stored.battlePass || {}) },
+      stamina: { ...fresh.stamina, ...(stored.stamina || {}) },
+      tower: { ...fresh.tower, ...(stored.tower || {}) },
+      dungeons: { ...fresh.dungeons, ...(stored.dungeons || {}) },
+      equipmentRefine: { ...fresh.equipmentRefine, ...(stored.equipmentRefine || {}) },
+      heroProgress: Object.fromEntries(HEROES.map((hero) => [hero.id, { ...fresh.heroProgress[hero.id], ...((stored.heroProgress || {})[hero.id] || {}) }])),
+      skillLevels: { ...fresh.skillLevels, ...(stored.skillLevels || {}) },
+      shards: Math.max(0, Number(stored.shards) || fresh.shards),
+      equippedFrame: stored.equippedFrame || fresh.equippedFrame,
+      eventState: { ...fresh.eventState, ...(stored.eventState || {}), progress: { ...fresh.eventState.progress, ...((stored.eventState || {}).progress || {}) } },
+      equippedTitle: stored.equippedTitle || fresh.equippedTitle,
+      equippedTreasure: stored.equippedTreasure || fresh.equippedTreasure,
       heroLevels: { ...fresh.heroLevels, ...(stored.heroLevels || {}) },
       positions: { ...fresh.positions, ...(stored.positions || {}) },
       tactics: { ...fresh.tactics, ...(stored.tactics || {}) },
@@ -140,11 +245,183 @@ function loadSave() {
 }
 
 const save = loadSave();
+
+function refillStamina() {
+  if (!save.stamina) save.stamina = { current: 20, max: 20, lastAt: Date.now() };
+  const now = Date.now();
+  const max = Math.max(1, Number(save.stamina.max) || 20);
+  const current = clamp(Number(save.stamina.current) || 0, 0, max);
+  const elapsed = Math.max(0, now - (Number(save.stamina.lastAt) || now));
+  save.stamina.current = Math.min(max, current + Math.floor(elapsed / (5 * 60 * 1000)));
+  save.stamina.max = max;
+  save.stamina.lastAt = save.stamina.current >= max ? now : now - (elapsed % (5 * 60 * 1000));
+  return save.stamina;
+}
+
+function staminaStatus() {
+  return refillStamina();
+}
+
+function spendStamina(amount) {
+  const stamina = refillStamina();
+  const cost = Math.max(0, Number(amount) || 0);
+  if (stamina.current < cost) return false;
+  stamina.current -= cost;
+  stamina.lastAt = Date.now();
+  return true;
+}
+
+function factionOfHero(heroId) {
+  for (const [factionId, heroIds] of Object.entries(FACTION_BY_HERO)) {
+    if (heroIds.includes(heroId)) return factionId;
+  }
+  return "qun";
+}
+
+function activeBonds() {
+  const ids = new Set(save.formation || []);
+  return BONDS.filter((bond) => bond.heroes.every((heroId) => ids.has(heroId)));
+}
+
+function treasureById(id) {
+  return TREASURES.find((treasure) => treasure.id === id) || null;
+}
+
+function titleById(id) {
+  return TITLES.find((title) => title.id === id) || TITLES[0] || null;
+}
+
+function avatarFrameById(id) {
+  return AVATAR_FRAMES.find((frame) => frame.id === id) || null;
+}
+
+function avatarFrameUnlocked(frame) {
+  return Boolean(frame) && save.maxStage > (Number(frame.unlockStage) || 0);
+}
+
+function heroProgression(heroId) {
+  ensureCycleState();
+  return save.heroProgress[heroId] || (save.heroProgress[heroId] = { stars: 1, breakthrough: 0, shards: 0 });
+}
+
+function heroGrowthMultiplier(heroId) {
+  const progress = heroProgression(heroId);
+  return 1 + Math.max(0, Number(progress.stars || 1) - 1) * 0.06 + Math.max(0, Number(progress.breakthrough || 0)) * 0.09;
+}
+
+function heroStarCost(heroId) {
+  const progress = heroProgression(heroId);
+  if (progress.stars >= 5) return null;
+  return { shards: 8 + progress.stars * 4, gold: 180 + progress.stars * 80 };
+}
+
+function heroSkillLevel(heroId) {
+  ensureCycleState();
+  return Math.max(1, Math.min(5, Number(save.skillLevels?.[heroId]) || 1));
+}
+
+function heroSkillCost(heroId) {
+  const level = heroSkillLevel(heroId);
+  if (level >= 5) return null;
+  return { gold: 140 + level * 100, food: 70 + level * 45 };
+}
+
+function heroBreakthroughCost(heroId) {
+  const progress = heroProgression(heroId);
+  if (progress.breakthrough >= 3 || progress.stars < 3) return null;
+  return { shards: 10 + progress.breakthrough * 6, jade: 2 + progress.breakthrough * 2 };
+}
+
+function localEventPeriod(event, time = Date.now()) {
+  return event?.period === "day" ? localDateKey(time) : localWeekKey(time);
+}
+
+function eventProgress(eventId) {
+  ensureCycleState();
+  return Math.max(0, Number(save.eventState.progress[eventId]) || 0);
+}
+
+function recordEventProgress(kind, amount = 1) {
+  ensureCycleState();
+  for (const event of LOCAL_EVENTS) {
+    if (event.kind !== kind || save.eventState.claimed.includes(event.id)) continue;
+    save.eventState.progress[event.id] = Math.min(event.target, eventProgress(event.id) + amount);
+  }
+}
+
+function ensureCycleState() {
+  const today = localDateKey();
+  const week = localWeekKey();
+  const month = localMonthKey();
+  if (!save.daily || save.daily.date !== today) save.daily = createDailyState();
+  if (!save.weekly || save.weekly.week !== week) save.weekly = createWeeklyState();
+  if (!save.checkin || save.checkin.month !== month) save.checkin = createCheckinState();
+  if (!save.arena || save.arena.week !== week) save.arena = { wins: 0, attempts: 0, claimed: [], week };
+  refillStamina();
+  if (!save.dungeons || save.dungeons.date !== today) save.dungeons = { date: today, claimed: {} };
+  if (!save.tower) save.tower = { floor: 0, best: 0 };
+  if (!save.equipmentRefine) save.equipmentRefine = Object.fromEntries(HEROES.map((hero) => [hero.id, 0]));
+  if (!save.equippedTitle || !titleById(save.equippedTitle)) save.equippedTitle = TITLES[0]?.id || "";
+  if (!save.equippedTreasure || !treasureById(save.equippedTreasure)) save.equippedTreasure = TREASURES[0]?.id || "";
+  if (!save.equippedFrame || !avatarFrameById(save.equippedFrame)) save.equippedFrame = AVATAR_FRAMES[0]?.id || "";
+  if (!save.heroProgress) save.heroProgress = Object.fromEntries(HEROES.map((hero) => [hero.id, { stars: 1, breakthrough: 0, shards: 0 }]));
+  if (!save.skillLevels) save.skillLevels = Object.fromEntries(HEROES.map((hero) => [hero.id, 1]));
+  for (const hero of HEROES) {
+    save.heroProgress[hero.id] = { stars: 1, breakthrough: 0, shards: 0, ...(save.heroProgress[hero.id] || {}) };
+    save.skillLevels[hero.id] = Math.max(1, Math.min(5, Number(save.skillLevels?.[hero.id]) || 1));
+  }
+  const eventPeriod = localWeekKey();
+  if (!save.eventState || save.eventState.period !== eventPeriod) save.eventState = { period: eventPeriod, progress: Object.fromEntries(LOCAL_EVENTS.map((event) => [event.id, 0])), claimed: [] };
+  save.eventState.progress = { ...Object.fromEntries(LOCAL_EVENTS.map((event) => [event.id, 0])), ...(save.eventState.progress || {}) };
+  save.daily.progress = { ...Object.fromEntries(DAILY_TASKS.map((task) => [task.id, 0])), ...(save.daily.progress || {}) };
+  save.weekly.progress = { ...Object.fromEntries(WEEKLY_TASKS.map((task) => [task.id, 0])), ...(save.weekly.progress || {}) };
+}
+
+function recordTaskProgress(taskId, amount = 1) {
+  ensureCycleState();
+  if (save.daily.progress[taskId] !== undefined) save.daily.progress[taskId] += amount;
+  if (save.weekly.progress[taskId] !== undefined) save.weekly.progress[taskId] += amount;
+}
+
+function recordStat(stat, amount = 1) {
+  save.stats[stat] = (save.stats[stat] || 0) + amount;
+  if (stat === "wins") recordEventProgress("wins", amount);
+}
+
+function awardResources(reward = {}) {
+  for (const key of ["gold", "food", "jade", "shards"]) {
+    if (reward[key]) save[key] = (save[key] || 0) + reward[key];
+  }
+  if (reward.exp) {
+    if (typeof gainExp === "function") gainExp(reward.exp);
+    else save.exp = (save.exp || 0) + reward.exp;
+  }
+}
+
+function vibrate(pattern = 22) {
+  if (!save.vibration || typeof navigator === "undefined" || !navigator.vibrate) return;
+  try { navigator.vibrate(pattern); } catch {}
+}
+
+function scheduleGameTimer(callback, delay) {
+  const timer = setTimeout(() => { runtime.timers.delete(timer); callback(); }, delay);
+  runtime.timers.add(timer);
+  return timer;
+}
+
+function clearScheduledGameTimers() {
+  for (const timer of runtime.timers) clearTimeout(timer);
+  runtime.timers.clear();
+}
+
+ensureCycleState();
 const runtime = {
   allies: [],
   enemies: [],
   effects: [],
+  effectPool: Array.from({ length: EFFECT_POOL_SIZE }, createEffectRecord),
   numbers: [],
+  damageStats: {},
   projectiles: [],
   terrain: [],
   waveClears: 0,
@@ -159,15 +436,60 @@ const runtime = {
   flash: 0,
   flashColor: "#fff4cf",
   dialogueTimer: 0,
+  combo: 0,
+  comboTimer: 0,
+  battleResult: null,
+  nextStageAfterSettlement: null,
+  tutorialFocus: null,
+  timers: new Set(),
   panel: null,
+  hudCache: Object.create(null),
+  hudTimerId: 0,
+  persistTimerId: 0,
+  rafId: 0,
+  backgrounded: false,
   heroFilter: "all",
+  heroSort: save.heroSort || "power",
   selectedHero: null,
   pendingOffline: null,
   activeStage: save.stage,
   log: ["義軍於涿郡整軍出發。"],
   audio: null,
+  ambientTimerId: 0,
   renderDelta: 1 / 60
 };
+
+function takeEffectRecord() {
+  return runtime.effectPool.pop() || createEffectRecord();
+}
+
+function releaseEffectRecord(effect) {
+  effect.type = "";
+  effect.x = 0;
+  effect.y = 0;
+  effect.color = "#fff";
+  effect.life = 0;
+  effect.maxLife = 0;
+  effect.radius = 0;
+  effect.angle = 0;
+  effect.scale = 1;
+  effect.facing = 1;
+  if (runtime.effectPool.length < EFFECT_POOL_SIZE) runtime.effectPool.push(effect);
+}
+
+function clearEffects() {
+  while (runtime.effects.length) releaseEffectRecord(runtime.effects.pop());
+}
+
+function recycleExpiredEffects() {
+  for (let index = runtime.effects.length - 1; index >= 0; index -= 1) {
+    const effect = runtime.effects[index];
+    if (effect.life > 0) continue;
+    const last = runtime.effects.pop();
+    if (last !== effect) runtime.effects[index] = last;
+    releaseEffectRecord(effect);
+  }
+}
 
 function persist() {
   save.lastSeen = Date.now();
@@ -200,11 +522,14 @@ function paperDollClasses(heroId) {
 }
 
 function heroEquipmentStats(heroId) {
-  return PAPER_DOLL_SLOTS.reduce((stats, slot) => {
+  const stats = PAPER_DOLL_SLOTS.reduce((result, slot) => {
     const item = paperDollItem(heroId, slot.id);
-    for (const [key, value] of Object.entries(item?.stats || {})) stats[key] = (stats[key] || 0) + value;
-    return stats;
+    for (const [key, value] of Object.entries(item?.stats || {})) result[key] = (result[key] || 0) + value;
+    return result;
   }, { atk: 0, hp: 0, def: 0, speed: 0, range: 0 });
+  const refineLevel = Number(save.equipmentRefine?.[heroId] || 0);
+  if (refineLevel > 0) for (const key of Object.keys(stats)) stats[key] = Math.round(stats[key] * (1 + refineLevel * .08));
+  return stats;
 }
 
 function equipmentBonusLabel(heroId) {
@@ -260,8 +585,19 @@ function addLog(message) {
   runtime.log = runtime.log.slice(0, 16);
 }
 
+function startAmbientAudio() {
+  if (!save.sound || runtime.ambientTimerId) return;
+  runtime.ambientTimerId = window.setInterval(() => {
+    if (document.hidden || runtime.backgrounded || !save.sound) return;
+    const base = runtime.bossActive ? 92 : 138;
+    beep(base, .12, "triangle", .008);
+    scheduleGameTimer(() => beep(base * 1.5, .1, "sine", .006), 180);
+  }, 4200);
+}
+
 function beep(frequency = 280, duration = 0.045, type = "square", gain = 0.025) {
   if (!save.sound) return;
+  startAmbientAudio();
   try {
     runtime.audio ||= new (window.AudioContext || window.webkitAudioContext)();
     const oscillator = runtime.audio.createOscillator();

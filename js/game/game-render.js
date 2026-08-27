@@ -1,6 +1,42 @@
 /* Render: Canvas sprites, effects and frame loop */
 "use strict";
 
+const ASSETS = window.TaoyuanAssets || {
+  cache: new Map(),
+  load(path) {
+    if (!path) return Promise.resolve(null);
+    if (this.cache.has(path)) return Promise.resolve(this.cache.get(path));
+    const image = new Image();
+    this.cache.set(path, image);
+    return new Promise((resolve) => {
+      image.onload = () => resolve(image);
+      image.onerror = () => { this.cache.delete(path); resolve(null); };
+      image.src = path;
+    });
+  },
+  preload(paths = []) { return Promise.all(paths.map((path) => this.load(path))); },
+  get(path) { const image = this.cache.get(path); return image?.complete && image.naturalWidth ? image : null; }
+};
+window.TaoyuanAssets = ASSETS;
+
+const TERRAIN_TILE_BY_CHAPTER = [0, 1, 2, 3, 4, 6, 7, 2, 8, 14, 9, 10, 6, 13, 11, 12, 15, 14, 13, 10];
+const VFX_ASSET_BY_TYPE = { afterimage: 2, dust: 12, impact: 15, shockwave: 14, charge: 1, slash: 0, ring: 10, bolt: 4, status: 5, combo: 14, rally: 10, guard: 9, stun: 8, volley: 3, rune: 11, petal: 6, soul: 13, meteor: 7 };
+const BOSS_SPRITE_BY_GENERAL = { zhangjiao: "zhangjiao", simayi: "zhangjiao", dongzhuo: "dongzhuo", yuanshao: "dongzhuo", lvbu: "lvbu", menghuo: "menghuo", zhurong: "menghuo" };
+function terrainTileAsset(chapterIndex) {
+  const tileId = TERRAIN_TILE_BY_CHAPTER[chapterIndex % TERRAIN_TILE_BY_CHAPTER.length] ?? 0;
+  return ASSETS.get("assets/backgrounds/terrain-tile-" + tileId + "-v1.png");
+}
+function drawTerrainTileLayer(chapterIndex) {
+  const tile = terrainTileAsset(chapterIndex);
+  if (!tile) return;
+  ctx.save();
+  ctx.globalAlpha = 0.28;
+  for (let y = 0; y < 720; y += 96) {
+    for (let x = 0; x < 390; x += 96) ctx.drawImage(tile, x, y, 96, 96);
+  }
+  ctx.restore();
+}
+
 function drawPixelRect(x, y, width, height, color) {
   ctx.fillStyle = color;
   ctx.fillRect(Math.round(x), Math.round(y), Math.round(width), Math.round(height));
@@ -10,6 +46,7 @@ function drawBackground() {
   const chapter = chapterForStage();
   ctx.fillStyle = chapter.base;
   ctx.fillRect(0, 0, 390, 720);
+  drawTerrainTileLayer(Math.floor((activeStageNumber() - 1) / STAGES_PER_CHAPTER));
 
   const gradient = ctx.createLinearGradient(0, 80, 390, 610);
   gradient.addColorStop(0, "#d9d3b51a");
@@ -63,11 +100,81 @@ function drawBackground() {
   drawMapDecoration(31, 402, "rock");
   drawMapDecoration(354, 525, "flag");
 
+  drawChapterEnvironment(chapter);
+  drawWeatherOverlay();
+
   const vignette = ctx.createRadialGradient(195, 335, 120, 195, 335, 350);
   vignette.addColorStop(0, "transparent");
   vignette.addColorStop(1, "#12150f88");
   ctx.fillStyle = vignette;
   ctx.fillRect(0, 0, 390, 720);
+}
+
+function drawWeatherOverlay() {
+  const stage = activeStageNumber();
+  const weather = stage % 11 === 0 ? "snow" : stage % 5 === 0 ? "night" : stage % 3 === 0 ? "rain" : "clear";
+  if (weather === "clear") return;
+  ctx.save();
+  if (weather === "night") {
+    ctx.fillStyle = "#16203a55";
+    ctx.fillRect(0, 0, 390, 720);
+    ctx.fillStyle = "#d9e7ff";
+    for (let i = 0; i < 8; i += 1) drawPixelRect((i * 59 + 22) % 390, 110 + (i % 3) * 34, 2, 2, "#e8edc7");
+  } else {
+    ctx.globalAlpha = weather === "snow" ? .6 : .35;
+    ctx.strokeStyle = weather === "snow" ? "#e5f0ed" : "#9eb6c5";
+    ctx.lineWidth = weather === "snow" ? 2 : 1;
+    for (let i = 0; i < 28; i += 1) {
+      const x = (i * 47 + Math.floor(runtime.elapsed * (weather === "snow" ? 8 : 21))) % 410 - 10;
+      const y = (i * 31 + Math.floor(runtime.elapsed * (weather === "snow" ? 15 : 42))) % 610 + 90;
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      ctx.lineTo(x + (weather === "snow" ? 2 : -5), y + (weather === "snow" ? 2 : 12));
+      ctx.stroke();
+    }
+  }
+  ctx.restore();
+}
+
+function drawChapterEnvironment(chapter) {
+  const chapterIndex = Math.floor((activeStageNumber() - 1) / STAGES_PER_CHAPTER);
+  const pulse = (Math.sin(runtime.elapsed * 2.5) + 1) * .5;
+  ctx.save();
+  ctx.globalAlpha = .22;
+  if (chapterIndex === 1) {
+    ctx.fillStyle = "#415537";
+    for (let i = 0; i < 5; i += 1) drawPixelRect(12 + i * 83, 106 + (i % 2) * 10, 28, 9, "#4c633d");
+    ctx.fillStyle = "#a98f55";
+    for (let i = 0; i < 3; i += 1) drawPixelRect(40 + i * 137, 570 - i * 13, 48, 4, "#b7a56c");
+  } else if (chapterIndex === 2) {
+    ctx.fillStyle = "#4c5554";
+    for (let i = 0; i < 4; i += 1) drawPixelRect(20 + i * 110, 126 + (i % 2) * 9, 46, 8, "#596564");
+    ctx.fillStyle = "#252c2a";
+    for (let i = 0; i < 5; i += 1) drawPixelRect(7 + i * 78, 610 - (i % 2) * 11, 36, 10, "#303a35");
+  } else if (chapterIndex === 3) {
+    ctx.fillStyle = "#384b46";
+    for (let i = 0; i < 5; i += 1) drawPixelRect(4 + i * 93, 123 + (i % 3) * 8, 54, 6, "#405e57");
+    ctx.fillStyle = "#9b7c4c";
+    for (let i = 0; i < 6; i += 1) drawPixelRect(18 + i * 67, 590 - (i % 2) * 12, 26, 3, "#b29660");
+  } else if (chapterIndex === 4) {
+    ctx.fillStyle = "#e7e5cc";
+    for (let i = 0; i < 8; i += 1) drawPixelRect(12 + i * 51, 98 + (i % 3) * 28, 4, 4, "#f4f3dc");
+    ctx.fillStyle = "#71818a";
+    for (let i = 0; i < 4; i += 1) drawPixelRect(9 + i * 121, 156 + (i % 2) * 17, 55, 5, "#81949a");
+  } else if (chapterIndex >= 5) {
+    ctx.fillStyle = "#b6a26b";
+    for (let i = 0; i < 7; i += 1) drawPixelRect(16 + i * 57, 98 + (i % 4) * 24, 2, 13, "#d5c17b");
+    ctx.fillStyle = "#5e3930";
+    for (let i = 0; i < 3; i += 1) drawPixelRect(15 + i * 153, 155 + i * 13, 48, 5, "#7d4435");
+  }
+  ctx.globalAlpha = .18 + pulse * .08;
+  ctx.fillStyle = chapterIndex >= 5 ? "#dfad52" : chapterIndex === 4 ? "#d9f1f0" : "#c2a873";
+  for (let i = 0; i < 9; i += 1) {
+    const x = (i * 71 + Math.floor(runtime.elapsed * (chapterIndex >= 5 ? 18 : 9))) % 390;
+    const y = 95 + ((i * 83 + Math.floor(runtime.elapsed * 7)) % 500);
+    drawPixelRect(x, y, chapterIndex === 4 ? 2 : 3, chapterIndex === 4 ? 5 : 2, ctx.fillStyle);
+  }
+  ctx.restore();
 }
 
 function drawMapDecoration(x, y, type) {
@@ -100,8 +207,11 @@ function drawHealthBar(unit, visualX = unit.x + unit.motionX + unit.kickX, visua
   // remain below the feet/mount baseline and never cover the paper-doll layers.
   const y = boss ? Math.round(visualY - 54 * unit.scale) : Math.round(visualY + 8 * unit.scale);
   drawPixelRect(x - 1, y - 1, width + 2, 6, "#1a1714");
+  const hpRatio = clamp(unit.hp / unit.maxHp, 0, 1);
+  const lagRatio = clamp(Number.isFinite(unit.hpLag) ? unit.hpLag / unit.maxHp : hpRatio, hpRatio, 1);
   drawPixelRect(x, y, width, 4, "#6d1d1b");
-  drawPixelRect(x, y, Math.ceil(width * clamp(unit.hp / unit.maxHp, 0, 1)), 4, boss ? "#d7a63b" : "#55a960");
+  if (lagRatio > hpRatio) drawPixelRect(x, y, Math.ceil(width * lagRatio), 4, "#fff1cf");
+  drawPixelRect(x, y, Math.ceil(width * hpRatio), 4, boss ? "#d7a63b" : "#55a960");
 }
 
 function drawSkillEnergyBar(unit, visualX, visualY) {
@@ -134,6 +244,13 @@ function drawWeapon(unit, color) {
   ctx.translate(7, -17);
   ctx.rotate(unit.weaponSwing);
   ctx.translate(-7, 17);
+  const weaponAssetId = { twin: "twin", guandao: "guandao", serpent: "serpent", lance: "lance", bow: "bow", fan: "fan", rings: "rings", halberd: "halberd" }[equippedWeapon];
+  const weaponImage = weaponAssetId ? ASSETS.get("assets/characters/equipment-weapon-" + weaponAssetId + "-v1.png") : null;
+  if (weaponImage) {
+    ctx.drawImage(weaponImage, -15, -46, 40, 40);
+    ctx.restore();
+    return;
+  }
   ctx.strokeStyle = "#30291f";
   ctx.lineCap = "square";
   ctx.lineJoin = "miter";
@@ -448,7 +565,18 @@ function drawDetailedMount(mount, unit, heroId, walkCycle) {
 }
 
 function drawMountOrFeet(unit, heroId, walkCycle, mountId = "") {
-  const mounted = (unit.role === "騎兵" || unit.type === "boss") && mountId !== "foot";
+  const mounted = (unit.role === "\u9a0e\u5175" || unit.type === "boss") && mountId !== "foot";
+  const resolvedMountId = mountId || (mounted ? "grey" : "foot");
+  const mountImage = ASSETS.get("assets/characters/mount-" + resolvedMountId + "-v1.png");
+  if (mountImage) {
+    const stride = unit.moving ? Math.round(walkCycle * 2) : 0;
+    ctx.save();
+    ctx.translate(stride, 0);
+    ctx.drawImage(mountImage, -24, -31, 48, 32);
+    ctx.restore();
+    if (mounted) drawMountVfx(mountVisualDefinition(unit, heroId, resolvedMountId), unit, walkCycle);
+    return;
+  }
   if (mounted) {
     const mount = mountVisualDefinition(unit, heroId, mountId);
     drawDetailedMount(mount, unit, heroId, walkCycle);
@@ -1087,6 +1215,45 @@ function drawAccessory(heroId, accessoryId, idleCycle) {
 }
 
 function drawEnemyBody(unit, body, accent, idleCycle) {
+  if (unit.type === "boss") {
+    const bossId = unit.enemyGeneralId;
+    if (bossId === "zhangjiao" || bossId === "simayi") {
+      drawPixelRect(-13, -30, 26, 24, bossId === "zhangjiao" ? "#695081" : "#36384f");
+      drawPixelRect(-17, -24, 6, 18, "#9a78a4");
+      drawPixelRect(11, -24, 6, 18, "#9a78a4");
+      drawPixelRect(-10, -46, 20, 8, "#d8c06c");
+      drawPixelRect(-8, -54, 16, 9, "#816aa2");
+      drawPixelRect(14, -58, 3, 31, "#4b352b");
+      drawPixelRect(10, -60, 12, 5, "#e0b84d");
+    } else if (bossId === "dongzhuo" || bossId === "yuanshao") {
+      drawPixelRect(-17, -31, 34, 27, "#332d2e");
+      drawPixelRect(-21, -25, 7, 20, "#6e5045");
+      drawPixelRect(14, -25, 7, 20, "#6e5045");
+      drawPixelRect(-14, -35, 28, 8, "#a47a4d");
+      drawPixelRect(-13, -50, 26, 14, "#a97e58");
+      drawPixelRect(-17, -56, 34, 8, "#262126");
+      drawPixelRect(-21, -51, 5, 14, "#e1bc61");
+      drawPixelRect(16, -51, 5, 14, "#e1bc61");
+    } else if (bossId === "lvbu") {
+      drawPixelRect(-14, -31, 28, 25, "#8f252c");
+      drawPixelRect(-19, -26, 7, 20, "#d1a33c");
+      drawPixelRect(12, -26, 7, 20, "#d1a33c");
+      drawPixelRect(-12, -48, 24, 12, "#c9825b");
+      drawPixelRect(-17, -59, 9, 22, "#be3335");
+      drawPixelRect(8, -59, 9, 22, "#be3335");
+      drawPixelRect(-5, -62, 4, 18, "#f2c95d");
+      drawPixelRect(1, -65, 4, 21, "#f2c95d");
+    } else if (bossId === "menghuo" || bossId === "zhurong") {
+      drawPixelRect(-16, -29, 32, 26, bossId === "menghuo" ? "#4e6b50" : "#9e473d");
+      drawPixelRect(-21, -24, 7, 18, "#d49b52");
+      drawPixelRect(14, -24, 7, 18, "#d49b52");
+      drawPixelRect(-13, -50, 26, 18, "#6e4b34");
+      drawPixelRect(-20, -57, 10, 9, "#a87c4f");
+      drawPixelRect(10, -57, 10, 9, "#a87c4f");
+      drawPixelRect(-16, -43, 32, 5, "#e3c068");
+    }
+    return;
+  }
   drawPixelRect(-10, -27, 20, 19, body);
   drawPixelRect(-13, -22, 5, 16, accent);
   drawPixelRect(8, -22, 5, 16, accent);
@@ -1100,6 +1267,23 @@ function drawEnemyBody(unit, body, accent, idleCycle) {
     drawPixelRect(-12, -48, 5, 11, "#d8bd72");
     drawPixelRect(7, -48, 5, 11, "#d8bd72");
   }
+}
+
+function drawStatusBadges(unit, x, y) {
+  const statuses = (unit.statuses || []).filter((status) => status.duration > 0);
+  if (!statuses.length) return;
+  const colors = { burn: "#ef7a40", slow: "#81c6d6", stun: "#f5d05a", mark: "#e875ac", fragile: "#d29f3a", guard: "#9fc6e8", haste: "#7be0a5", silence: "#9d8eaa", ward: "#d7b84f" };
+  ctx.save();
+  ctx.textAlign = "center";
+  ctx.font = "700 8px ui-monospace, Consolas, monospace";
+  statuses.slice(0, 3).forEach((status, index) => {
+    const px = x - 12 + index * 12;
+    ctx.fillStyle = colors[status.type] || "#ddd";
+    ctx.fillRect(px - 4, y - 69, 8, 8);
+    ctx.fillStyle = "#1b1712";
+    ctx.fillText(status.type.slice(0, 1).toUpperCase(), px, y - 62);
+  });
+  ctx.restore();
 }
 
 function drawUnit(unit) {
@@ -1144,9 +1328,15 @@ function drawUnit(unit) {
 
   const body = unit.team === "ally" ? unit.hero.color : unit.color;
   const accent = unit.team === "ally" ? unit.hero.accent : unit.accent;
-  drawMountOrFeet(unit, visualId, walkCycle, loadout?.mount);
+  const spritePromise = unit.team === "ally" ? ASSETS.get(unit.hero.combatSprite) : null;
+  const bossSpriteId = unit.type === "boss" ? BOSS_SPRITE_BY_GENERAL[unit.enemyGeneralId] : null;
+  const bossSprite = bossSpriteId ? ASSETS.get("assets/characters/boss-" + bossSpriteId + "-v1.png") : null;
+  if (!(unit.type === "boss" && bossSprite)) drawMountOrFeet(unit, visualId, walkCycle, loadout?.mount);
 
   if (unit.team === "ally") {
+    const spriteImage = spritePromise;
+    if (spriteImage) ctx.drawImage(spriteImage, -16, -38, 32, 38);
+    else {
     drawHeroBack(visualId, accent, unit.moving ? walkCycle : 0, idleCycle);
     drawHeroBody(visualId, body, accent);
     drawArmorOverlay(loadout?.armor, idleCycle);
@@ -1154,8 +1344,10 @@ function drawUnit(unit) {
     drawHeroHead(visualId, idleCycle);
     drawHeroDetails(visualId, loadout?.armor, idleCycle, unit.moving ? walkCycle : 0);
     drawCompactHeroDetails(visualId, body, accent, loadout?.armor, loadout?.accessory, idleCycle, unit.scale);
+    }
   } else {
-    drawEnemyBody(unit, body, accent, idleCycle);
+    if (bossSprite) ctx.drawImage(bossSprite, -32, -70, 64, 72);
+    else drawEnemyBody(unit, body, accent, idleCycle);
     drawEnemyDetails(unit, idleCycle);
   }
   if (unit.hitFlash > 0) {
@@ -1169,14 +1361,33 @@ function drawUnit(unit) {
     ctx.globalAlpha = 1;
     ctx.globalCompositeOperation = "source-over";
   }
-  drawWeapon(unit, accent);
+  if (!(unit.type === "boss" && bossSprite)) drawWeapon(unit, accent);
   ctx.restore();
   if (!unit.dead) {
     const barY = unit.renderY + bob + unit.kickY;
     drawHealthBar(unit, unit.renderX + unit.kickX, barY);
     drawSkillEnergyBar(unit, unit.renderX + unit.kickX, barY);
+    drawStatusBadges(unit, unit.renderX + unit.kickX, barY);
   }
 }
+
+
+function preloadConfiguredAssets() {
+  const paths = HEROES.filter((hero) => hero.portrait || hero.combatSprite).reduce((all, hero) => {
+    if (hero.portrait) all.push(hero.portrait);
+    if (hero.combatSprite) all.push(hero.combatSprite);
+    return all;
+  }, []);
+  const mountIds = ["foot", "grey", "redhare", "jadelion", "whitehorse", "blackhorse", "war-elephant", "cloud-deer", "hex-mark", "thunder-horse", "armored-rhino", "crimson-deer", "flying-horse", "black-panther"];
+  const mountPaths = mountIds.map((id) => "assets/characters/mount-" + id + "-v1.png");
+  const weaponIds = ["twin", "guandao", "serpent", "lance", "bow", "fan", "rings", "halberd"];
+  const weaponPaths = weaponIds.map((id) => "assets/characters/equipment-weapon-" + id + "-v1.png");
+  const terrainPaths = Array.from({ length: 16 }, (_, index) => "assets/backgrounds/terrain-tile-" + index + "-v1.png");
+  const vfxPaths = Array.from({ length: 16 }, (_, index) => "assets/vfx/vfx-" + index + "-v1.png");
+  const bossPaths = ["zhangjiao", "dongzhuo", "lvbu", "menghuo"].map((id) => "assets/characters/boss-" + id + "-v1.png");
+  ASSETS.preload([...paths, ...mountPaths, ...weaponPaths, ...terrainPaths, ...vfxPaths, ...bossPaths]);
+}
+preloadConfiguredAssets();
 
 function drawEffects() {
   ctx.save();
@@ -1184,6 +1395,18 @@ function drawEffects() {
   for (const effect of runtime.effects) {
     const progress = 1 - effect.life / effect.maxLife;
     const alpha = Math.sin(progress * Math.PI);
+    const assetIndex = VFX_ASSET_BY_TYPE[effect.type];
+    const vfxImage = assetIndex === undefined ? null : ASSETS.get("assets/vfx/vfx-" + assetIndex + "-v1.png");
+    if (vfxImage) {
+      ctx.save();
+      ctx.globalAlpha = alpha * (effect.type === "status" ? 0.72 : 0.9);
+      ctx.translate(effect.x, effect.y);
+      ctx.rotate(effect.angle || 0);
+      const vfxScale = Math.max(0.45, effect.scale || 1);
+      ctx.drawImage(vfxImage, -32 * vfxScale, -32 * vfxScale, 64 * vfxScale, 64 * vfxScale);
+      ctx.restore();
+      continue;
+    }
     ctx.globalAlpha = alpha;
     ctx.strokeStyle = effect.color;
     ctx.fillStyle = effect.color;
@@ -1250,6 +1473,85 @@ function drawEffects() {
       ctx.lineTo(effect.x + 6, effect.y - 49);
       ctx.lineTo(effect.x - 4, effect.y - 27);
       ctx.lineTo(effect.x + 8, effect.y - 2);
+      ctx.stroke();
+    } else if (effect.type === "status") {
+      ctx.beginPath();
+      ctx.arc(effect.x, effect.y, effect.radius * (.55 + progress * .45), 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.fillRect(effect.x - 2, effect.y - 2, 4, 4);
+    } else if (effect.type === "combo") {
+      ctx.save();
+      ctx.translate(effect.x, effect.y - progress * 22);
+      ctx.font = "900 " + Math.round(18 + progress * 8) + "px ui-monospace, Consolas, monospace";
+      ctx.textAlign = "center";
+      ctx.strokeStyle = "#382313";
+      ctx.lineWidth = 4;
+      ctx.strokeText("COMBO", 0, 0);
+      ctx.fillStyle = effect.color;
+      ctx.fillText("COMBO", 0, 0);
+      ctx.restore();
+    } else if (effect.type === "rally") {
+      for (let i = 0; i < 5; i += 1) {
+        const angle = progress * 4 + i * Math.PI * 2 / 5;
+        const radius = effect.radius * (.35 + progress * .45);
+        ctx.fillRect(effect.x + Math.cos(angle) * radius - 3, effect.y + Math.sin(angle) * radius - 3, 6, 6);
+      }
+      ctx.beginPath();
+      ctx.arc(effect.x, effect.y, effect.radius * progress, 0, Math.PI * 2);
+      ctx.stroke();
+    } else if (effect.type === "guard") {
+      ctx.save();
+      ctx.translate(effect.x, effect.y);
+      ctx.rotate(progress * .8);
+      ctx.strokeRect(-effect.radius * .55, -effect.radius * .55, effect.radius * 1.1, effect.radius * 1.1);
+      ctx.strokeRect(-effect.radius * .38, -effect.radius * .38, effect.radius * .76, effect.radius * .76);
+      ctx.restore();
+    } else if (effect.type === "stun") {
+      for (let i = 0; i < 3; i += 1) {
+        const angle = i * Math.PI * 2 / 3 + progress * 4;
+        ctx.fillRect(effect.x + Math.cos(angle) * effect.radius * .55 - 3, effect.y + Math.sin(angle) * effect.radius * .22 - 3, 6, 6);
+      }
+    } else if (effect.type === "volley") {
+      for (let i = 0; i < 7; i += 1) {
+        const x = effect.x - effect.radius * .65 + i * effect.radius * .2;
+        const y = effect.y - progress * effect.radius * .35 + Math.sin(i * 2) * 6;
+        ctx.fillRect(x, y, 3, 13);
+      }
+    } else if (effect.type === "rune") {
+      ctx.beginPath();
+      ctx.arc(effect.x, effect.y, effect.radius * (.35 + progress * .65), 0, Math.PI * 2);
+      ctx.stroke();
+      for (let i = 0; i < 8; i += 1) {
+        const angle = i * Math.PI / 4;
+        ctx.fillRect(effect.x + Math.cos(angle) * effect.radius * progress - 2, effect.y + Math.sin(angle) * effect.radius * progress - 2, 4, 4);
+      }
+    } else if (effect.type === "petal") {
+      ctx.save();
+      ctx.translate(effect.x, effect.y - progress * 12);
+      ctx.rotate(effect.angle + progress * 2);
+      for (let i = 0; i < 5; i += 1) {
+        ctx.rotate(Math.PI * 2 / 5);
+        ctx.fillRect(effect.radius * progress * .25, -3, 9, 5);
+      }
+      ctx.restore();
+    } else if (effect.type === "soul") {
+      ctx.save();
+      ctx.translate(effect.x, effect.y - progress * 34);
+      ctx.globalAlpha = alpha * .75;
+      ctx.fillRect(-4, -8, 8, 13);
+      ctx.fillRect(-7, -3, 14, 4);
+      ctx.fillRect(-2, -13, 4, 5);
+      ctx.restore();
+    } else if (effect.type === "meteor") {
+      ctx.save();
+      ctx.translate(effect.x + progress * 22, effect.y - effect.radius * (.8 - progress * .7));
+      ctx.rotate(-.68);
+      ctx.fillRect(-8, -8, 16, 16);
+      ctx.fillRect(-22, 0, 14, 4);
+      ctx.fillRect(-35, 7, 11, 3);
+      ctx.restore();
+      ctx.beginPath();
+      ctx.ellipse(effect.x, effect.y, effect.radius * progress, effect.radius * progress * .35, 0, 0, Math.PI * 2);
       ctx.stroke();
     } else {
       const particles = effect.type === "burst" ? 12 : 6;
@@ -1334,9 +1636,23 @@ function render() {
 }
 
 function gameLoop(time) {
+  if (runtime.backgrounded || document.hidden) {
+    runtime.rafId = 0;
+    return;
+  }
   const delta = (time - runtime.lastTime) / 1000;
   runtime.lastTime = time;
-  updateGame(delta);
-  render();
-  requestAnimationFrame(gameLoop);
+  try {
+    updateGame(delta);
+    const shouldRender = save.renderQuality !== "low" || Math.floor(time / 90) % 2 === 0;
+    if (shouldRender) render();
+  } catch (error) {
+    runtime.backgrounded = true;
+    runtime.rafId = 0;
+    console.error("Battle loop paused after runtime error", error);
+    if (typeof stopRuntimeTimers === "function") stopRuntimeTimers();
+    if (typeof toast === "function") toast("戰場暫停，請重新整理頁面");
+    return;
+  }
+  runtime.rafId = requestAnimationFrame(gameLoop);
 }

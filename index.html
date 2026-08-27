@@ -10,6 +10,7 @@
 </head>
 <body>
   <main id="gameApp" class="game-app" aria-label="三國：群英再起遊戲">
+    <div id="loadingScreen" class="loading-screen" role="status" aria-live="polite"><span class="loading-seal">&#x6843;</span><strong>&#x4e09;&#x570b;&#xff1a;&#x7fa4;&#x82f1;&#x518d;&#x8d77;</strong><small>&#x6574;&#x8ecd;&#x4e2d;&#x2026;</small></div>
     <section id="battleScreen" class="battle-screen">
       <canvas id="battleCanvas" width="390" height="720" aria-label="像素武將自動戰鬥場景"></canvas>
 
@@ -26,13 +27,20 @@
         <div class="battle-meta">
           <button id="autoButton" class="metal-button active" type="button" aria-pressed="true">自動戰鬥</button>
           <button id="speedButton" class="speed-button" type="button" aria-label="切換戰鬥速度" aria-valuetext="戰鬥速度 ×1">×1</button>
-          <p class="stage-meta"><span id="chapterLabel">&#x95dc;&#x5361;</span><b id="stageLabel">1-1</b><strong id="stageName">&#x6843;&#x5712;&#x521d;&#x9663; 1</strong></p>
+          <p class="stage-meta"><span id="chapterLabel">&#x95dc;&#x5361;</span><b id="stageLabel">1-1</b><strong id="stageName">&#x6843;&#x5712;&#x521d;&#x9663; 1</strong><small id="stagePowerLabel"></small></p>
         </div>
       </header>
 
       <aside class="right-rail" aria-label="快捷功能">
         <button type="button" data-panel="settings"><i class="icon-gear"></i><span>設定</span></button>
         <button type="button" data-panel="mail"><i class="icon-mail"></i><span>軍件</span><b class="alert-dot" id="mailDot"></b></button>
+        <button type="button" data-panel="daily"><i class="icon-calendar"></i><span>&#x65e5;&#x52d9;</span><b class="alert-dot" id="dailyDot"></b></button>
+        <button type="button" data-panel="events"><i class="icon-flag"></i><span>&#x6d3b;&#x52d5;</span><b class="alert-dot" id="eventDot"></b></button>
+        <button type="button" data-panel="shop"><i class="icon-shop"></i><span>&#x884c;&#x5546;</span></button>
+        <button type="button" data-panel="arena"><i class="icon-arena"></i><span>&#x6f14;&#x6b66;</span></button>
+        <button type="button" data-panel="collection"><i class="icon-book"></i><span>&#x5716;&#x9451;</span></button>
+        <button type="button" data-panel="tower"><i class="icon-tower"></i><span>&#x554f;&#x5929;</span></button>
+        <button type="button" data-panel="dungeon"><i class="icon-dungeon"></i><span>&#x526f;&#x672c;</span></button>
         <button type="button" data-panel="rank"><i class="icon-rank"></i><span>排行</span></button>
         <button type="button" data-panel="achievement"><i class="icon-medal"></i><span>成就</span></button>
         <button type="button" data-panel="record"><i class="icon-scroll"></i><span>戰報</span></button>
@@ -41,6 +49,7 @@
       <div class="stage-stamp" aria-live="polite">
         <span id="waveLabel">&#x7b2c; 1 &#x6ce2;</span>
         <strong id="enemyCount">&#x6575;&#x8ecd; 4</strong>
+        <span id="comboMeter" class="combo-meter" hidden>&#x9023;&#x64ca; <b id="comboValue">0</b></span>
       </div>
 
       <section id="enemyPreview" class="enemy-preview" aria-live="polite" aria-label="&#x672c;&#x6ce2;&#x6575;&#x5c07;">
@@ -63,6 +72,7 @@
           <span><i class="res-coin"></i><b id="goldValue">860</b></span>
           <span><i class="res-food"></i><b id="foodValue">320</b></span>
           <span><i class="res-jade"></i><b id="jadeValue">12</b></span>
+          <span><i class="res-shard"></i><b id="shardValue">24</b></span>
           <button id="bossButton" type="button"><small>關卡首領</small><strong id="bossProgress">0 / 4</strong></button>
         </div>
 
@@ -99,6 +109,32 @@
           <span><i class="res-food"></i><b id="offlineFood">0</b> 糧草</span>
         </div>
         <button id="claimOffline" class="seal-button" type="button">收下軍資</button>
+        <button id="doubleOffline" class="stone-button" type="button">&#x770b;&#x5ee3;&#x544a;&#xff0c;&#x8ecd;&#x8cc7;&#x7ffb;&#x500d;</button>
+      </section>
+    </div>
+
+    <div id="settlementModal" class="modal-backdrop" hidden>
+      <section class="settlement-modal" role="dialog" aria-modal="true" aria-labelledby="settlementTitle">
+        <span class="settlement-ribbon">BATTLE REPORT</span>
+        <h2 id="settlementTitle">勝利</h2>
+        <p id="settlementSubtitle"></p>
+        <div id="settlementLoot" class="settlement-loot"></div>
+        <div id="settlementStats" class="settlement-stats"></div>
+        <div id="settlementUnlock" class="settlement-unlock" hidden></div>
+        <div class="action-row"><button id="settlementPrimary" class="seal-button" type="button"></button><button id="settlementSecondary" class="stone-button" type="button"></button></div>
+      </section>
+    </div>
+
+    <div id="tutorialLayer" class="modal-backdrop" hidden>
+      <section class="tutorial-modal" role="dialog" aria-modal="true" aria-labelledby="tutorialTitle">
+        <span class="tutorial-mark">桃</span>
+        <p class="eyebrow">FIRST MARCH</p>
+        <h2 id="tutorialTitle"></h2>
+        <p id="tutorialBody"></p>
+        <label id="tutorialNameWrap" class="tutorial-name" hidden><span>&#x4e3b;&#x516c;</span><input id="tutorialName" maxlength="10" value="&#x7121;&#x540d;" autocomplete="nickname"></label>
+        <div class="tutorial-progress"><i id="tutorialProgressBar"></i></div>
+        <button id="tutorialNext" class="seal-button" type="button"></button>
+        <button id="tutorialSkip" class="text-button" type="button">跳過教學</button>
       </section>
     </div>
 
@@ -108,8 +144,11 @@
 
   <script src="js/admob-config.js"></script>
   <script src="js/admob.js"></script>
+  <script src="js/platform.js"></script>
+  <script src="js/iap.js"></script>
   <script src="data/game-data.js"></script>
-<script src="js/game/game-core.js"></script>
+  <script src="data/shop-data.js"></script>
+  <script src="js/game/game-core.js"></script>
   <script src="js/game/game-combat.js"></script>
   <script src="js/game/game-render.js"></script>
   <script src="js/game/game-ui.js"></script>

@@ -28,18 +28,18 @@ const STAGE_NAME_PREFIXES = [
 window.THREE_KINGDOMS_DATA = {
   enemyGenerals: ENEMY_GENERALS,
   heroes: [
-    { id: "liubei", name: "劉備", title: "仁德昭烈", avatar: "avatar-liubei", role: "步兵", color: "#e7e1c7", accent: "#4c9558", atk: 23, hp: 230, def: 12, speed: 24, range: 31, skill: "仁德回春", skillCooldown: 6, unlock: 0, rarity: 4, passive: "友軍受到治療時額外回復 4% 最大兵力" },
-    { id: "guanyu", name: "關羽", title: "武聖雲長", avatar: "avatar-guanyu", role: "騎兵", color: "#2b855b", accent: "#b6372c", atk: 34, hp: 265, def: 14, speed: 29, range: 35, skill: "青龍偃月", skillCooldown: 5.2, unlock: 0, rarity: 5, passive: "對 Boss 傷害提高 12%" },
-    { id: "zhangfei", name: "張飛", title: "萬夫莫敵", avatar: "avatar-zhangfei", role: "步兵", color: "#5f6770", accent: "#b54832", atk: 30, hp: 310, def: 18, speed: 22, range: 33, skill: "燕人怒吼", skillCooldown: 5.6, unlock: 0, rarity: 5, passive: "受到致命傷害時保留 1 兵力，每場一次" },
-    { id: "zhaoyun", name: "趙雲", title: "常勝子龍", avatar: "avatar-zhaoyun", role: "騎兵", color: "#4e82ba", accent: "#d8e5e7", atk: 31, hp: 238, def: 13, speed: 33, range: 37, skill: "七進七出", skillCooldown: 4.8, unlock: 0, rarity: 5, passive: "移動中攻擊速度提高 8%" },
-    { id: "huangzhong", name: "黃忠", title: "老當益壯", avatar: "avatar-huangzhong", role: "弓兵", color: "#8e7138", accent: "#d8bd62", atk: 35, hp: 190, def: 9, speed: 21, range: 142, skill: "百步穿楊", skillCooldown: 5.4, unlock: 2, rarity: 4, passive: "距離越遠，暴擊率最高提高 12%" },
-    { id: "sunshang", name: "孫尚香", title: "弓腰姬", avatar: "avatar-sunshang", role: "弓兵", color: "#d05b72", accent: "#f0bd60", atk: 33, hp: 185, def: 9, speed: 24, range: 138, skill: "流星連射", skillCooldown: 5, unlock: 3, rarity: 4, passive: "攻擊命中後有機率追加一支箭" },
-    { id: "caocao", name: "曹操", title: "魏武霸業", avatar: "avatar-caocao", role: "謀士", color: "#4a4b6c", accent: "#8d55ad", atk: 38, hp: 205, def: 10, speed: 22, range: 126, skill: "奸雄號令", skillCooldown: 6.2, unlock: 4, rarity: 5, passive: "全隊技能冷卻縮短 4%" },
-    { id: "xiahoudun", name: "夏侯惇", title: "獨目虎將", avatar: "avatar-xiahoudun", role: "騎兵", color: "#315988", accent: "#aeb8c7", atk: 36, hp: 280, def: 16, speed: 30, range: 35, skill: "拔矢啖睛", skillCooldown: 5.8, unlock: 5, rarity: 4, passive: "生命低於 40% 時防禦提高 20%" },
-    { id: "zhugeliang", name: "諸葛亮", title: "臥龍先生", avatar: "avatar-zhugeliang", role: "謀士", color: "#81a69d", accent: "#e6e0ce", atk: 42, hp: 195, def: 8, speed: 20, range: 154, skill: "八陣奇門", skillCooldown: 6.8, unlock: 6, rarity: 5, passive: "技能命中時使敵人攻速降低 10%" },
-    { id: "diaochan", name: "貂蟬", title: "閉月之姿", avatar: "avatar-diaochan", role: "謀士", color: "#9b5fba", accent: "#e875ac", atk: 39, hp: 178, def: 8, speed: 25, range: 148, skill: "傾城離間", skillCooldown: 5.9, unlock: 7, rarity: 5, passive: "對被技能標記的敵人傷害提高 15%" },
-    { id: "lubu", name: "呂布", title: "天下無雙", avatar: "avatar-lubu", role: "騎兵", color: "#9c2d31", accent: "#e1b34d", atk: 54, hp: 330, def: 17, speed: 35, range: 42, skill: "方天亂舞", skillCooldown: 7.2, unlock: 9, rarity: 5, passive: "單獨對 Boss 時攻擊提高 18%" },
-    { id: "locked", name: "未識名將", title: "尚待結識", avatar: "avatar-locked", role: "未知", color: "#555", accent: "#777", atk: 1, hp: 1, def: 1, speed: 1, range: 1, skill: "未知戰法", skillCooldown: 8, unlock: 12, rarity: 5, passive: "尚未解鎖" }
+    { id: "liubei", name: "劉備", title: "仁德昭烈", avatar: "avatar-liubei", portrait: "assets/characters/portrait-liubei-v1.png", combatSprite: "assets/characters/combat-body-liubei-v1.png", role: "步兵", color: "#e7e1c7", accent: "#4c9558", atk: 23, hp: 230, def: 12, speed: 24, range: 31, skill: "仁德回春", skillCooldown: 6, unlock: 0, rarity: 4, passive: "友軍受到治療時額外回復 4% 最大兵力" },
+    { id: "guanyu", name: "關羽", title: "武聖雲長", avatar: "avatar-guanyu", portrait: "assets/characters/portrait-guanyu-v1.png", combatSprite: "assets/characters/combat-body-guanyu-v1.png", role: "騎兵", color: "#2b855b", accent: "#b6372c", atk: 34, hp: 265, def: 14, speed: 29, range: 35, skill: "青龍偃月", skillCooldown: 5.2, unlock: 0, rarity: 5, passive: "對 Boss 傷害提高 12%" },
+    { id: "zhangfei", name: "張飛", title: "萬夫莫敵", avatar: "avatar-zhangfei", portrait: "assets/characters/portrait-zhangfei-v1.png", combatSprite: "assets/characters/combat-body-zhangfei-v1.png", role: "步兵", color: "#5f6770", accent: "#b54832", atk: 30, hp: 310, def: 18, speed: 22, range: 33, skill: "燕人怒吼", skillCooldown: 5.6, unlock: 0, rarity: 5, passive: "受到致命傷害時保留 1 兵力，每場一次" },
+    { id: "zhaoyun", name: "趙雲", title: "常勝子龍", avatar: "avatar-zhaoyun", portrait: "assets/characters/portrait-zhaoyun-v1.png", combatSprite: "assets/characters/combat-body-zhaoyun-v1.png", role: "騎兵", color: "#4e82ba", accent: "#d8e5e7", atk: 31, hp: 238, def: 13, speed: 33, range: 37, skill: "七進七出", skillCooldown: 4.8, unlock: 0, rarity: 5, passive: "移動中攻擊速度提高 8%" },
+    { id: "huangzhong", name: "黃忠", title: "老當益壯", avatar: "avatar-huangzhong", portrait: "assets/characters/portrait-huangzhong-v1.png", combatSprite: "assets/characters/combat-body-huangzhong-v1.png", role: "弓兵", color: "#8e7138", accent: "#d8bd62", atk: 35, hp: 190, def: 9, speed: 21, range: 142, skill: "百步穿楊", skillCooldown: 5.4, unlock: 2, rarity: 4, passive: "距離越遠，暴擊率最高提高 12%" },
+    { id: "sunshang", name: "孫尚香", title: "弓腰姬", avatar: "avatar-sunshang", portrait: "assets/characters/portrait-sunshang-v1.png", combatSprite: "assets/characters/combat-body-sunshang-v1.png", role: "弓兵", color: "#d05b72", accent: "#f0bd60", atk: 33, hp: 185, def: 9, speed: 24, range: 138, skill: "流星連射", skillCooldown: 5, unlock: 3, rarity: 4, passive: "攻擊命中後有機率追加一支箭" },
+    { id: "caocao", name: "曹操", title: "魏武霸業", avatar: "avatar-caocao", portrait: "assets/characters/portrait-caocao-v1.png", combatSprite: "assets/characters/combat-body-caocao-v1.png", role: "謀士", color: "#4a4b6c", accent: "#8d55ad", atk: 38, hp: 205, def: 10, speed: 22, range: 126, skill: "奸雄號令", skillCooldown: 6.2, unlock: 4, rarity: 5, passive: "全隊技能冷卻縮短 4%" },
+    { id: "xiahoudun", name: "夏侯惇", title: "獨目虎將", avatar: "avatar-xiahoudun", portrait: "assets/characters/portrait-xiahoudun-v1.png", combatSprite: "assets/characters/combat-body-xiahoudun-v1.png", role: "騎兵", color: "#315988", accent: "#aeb8c7", atk: 36, hp: 280, def: 16, speed: 30, range: 35, skill: "拔矢啖睛", skillCooldown: 5.8, unlock: 5, rarity: 4, passive: "生命低於 40% 時防禦提高 20%" },
+    { id: "zhugeliang", name: "諸葛亮", title: "臥龍先生", avatar: "avatar-zhugeliang", portrait: "assets/characters/portrait-zhugeliang-v1.png", combatSprite: "assets/characters/combat-body-zhugeliang-v1.png", role: "謀士", color: "#81a69d", accent: "#e6e0ce", atk: 42, hp: 195, def: 8, speed: 20, range: 154, skill: "八陣奇門", skillCooldown: 6.8, unlock: 6, rarity: 5, passive: "技能命中時使敵人攻速降低 10%" },
+    { id: "diaochan", name: "貂蟬", title: "閉月之姿", avatar: "avatar-diaochan", portrait: "assets/characters/portrait-diaochan-v1.png", combatSprite: "assets/characters/combat-body-diaochan-v1.png", role: "謀士", color: "#9b5fba", accent: "#e875ac", atk: 39, hp: 178, def: 8, speed: 25, range: 148, skill: "傾城離間", skillCooldown: 5.9, unlock: 7, rarity: 5, passive: "對被技能標記的敵人傷害提高 15%" },
+    { id: "lubu", name: "呂布", title: "天下無雙", avatar: "avatar-lubu", portrait: "assets/characters/portrait-lubu-v1.png", combatSprite: "assets/characters/combat-body-lubu-v1.png", role: "騎兵", color: "#9c2d31", accent: "#e1b34d", atk: 54, hp: 330, def: 17, speed: 35, range: 42, skill: "方天亂舞", skillCooldown: 7.2, unlock: 9, rarity: 5, passive: "單獨對 Boss 時攻擊提高 18%" },
+    { id: "locked", name: "未識名將", title: "尚待結識", avatar: "avatar-locked", portrait: "assets/characters/portrait-locked-v1.png", combatSprite: "assets/characters/combat-body-locked-v1.png", role: "未知", color: "#555", accent: "#777", atk: 1, hp: 1, def: 1, speed: 1, range: 1, skill: "未知戰法", skillCooldown: 8, unlock: 12, rarity: 5, passive: "尚未解鎖" }
   ],
   paperDollSlots: [
     { id: "weapon", label: "武器", choices: [
@@ -162,7 +162,7 @@ const EXTRA_HERO_SPECS = [
 const baseHeroByVisual = (visual) => window.THREE_KINGDOMS_DATA.heroes.find((hero) => hero.id === visual) || window.THREE_KINGDOMS_DATA.heroes[0];
 const extraHeroes = EXTRA_HERO_SPECS.map((spec) => {
   const template = baseHeroByVisual(spec.visual);
-  return { ...template, ...spec, avatar: template.avatar };
+  return { ...template, ...spec, avatar: template.avatar, portrait: "assets/characters/portrait-" + spec.id + "-v1.png", portraitKey: spec.id, combatSprite: "assets/characters/combat-body-" + spec.id + "-v1.png" };
 });
 const lockedHeroIndex = window.THREE_KINGDOMS_DATA.heroes.findIndex((hero) => hero.id === "locked");
 window.THREE_KINGDOMS_DATA.heroes.splice(lockedHeroIndex < 0 ? window.THREE_KINGDOMS_DATA.heroes.length : lockedHeroIndex, 0, ...extraHeroes);
@@ -249,3 +249,118 @@ for (const [index, hero] of window.THREE_KINGDOMS_DATA.heroes.entries()) {
     };
   }
 }
+
+
+// Release-ready content contracts: combat, retention and platform fallbacks stay data-driven.
+window.THREE_KINGDOMS_DATA.skillSpecs = {
+  liubei: { tone: "heal", label: "\u4ec1\u5fb7\u56de\u5929", color: "#7be0a5" },
+  guanyu: { tone: "slash", label: "\u9752\u9f8d\u65a9", color: "#d7b84f" },
+  zhangfei: { tone: "stun", label: "\u9739\u9742\u6012\u5596", color: "#e9c05c" },
+  zhaoyun: { tone: "dash", label: "\u9f8d\u9a30\u7a81\u9673", color: "#75bceb" },
+  huangzhong: { tone: "sniper", label: "\u9ec3\u5fe0\u795e\u7bad", color: "#e7cb73" },
+  sunshang: { tone: "volley", label: "\u68a8\u82b1\u7bad\u96e8", color: "#ef8ca2" },
+  caocao: { tone: "rally", label: "\u9b4f\u6b66\u53f0", color: "#a98bd1" },
+  xiahoudun: { tone: "guard", label: "\u7368\u773c\u9435\u885b", color: "#8db5d2" },
+  zhugeliang: { tone: "thunder", label: "\u4e94\u96f7\u8fce\u5929", color: "#8ee4cf" },
+  diaochan: { tone: "charm", label: "\u9589\u6708\u82b1\u843d", color: "#e875ac" },
+  lubu: { tone: "meteor", label: "\u5929\u4e0b\u7121\u96d9", color: "#f06a4d" },
+  locked: { tone: "locked", label: "\u672a\u77e5\u6230\u6cd5", color: "#777" }
+};
+window.THREE_KINGDOMS_DATA.tutorialSteps = [
+  { id: "welcome", title: "\u6843\u5712\u96c6\u7d50", body: "\u4e09\u570b\u4e4b\u4e16\u98a8\u96f2\u518d\u8d77\uff0c\u8acb\u4e3b\u516c\u5e36\u9818\u4f17\u5c07\u91cd\u5efa\u6f22\u5ba4\u3002", action: "\u958b\u59cb\u5f81\u6230" },
+  { id: "battle", title: "\u81ea\u52d5\u5f81\u6230", body: "\u5c07\u9810\u8a2d\u9663\u5bb9\u5e36\u5165\u6230\u5834\uff0c\u9ede\u64ca\u6230\u5834\u5373\u53ef\u5f9e\u7b2c\u4e00\u6ce2\u958b\u59cb\u7d2f\u7a4d\u6230\u529b\u3002", action: "\u77e5\u9053\u4e86" },
+  { id: "skill", title: "\u6280\u80fd\u8207\u88ab\u52d5", body: "\u540d\u5c07\u6bcf\u5165\u6230 5 \u6b21\u653b\u64ca\u5f8c\u53ef\u91cb\u653e\u6280\u80fd\uff0c\u9663\u5bb9\u88ab\u52d5\u6703\u6539\u8b8a\u751f\u5b58\u8207\u8f38\u51fa\u3002", action: "\u7e7c\u7e8c" },
+  { id: "boss", title: "\u9996\u9818\u6230", body: "\u6e05\u6389 3 \u6ce2\u6575\u8ecd\u5f8c\u8fce\u6230\u9996\u9818\uff0c\u52dd\u5229\u53ef\u63a8\u9032\u95dc\u5361\u4e26\u89e3\u9396\u66f4\u591a\u5c07\u9818\u3002", action: "\u51fa\u767c" }
+];
+window.THREE_KINGDOMS_DATA.dailyTasks = [
+  { id: "daily-battle", name: "日常征戰", desc: "完成 3 波戰鬥", target: 3, reward: { gold: 180, food: 60 } },
+  { id: "daily-skill", name: "日常施法", desc: "釋放 2 次技能", target: 2, reward: { jade: 1, food: 35 } },
+  { id: "daily-upgrade", name: "日常整軍", desc: "升級 1 次將領", target: 1, reward: { gold: 260 } },
+  { id: "daily-claim", name: "日日簽到", desc: "完成今日簽到", target: 1, reward: { food: 100 } },
+  { id: "daily-mail", name: "關懷軍報", desc: "領取 1 封系統信件", target: 1, reward: { gold: 120 } },
+  { id: "daily-arena", name: "\u6f14\u6b66\u4e00\u5834", desc: "\u5b8c\u6210 1 \u6b21\u6f14\u6b66", target: 1, reward: { jade: 1, food: 80 } },
+  { id: "daily-dungeon", name: "\u65e5\u5e38\u526f\u672c", desc: "\u5b8c\u6210 1 \u6b21\u65e5\u5e38\u526f\u672c", target: 1, reward: { gold: 220, food: 100 } }
+]
+window.THREE_KINGDOMS_DATA.weeklyTasks = [
+  { id: "weekly-boss", name: "\u9996\u9818\u8ffd\u8e64", desc: "\u64ca\u6bba 5 \u540d\u9996\u9818", target: 5, reward: { jade: 8, gold: 900 } },
+  { id: "weekly-heroes", name: "\u7fa4\u82f1\u805a\u7fa9", desc: "\u89e3\u9396 3 \u540d\u540d\u5c07", target: 3, reward: { jade: 5, food: 500 } }
+];
+window.THREE_KINGDOMS_DATA.checkinRewards = [
+  { gold: 120 }, { food: 180 }, { jade: 2 }, { gold: 260 }, { food: 360 }, { jade: 5 }, { gold: 700, jade: 8 }
+];
+window.THREE_KINGDOMS_DATA.shopItems = [
+  { id: "jade-small", name: "玉璧小袋", desc: "獲得 玉璧 ×12", cost: { gold: 900 }, reward: { jade: 12 }, tone: "common" },
+  { id: "war-rations", name: "行軍糧草", desc: "獲得 糧草 ×700", cost: { jade: 2 }, reward: { food: 700 }, tone: "rare" },
+  { id: "hero-scroll", name: "名將訓練書", desc: "獲得 180 經驗", cost: { jade: 3 }, reward: { exp: 180 }, tone: "epic" },
+  { id: "hero-shards", name: "\u540d\u5c07\u788e\u7247\u5323", desc: "\u7372\u5f97 \u540d\u5c07\u788e\u7247 \u00d718", cost: { jade: 2 }, reward: { shards: 18 }, tone: "epic" },
+  { id: "starter-pack", name: "元戰備禮包", desc: "玉璧 ×60 + 金幣 ×1200", cost: { jade: 0 }, reward: { jade: 60, gold: 1200 }, tone: "legend", productId: "sku_starter_pack", requiresNativePurchase: true },
+  { id: "monthly-pass", name: "月卡軍令", desc: "每日軍資加碼 30 天", cost: { jade: 0 }, reward: { jade: 20, gold: 900 }, tone: "legend", productId: "sku_monthly_pass", requiresNativePurchase: true },
+  { id: "no-ads", name: "永久無廣告", desc: "移除獎勵廣告限制", cost: { jade: 0 }, reward: { adFree: true }, tone: "legend", productId: "sku_no_ads_permanent", requiresNativePurchase: true }
+]
+window.THREE_KINGDOMS_DATA.arenaOpponents = [
+  { id: "ghost-1", name: "\u9ec3\u5dfe\u65b0\u8ecd", power: 1800, reward: { gold: 320, jade: 1 } },
+  { id: "ghost-2", name: "\u897f\u6dbc\u9a0e\u5175", power: 2600, reward: { gold: 460, food: 120 } },
+  { id: "ghost-3", name: "\u6c34\u8ecd\u90fd\u7763", power: 3400, reward: { gold: 620, jade: 2 } },
+  { id: "ghost-4", name: "\u4e94\u6eaa\u86ee\u738b", power: 4300, reward: { food: 380, jade: 3 } }
+];
+window.THREE_KINGDOMS_DATA.storyBeats = [
+  { id: "peach-garden", stage: 1, speaker: "\u5289\u5099", text: "\u4eca\u65e5\u7d50\u7fa9\uff0c\u4ed6\u65e5\u5171\u5b88\u5c71\u6cb3\u3002" },
+  { id: "yellow-turban", stage: 4, speaker: "\u95dc\u7fbd", text: "\u9ec3\u5dfe\u96d6\u773e\uff0c\u95dc\u67d0\u4e00\u5200\u53ef\u65b7\u5176\u92d2\u3002" },
+  { id: "hulao", stage: 9, speaker: "\u5442\u5e03", text: "\u5929\u4e0b\u82f1\u96c4\uff0c\u53ef\u6709\u4eba\u6562\u8207\u6211\u4e00\u6230\uff1f" },
+  { id: "red-cliff", stage: 24, speaker: "\u8af8\u845b\u4eae", text: "\u6c5f\u6f6e\u5df2\u8d77\uff0c\u8acb\u4e3b\u516c\u501f\u98a8\u7834\u6575\u3002" }
+];
+
+// Local-first progression contracts. Online services can replace these adapters later without changing combat data.
+window.THREE_KINGDOMS_DATA.factionByHero = {
+  shu: ["liubei", "guanyu", "zhangfei", "zhaoyun", "huangzhong", "machao", "pangtong", "weiyan", "jiangwei", "guanping", "guanxing", "fazheng"],
+  wei: ["caocao", "xiahoudun", "dianwei", "xuhuang", "zhangliao", "zhanghe", "xunyu", "guojia", "yujin", "lejin", "caoren", "xiahouyuan", "yuanshao"],
+  wu: ["sunshang", "zhouyu", "lusu", "luxun", "ganning", "taishici", "zhuran", "panzhang", "huanggai", "handang", "chengpu", "daqiao", "xiaoqiao"],
+  qun: ["zhugeliang", "diaochan", "lubu", "simayi", "zhangbao", "zhangliang", "menghuo", "zhurong", "madai", "gongsunzan", "zhenji"]
+};
+window.THREE_KINGDOMS_DATA.factions = {
+  shu: { name: "\u8700\u6f22", color: "#4c9558", desc: "\u4ec1\u5fb7\u8207\u7fa9\u52c7\uff0c\u751f\u547d\u8207\u56de\u5fa9\u66f4\u7a69\u5b9a\u3002" },
+  wei: { name: "\u66f9\u9b4f", color: "#6f7fa9", desc: "\u8ecd\u7d00\u56b4\u660e\uff0c\u9632\u79a6\u8207\u9996\u9818\u6230\u66f4\u53ef\u9760\u3002" },
+  wu: { name: "\u6771\u5433", color: "#4f9a96", desc: "\u6c34\u706b\u5947\u8b00\uff0c\u6280\u80fd\u8207\u9060\u7a0b\u8f38\u51fa\u66f4\u5f37\u3002" },
+  qun: { name: "\u7fa4\u96c4", color: "#a16f8d", desc: "\u5404\u8def\u5947\u624d\uff0c\u9023\u64ca\u8207\u66b4\u64ca\u66f4\u9748\u6d3b\u3002" }
+};
+window.THREE_KINGDOMS_DATA.bonds = [
+  { id: "peach-oath", name: "\u6843\u5712\u7d50\u7fa9", heroes: ["liubei", "guanyu", "zhangfei"], kind: "atk", value: 0.08, desc: "\u5289\u95dc\u5f35\u540c\u968a\uff1a\u5168\u968a\u653b\u64ca +8%" },
+  { id: "wolong-phoenix", name: "\u81e5\u9f8d\u9cf3\u96db", heroes: ["zhugeliang", "pangtong"], kind: "cooldown", value: 0.05, desc: "\u8af8\u845b\u4eae\u8207\u9f90\u7d71\u540c\u968a\uff1a\u6280\u80fd\u51b7\u537b -5%" },
+  { id: "jiangdong-duo", name: "\u6c5f\u6771\u96d9\u59dd", heroes: ["daqiao", "xiaoqiao"], kind: "atk", value: 0.06, desc: "\u5927\u55ac\u8207\u5c0f\u55ac\u540c\u968a\uff1a\u6280\u80fd\u50b7\u5bb3 +6%" },
+  { id: "five-tigers", name: "\u4e94\u864e\u9918\u5a01", heroes: ["guanyu", "zhangfei", "zhaoyun", "huangzhong", "machao"], kind: "def", value: 0.06, desc: "\u96c6\u7d50\u4e09\u540d\u4ee5\u4e0a\u4e94\u864e\uff1a\u5168\u968a\u9632\u79a6 +6%" }
+];
+window.THREE_KINGDOMS_DATA.dailyDungeons = [
+  { id: "coin-vault", name: "\u9285\u96c0\u5bf6\u5eab", desc: "\u64ca\u9000\u5b88\u5eab\u8ecd\uff0c\u53d6\u5f97\u5927\u91cf\u9285\u9322\u3002", cost: 3, power: 2200, reward: { gold: 720, exp: 55 } },
+  { id: "grain-field", name: "\u8ecd\u7ce7\u5c6f\u7530", desc: "\u5b88\u4f4f\u7ce7\u9053\uff0c\u88dc\u8db3\u884c\u8ecd\u7ce7\u8349\u3002", cost: 3, power: 2700, reward: { food: 620, exp: 55 } },
+  { id: "weapon-yard", name: "\u795e\u5175\u8a66\u7149", desc: "\u6311\u6230\u935b\u5175\u5834\uff0c\u53d6\u5f97\u7389\u74a7\u8207\u7d93\u9a57\u3002", cost: 4, power: 3400, reward: { jade: 3, shards: 6, exp: 80 } }
+];
+window.THREE_KINGDOMS_DATA.treasures = [
+  { id: "peach-jade", name: "\u6843\u5712\u7389\u74a7", desc: "\u5168\u968a\u751f\u547d\u4e0a\u9650 +5%\u3002", kind: "hp", value: 0.05, unlock: 1 },
+  { id: "han-banner", name: "\u6f22\u5ba4\u65cc\u65d7", desc: "\u5168\u968a\u653b\u64ca +4%\u3002", kind: "atk", value: 0.04, unlock: 8 },
+  { id: "eight-trigrams", name: "\u516b\u5366\u9663\u5716", desc: "\u6280\u80fd\u51b7\u537b\u901f\u5ea6 +5%\u3002", kind: "cooldown", value: 0.05, unlock: 16 },
+  { id: "red-cliff-fire", name: "\u8d64\u58c1\u706b\u7a2e", desc: "\u5c0d Boss \u50b7\u5bb3 +6%\u3002", kind: "boss", value: 0.06, unlock: 24 },
+  { id: "unified-seal", name: "\u4e00\u7d71\u5175\u7b26", desc: "\u5168\u968a\u9632\u79a6 +6%\u3002", kind: "def", value: 0.06, unlock: 50 }
+];
+window.THREE_KINGDOMS_DATA.titles = [
+  { id: "volunteer", name: "\u7fa9\u52c7\u8ecd", desc: "\u521d\u5165\u6843\u5712", type: "stage", value: 1 },
+  { id: "yellow-turban-breaker", name: "\u7834\u5dfe\u5148\u92d2", desc: "\u901a\u904e\u7b2c 10 \u95dc", type: "stage", value: 10 },
+  { id: "hundred-battles", name: "\u767e\u6230\u8001\u5c07", desc: "\u901a\u904e\u7b2c 25 \u95dc", type: "stage", value: 25 },
+  { id: "lord-of-heroes", name: "\u7fa4\u82f1\u4e4b\u4e3b", desc: "\u7d50\u8b58 20 \u540d\u6b66\u5c07", type: "heroes", value: 20 },
+  { id: "arena-star", name: "\u6f14\u6b66\u7121\u96d9", desc: "\u6f14\u6b66\u7372\u52dd 4 \u5834", type: "arena", value: 4 }
+];
+window.THREE_KINGDOMS_DATA.tower = { name: "\u554f\u5929\u6a13", basePower: 2700, powerStep: 260, stamina: 4 };
+
+window.THREE_KINGDOMS_DATA.avatarFrames = [
+  { id: "plain", name: "\u7fa9\u52c7\u7d20\u6846", desc: "\u6843\u5712\u7fa9\u8ecd\u7684\u672c\u8272", color: "#c6a654", unlockStage: 0 },
+  { id: "shu-banner", name: "\u8700\u6f22\u65cc\u65d7", desc: "\u901a\u904e\u7b2c 10 \u95dc\u89e3\u9396", color: "#65a66d", unlockStage: 10 },
+  { id: "star-ribbon", name: "\u540d\u5c07\u91d1\u5e36", desc: "\u901a\u904e\u7b2c 25 \u95dc\u89e3\u9396", color: "#d4a746", unlockStage: 25 },
+  { id: "red-cliff", name: "\u8d64\u58c1\u706b\u5370", desc: "\u901a\u904e\u7b2c 50 \u95dc\u89e3\u9396", color: "#bb5143", unlockStage: 50 }
+];
+window.THREE_KINGDOMS_DATA.announcements = [
+  { id: "launch-notice", date: "2026-08-27", tag: "\u6025\u5831", title: "\u6843\u5712\u7fa9\u8ecd\u5df2\u96c6\u7d50", body: "\u65b0\u7248\u5df2\u958b\u653e\u554f\u5929\u6a13\u3001\u65e5\u5e38\u526f\u672c\u8207\u88dd\u5099\u7cbe\u7149\u3002" },
+  { id: "sprite-notice", date: "2026-08-27", tag: "\u7f8e\u8853", title: "\u540d\u5c07\u5716\u8b5c\u66f4\u65b0", body: "\u6230\u5834\u89d2\u8272\u3001Boss\u3001\u5750\u9a0e\u3001Tile \u8207 VFX \u5df2\u7d71\u4e00\u50cf\u7d20\u6e32\u67d3\u3002" }
+];
+window.THREE_KINGDOMS_DATA.localEvents = [
+  { id: "peach-oath-week", name: "\u6843\u5712\u7fa9\u52c7\u9031", desc: "\u672c\u9031\u7d2f\u7a4d 5 \u5834\u52dd\u5834\uff0c\u9818\u53d6\u7389\u74a7\u8207\u8ecd\u8cc7", kind: "wins", target: 5, reward: { jade: 6, gold: 500 }, period: "week" }
+];
+window.THREE_KINGDOMS_DATA.appVersion = "0.1.0-local";

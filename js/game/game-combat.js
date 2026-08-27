@@ -35,16 +35,162 @@ function tacticBonus(id) {
   return tactic.base + (save.tactics[id] - 1) * 0.025;
 }
 
+function livingUnits(units) {
+  return units.filter((unit) => !unit.dead);
+}
+
+function hasStatus(unit, type) {
+  return Boolean(unit?.statuses?.some((status) => status.type === type && status.duration > 0));
+}
+
+function statusValue(unit, type, fallback = 0) {
+  return unit?.statuses?.find((status) => status.type === type && status.duration > 0)?.value ?? fallback;
+}
+
+function applyStatus(target, type, duration, value = 0, source = null) {
+  if (!target || target.dead) return;
+  if (target.hero?.id === "menghuo" && ["stun", "slow", "silence"].includes(type)) healUnit(target, target.maxHp * .06, source || target);
+  target.statuses ||= [];
+  const existing = target.statuses.find((status) => status.type === type);
+  if (existing) {
+    existing.duration = Math.max(existing.duration, duration);
+    existing.value = Math.max(existing.value || 0, value);
+    existing.source = source;
+  } else {
+    target.statuses.push({ type, duration, value, tick: 0, source });
+  }
+  addEffect("status", target.x, target.y - 24, type === "burn" ? "#ef7a40" : type === "slow" ? "#81c6d6" : type === "stun" ? "#f5d05a" : "#db8ac0", { radius: 22, life: .32 });
+}
+
+function tickUnitStatuses(unit, delta) {
+  if (!unit.statuses) return;
+  for (let index = unit.statuses.length - 1; index >= 0; index -= 1) {
+    const status = unit.statuses[index];
+    status.duration -= delta;
+    if (status.type === "burn") {
+      status.tick = (status.tick || 0) + delta;
+      if (status.tick >= .5) {
+        status.tick = 0;
+        applyDamage({ atk: Math.max(3, status.value || 6), team: "enemy", x: unit.x, y: unit.y }, unit, .32, 0, { status: true });
+      }
+    }
+    if (status.duration <= 0) unit.statuses.splice(index, 1);
+  }
+}
+
+function teamPassiveBonus(kind) {
+  const ids = new Set(save.formation || []);
+  let bonus = 0;
+  if (kind === "hp") bonus += (ids.has("lusu") ? .06 : 0) + (ids.has("chengpu") ? .07 : 0);
+  if (kind === "cooldown") bonus += (ids.has("caocao") ? .04 : 0) + (ids.has("daqiao") ? .08 : 0);
+  if (kind === "def" && [...ids].filter((id) => heroById(id)?.role === "\u6b65\u5175").length >= 3) bonus += .08;
+  const factionCounts = Object.values(FACTION_BY_HERO).map((heroIds) => heroIds.filter((id) => ids.has(id)).length);
+  const strongestFaction = Math.max(0, ...factionCounts);
+  if (kind === "atk" && strongestFaction >= 3) bonus += .04;
+  if (kind === "hp" && strongestFaction >= 4) bonus += .05;
+  if (kind === "def" && strongestFaction >= 3) bonus += .04;
+  for (const bond of activeBonds()) if (bond.kind === kind) bonus += bond.value || 0;
+  const treasure = treasureById(save.equippedTreasure);
+  if (treasure && treasure.kind === kind) bonus += treasure.value || 0;
+  return bonus;
+}
+
+function attackSpeedMultiplier(unit) {
+  let multiplier = 1;
+  const hero = unit.hero;
+  if (!hero) return multiplier;
+  if (hero.id === "zhaoyun" && unit.moving) multiplier *= 1.08;
+  if (hero.id === "gongsunzan" && runtime.elapsed < 8) multiplier *= 1.2;
+  if (hero.id === "lejin" && runtime.elapsed < 10) multiplier *= 1.12;
+  if (hasStatus(unit, "haste")) multiplier *= 1 + statusValue(unit, "haste", .12);
+  if (hasStatus(unit, "slow")) multiplier *= 1 - Math.min(.45, statusValue(unit, "slow", .15));
+  return Math.max(.35, multiplier);
+}
+
+function effectiveDefense(unit) {
+  let defense = unit.def || 0;
+  const hero = unit.hero;
+  if (hero?.id === "xiahoudun" && unit.hp / unit.maxHp < .4) defense *= 1.2;
+  if (hero?.id === "caoren" && unit.hp / unit.maxHp < .5) defense *= 1.18;
+  if (hero?.id === "dianwei" && unit.hp / unit.maxHp < .5) unit.damageTakenMultiplier = .85;
+  if (hero?.id === "yujin" && unit.y < 430) defense *= 1.09;
+  if (hero?.id === "zhangfei" && unit.hp / unit.maxHp < .5) defense *= 1.08;
+  if (hasStatus(unit, "guard")) defense *= 1 + statusValue(unit, "guard", .15);
+  if (hasStatus(unit, "fragile")) defense *= 1 - Math.min(.45, statusValue(unit, "fragile", .1));
+  return defense;
+}
+
+function attackMultiplier(attacker, target, baseMultiplier, context = {}) {
+  let multiplier = baseMultiplier;
+  const hero = attacker?.hero;
+  if (!hero) return multiplier;
+  if (context.skill) multiplier *= 1 + (heroSkillLevel(hero.id) - 1) * .12;
+  const distance = context.distance ?? Math.hypot((target?.x || 0) - (attacker.x || 0), (target?.y || 0) - (attacker.y || 0));
+  if (hero.id === "guanyu" && target?.type === "boss") multiplier *= 1.12;
+  if (target?.type === "boss") multiplier *= 1 + teamPassiveBonus("boss");
+  if (hero.id === "lubu" && target?.type === "boss" && livingUnits(runtime.allies).length === 1) multiplier *= 1.18;
+  if (hero.id === "diaochan" && hasStatus(target, "mark")) multiplier *= 1.15;
+  if (hero.id === "pangtong" && context.skill && hasStatus(target, "burn")) multiplier *= 1.18;
+  if (hero.id === "xuhuang" && target?.hp >= target?.maxHp) multiplier *= 1.1;
+  if ((hero.id === "ganning" || hero.id === "handang") && target?.role === "\u5f13\u5175") multiplier *= hero.id === "handang" ? 1.16 : 1.14;
+  if (hero.id === "zhanghe" && target?.y < 330) multiplier *= 1.12;
+  if (hero.id === "luxun" && context.skill) multiplier *= 1 + Math.min(.2, livingUnits(runtime.enemies).length * .025);
+  if (hero.id === "zhangliao") multiplier *= 1 + Math.min(.18, Math.max(0, 4 - livingUnits(runtime.enemies).length) * .045);
+  if (hero.id === "zhangliang" && target?.hp >= target?.maxHp) multiplier *= 1.15;
+  if (hero.id === "huanggai") multiplier *= 1 + Math.floor((1 - attacker.hp / attacker.maxHp) / .2) * .05;
+  if (hero.id === "madai") multiplier *= 1 + Math.min(.14, (attacker.speed || 0) / 280);
+  if ((hero.id === "guanping" && save.formation.includes("guanyu")) || (hero.id === "xiaoqiao" && save.formation.includes("daqiao") && context.skill)) multiplier *= hero.id === "guanping" ? 1.12 : 1.16;
+  if (hasStatus(target, "mark") && hero.id !== "diaochan") multiplier *= 1.05;
+  if (hero.id === "machao" && context.charge && !attacker.passiveState.chargeUsed) multiplier *= 1.3;
+  if (hero.id === "guojia" && context.skill && target?.hp / target?.maxHp < .35) multiplier *= 1.18;
+  if (hero.id === "zhouyu" && context.skill && attacker.passiveState?.skillCount % 3 === 0) multiplier *= 1.08;
+  return multiplier;
+}
+
+function criticalChance(attacker, target, baseChance, distance) {
+  let chanceValue = baseChance;
+  const hero = attacker?.hero;
+  if (hero?.id === "huangzhong") chanceValue += Math.min(.12, Math.max(0, distance - 80) / 520);
+  if (hero?.id === "panzhang" && target?.type === "boss") chanceValue += .1;
+  if (hero?.id === "taishici" && attacker.lastTargetId === target?.id) chanceValue += Math.min(.16, (attacker.targetStreak || 0) * .04);
+  return Math.min(.7, chanceValue);
+}
+
+function healUnit(target, amount, source) {
+  if (!target || target.dead) return;
+  const hero = source?.hero;
+  const bonus = hero?.id === "liubei" || source?.hero?.id === "liubei" ? .04 : 0;
+  const healed = Math.min(target.maxHp - target.hp, amount * (1 + bonus));
+  if (healed <= 0) return;
+  target.hp += healed;
+  target.hpLag = Math.max(target.hp, target.hpLag || target.maxHp);
+  addNumber(target.x, target.y - 35, healed, false, true);
+  addEffect("ring", target.x, target.y, "#7be0a5", { radius: 28, life: .6 });
+}
+
+function registerCombatHit(target, critical) {
+  if (!target || target.dead) return;
+  runtime.combo = Math.min(999, (runtime.combo || 0) + 1);
+  runtime.comboTimer = 2.2;
+  save.stats.highestCombo = Math.max(save.stats.highestCombo || 0, runtime.combo);
+  if (runtime.combo >= 8 && runtime.combo % 4 === 0) {
+    addEffect("combo", target.x, target.y - 44, "#f5d276", { radius: 36, life: .42 });
+    vibrate(critical ? [14, 18, 14] : 12);
+  }
+}
+
+
 function makeAlly(heroId, slot, index) {
   const hero = heroById(heroId);
   const level = save.heroLevels[heroId] || 1;
   const equipment = heroEquipmentStats(heroId);
+  const growth = heroGrowthMultiplier(heroId);
   const position = formationPoint(slot);
   const laneBonus = formationBonus(slot);
   const hpBonus = tacticBonus("wall");
-  const atkBonus = tacticBonus("snake");
+  const atkBonus = tacticBonus("snake") + teamPassiveBonus("atk");
   const speedBonus = tacticBonus("wind");
-  const maxHp = Math.round((hero.hp + level * 23 + equipment.hp) * (1 + hpBonus + laneBonus.hp));
+  const maxHp = Math.round((hero.hp + level * 23 + equipment.hp) * growth * (1 + hpBonus + laneBonus.hp + teamPassiveBonus("hp")));
   return {
     id: hero.id + "-" + index,
     hero,
@@ -57,13 +203,16 @@ function makeAlly(heroId, slot, index) {
     renderY: position.y,
     hp: maxHp,
     maxHp,
-    atk: (hero.atk + level * 3.2 + equipment.atk) * (1 + atkBonus + laneBonus.atk),
-    def: (hero.def + level * 0.8 + equipment.def) * (1 + laneBonus.def),
+    hpLag: maxHp,
+    atk: (hero.atk + level * 3.2 + equipment.atk) * growth * (1 + atkBonus + laneBonus.atk),
+    def: (hero.def + level * 0.8 + equipment.def) * growth * (1 + laneBonus.def + teamPassiveBonus("def")),
     speed: (hero.speed + equipment.speed) * (1 + speedBonus + laneBonus.speed),
     range: hero.range + equipment.range + laneBonus.range,
     cooldown: Math.random() * 0.5,
-    skillCooldown: Math.random() * (hero.skillCooldown || 5),
+    skillCooldown: Math.random() * (hero.skillCooldown || 5) / (1 + teamPassiveBonus("cooldown")),
     attackCount: 0,
+    statuses: [],
+    passiveState: { lethalGuardUsed: false, chargeUsed: false, lastTargetId: "", targetStreak: 0 },
     hitFlash: 0,
     attackPose: 0,
     action: null,
@@ -123,6 +272,9 @@ function makeEnemy(index, boss = false) {
     renderY: spawnY,
     hp: maxHp,
     maxHp,
+    hpLag: maxHp,
+    statuses: [],
+    passiveState: {},
     atk: (boss ? (config?.bossAtk || 27) : profile.atk + Math.random() * 2) * stagePower,
     def: (boss ? 11 : profile.def) * stagePower,
     speed: boss ? 16 : profile.speed + Math.random() * 3,
@@ -175,13 +327,37 @@ function spawnWave(boss = false) {
   updateHud();
 }
 
+const ROLE_COUNTER = Object.freeze({ "步兵": "弓兵", "弓兵": "騎兵", "騎兵": "步兵" });
+
+function roleAdvantage(attacker, target) {
+  if (!attacker || !target || attacker.team === target.team) return 1;
+  if (ROLE_COUNTER[attacker.role] === target.role) return 1.15;
+  if (ROLE_COUNTER[target.role] === attacker.role) return .88;
+  return 1;
+}
+
+function targetPriorityScore(unit, target, distance) {
+  let score = -distance * .18;
+  if (unit.team === "enemy") {
+    if (unit.type === "archer" || unit.role === "弓兵") score += target.role === "謀士" || target.role === "弓兵" ? 160 : 0;
+    if (unit.type === "cavalry" || unit.role === "騎兵") score += target.role === "弓兵" || target.role === "謀士" ? 180 : 0;
+    if (unit.type === "strategist" || unit.role === "謀士") score += target.role === "步兵" ? 130 : 0;
+  }
+  if (unit.team === "ally" && target.type === "boss") score += 12;
+  if (target.maxHp > 0 && target.hp / target.maxHp < .25) score += 6;
+  return score;
+}
+
 function nearestTarget(unit, targets) {
   let best = null;
   let bestDistance = Infinity;
+  let bestScore = -Infinity;
   for (const target of targets) {
     if (target.dead) continue;
     const distance = Math.hypot(target.x - unit.x, (target.y - unit.y) * 1.12);
-    if (distance < bestDistance) {
+    const score = targetPriorityScore(unit, target, distance);
+    if (score > bestScore) {
+      bestScore = score;
       bestDistance = distance;
       best = target;
     }
@@ -205,56 +381,94 @@ function addNumber(x, y, value, critical = false, heal = false) {
 
 function addEffect(type, x, y, color = "#fff", options = {}) {
   if (!save.effects) return;
-  if (runtime.effects.length > 140) runtime.effects.splice(0, runtime.effects.length - 120);
-  runtime.effects.push({
-    type,
-    x,
-    y,
-    color,
-    life: options.life || 0.38,
-    maxLife: options.life || 0.38,
-    radius: options.radius || 35,
-    angle: options.angle || 0,
-    scale: options.scale || 1,
-    facing: options.facing || 1
-  });
+  if (runtime.effects.length >= EFFECT_POOL_SIZE) releaseEffectRecord(runtime.effects.shift());
+  const effect = takeEffectRecord();
+  effect.type = type;
+  effect.x = x;
+  effect.y = y;
+  effect.color = color;
+  effect.life = options.life || 0.38;
+  effect.maxLife = effect.life;
+  effect.radius = options.radius || 35;
+  effect.angle = options.angle || 0;
+  effect.scale = options.scale || 1;
+  effect.facing = options.facing || 1;
+  runtime.effects.push(effect);
 }
 
-function fireProjectile(attacker, target, color) {
+function fireProjectile(attacker, target, color, options = {}) {
   runtime.projectiles.push({
     x: attacker.x,
     y: attacker.y - 20,
     target,
-    speed: attacker.role === "謀士" ? 245 : 310,
+    attacker,
+    speed: attacker.role === "\u8b00\u58eb" ? 245 : 310,
     color,
-    damage: Math.max(2, attacker.atk - target.def * 0.55),
+    damage: Math.max(2, attacker.atk - effectiveDefense(target) * 0.55),
     team: attacker.team,
+    skill: Boolean(options.skill),
     life: 1.4
   });
 }
 
-function applyDamage(attacker, target, multiplier = 1, criticalChance = 0.12) {
+function applyDamage(attacker, target, multiplier = 1, criticalChanceBase = 0.12, context = {}) {
   if (!target || target.dead) return;
-  const critical = chance(criticalChance);
+  const distance = Math.hypot((target.x || 0) - (attacker.x || 0), (target.y || 0) - (attacker.y || 0));
+  const finalMultiplier = attackMultiplier(attacker, target, multiplier, { ...context, distance });
+  const roleMultiplier = roleAdvantage(attacker, target);
+  const critical = !context.status && chance(criticalChance(attacker, target, criticalChanceBase, distance));
   const variance = 0.88 + Math.random() * 0.22;
-  const damage = Math.max(2, (attacker.atk * multiplier - target.def * 0.58) * variance * (critical ? 1.72 : 1));
+  const defense = effectiveDefense(target);
+  const lowHealthReduction = target.hero?.id === "dianwei" && target.hp / target.maxHp < .5 ? .85 : 1;
+  const wardReduction = hasStatus(target, "ward") ? 0.94 : 1;
+  const damage = Math.max(2, (attacker.atk * finalMultiplier - defense * 0.58) * variance * (critical ? 1.72 : 1) * lowHealthReduction * wardReduction * roleMultiplier);
+  if (!context.status && damage > 0) {
+    const sourceId = attacker.hero?.id || attacker.enemyGeneralId || attacker.type || "enemy";
+    runtime.damageStats[sourceId] = (runtime.damageStats[sourceId] || 0) + damage;
+  }
+  if (target.team === "ally" && target.hero?.id === "zhangfei" && target.hp - damage <= 0 && !target.passiveState.lethalGuardUsed) {
+    target.passiveState.lethalGuardUsed = true;
+    target.hp = 1;
+    target.hpLag = Math.max(target.hpLag || target.maxHp, target.hp);
+    addNumber(target.x, target.y - 31, 1, true);
+    addEffect("guard", target.x, target.y - 18, "#e9c05c", { radius: 38, life: .55 });
+    showDialogue(target.hero.name, "\u71d5\u4eba\u5c1a\u5728\uff01", target.hero.avatar);
+    toast(target.hero.name + "\u89f8\u767c\u4e0d\u5c48\uff0c\u88ab\u52d5\u4fdd\u7559 1 \u5175\u529b");
+    vibrate([18, 30, 18]);
+    return;
+  }
   target.hp -= damage;
+  target.hpLag = Math.max(Number.isFinite(target.hpLag) ? target.hpLag : target.maxHp, target.hp);
   target.hitFlash = critical ? 0.2 : 0.14;
   target.hitStun = critical ? 0.075 : 0.035;
   const sourceX = Number.isFinite(attacker.x) ? attacker.x : target.x;
   const sourceY = Number.isFinite(attacker.y) ? attacker.y : target.y + 1;
   const knockAngle = Math.atan2(target.y - sourceY, target.x - sourceX);
-  const knockForce = critical ? 10 : multiplier > 1.25 ? 7 : 4;
+  const knockForce = critical ? 10 : finalMultiplier > 1.25 ? 7 : 4;
   target.kickX = Math.cos(knockAngle) * knockForce;
   target.kickY = Math.sin(knockAngle) * knockForce;
-  addNumber(target.x, target.y - 31, damage, critical);
-  addEffect("spark", target.x, target.y - 13, critical ? "#ffe270" : "#f1d8bd", { radius: critical ? 25 : 14, life: 0.22 });
-  addEffect("impact", target.x, target.y - 14, critical ? "#fff08b" : "#f7d8ad", { radius: critical ? 34 : 19, life: critical ? 0.3 : 0.18, angle: knockAngle });
-  runtime.hitStop = Math.max(runtime.hitStop, critical ? 0.055 : multiplier > 1.25 ? 0.04 : 0.018);
+  if (!context.status) {
+    addNumber(target.x, target.y - 31, damage, critical);
+    addEffect("spark", target.x, target.y - 13, critical ? "#ffe270" : "#f1d8bd", { radius: critical ? 25 : 14, life: 0.22 });
+    addEffect("impact", target.x, target.y - 14, critical ? "#fff08b" : "#f7d8ad", { radius: critical ? 34 : 19, life: critical ? 0.3 : 0.18, angle: knockAngle });
+    registerCombatHit(target, critical);
+  }
+  runtime.hitStop = Math.max(runtime.hitStop, critical ? 0.055 : finalMultiplier > 1.25 ? 0.04 : 0.018);
   if (critical) {
     runtime.shake = Math.max(runtime.shake, 5);
     addEffect("shockwave", target.x, target.y - 10, "#ffd769", { radius: 42, life: 0.34 });
+    vibrate(critical ? [10, 15, 10] : 8);
   }
+  if (attacker.hero?.id === "zhurong" && critical) applyStatus(target, "burn", 4, 8, attacker);
+  if (attacker.hero?.id === "zhuran" && context.skill) applyStatus(target, "burn", 6, 8, attacker);
+  if (attacker.hero?.id === "zhouyu" && context.skill && attacker.passiveState?.skillCount % 3 === 0) applyStatus(target, "burn", 4, 8, attacker);
+  if (attacker.hero?.id === "simayi" && context.skill) applyStatus(target, "slow", 3, .08, attacker);
+  if (attacker.hero?.id === "jiangwei" && context.skill) healUnit(attacker, attacker.maxHp * .08, attacker);
+  if (attacker.hero?.id === "zhenji" && context.skill) livingUnits(runtime.allies).forEach((ally) => applyStatus(ally, "ward", 4, .06, attacker));
+  if (attacker.hero?.id === "zhugeliang" && context.skill) applyStatus(target, "slow", 3, .1, attacker);
+  if (attacker.hero?.id === "diaochan" && context.skill) applyStatus(target, "mark", 4, .15, attacker);
+  if (attacker.hero?.id === "fazheng" && context.skill && target.type === "boss") applyStatus(target, "fragile", 4, .1, attacker);
+  if (target.team === "ally" && target.hero?.id === "zhangbao" && attacker.team === "enemy" && !context.reflect) applyDamage(target, attacker, .08, 0, { reflect: true });
   if (target.hp <= 0) killUnit(target, attacker);
 }
 
@@ -268,81 +482,133 @@ function killUnit(target, attacker) {
   target.kickY -= 5;
   addEffect("burst", target.x, target.y - 12, target.team === "enemy" ? "#b94934" : "#75a7ca", { radius: 42, life: 0.55 });
   addEffect("dust", target.x, target.y + 2, "#b7a77d", { radius: target.type === "boss" ? 42 : 25, life: 0.55 });
+  addEffect("soul", target.x, target.y - 25, target.team === "enemy" ? "#f0c66b" : "#86c8db", { radius: 20, life: 0.72 });
   if (target.team === "enemy") {
     const battleStage = activeStageNumber();
     const gold = target.type === "boss" ? 105 + battleStage * 22 : 4 + battleStage;
     const food = target.type === "boss" ? 46 + battleStage * 8 : chance(0.35) ? 2 : 0;
-    save.gold += gold;
-    save.food += food;
-    gainExp(target.type === "boss" ? 55 + battleStage * 6 : 5);
+    const expMultiplier = save.formation.includes("xunyu") ? 1.1 : 1;
+    awardResources({ gold, food, exp: Math.round((target.type === "boss" ? 55 + battleStage * 6 : 5) * expMultiplier) });
+    recordStat("kills");
+    save.battlePass.xp = (save.battlePass.xp || 0) + (target.type === "boss" ? 10 : 1);
+    if (attacker?.hero?.id === "weiyan" || attacker?.hero?.id === "guanxing") applyStatus(attacker, "haste", 3, .12, attacker);
     if (target.type === "boss") {
       runtime.shake = 10;
       beep(135, 0.22, "square", 0.045);
     }
-  } else if (attacker) {
-    addLog(target.hero.name + "力竭，等待重新整軍。");
+  } else if (attacker && target.hero) {
+    addLog(target.hero.name + "\u529b\u7aed\uff0c\u7b49\u5f85\u91cd\u65b0\u6574\u8ecd\u3002");
   }
 }
-
 function useHeroSkill(unit, target) {
   unit.attackCount = 0;
-  unit.skillCooldown = unit.hero.skillCooldown || 5;
+  unit.skillCooldown = (unit.hero.skillCooldown || 5) / (1 + teamPassiveBonus("cooldown"));
+  unit.passiveState.skillCount = (unit.passiveState.skillCount || 0) + 1;
   runtime.shake = Math.max(runtime.shake, 6);
   runtime.flash = 0.13;
   runtime.flashColor = unit.hero.accent;
+  const skillTimeScale = runtime.timeScale;
+  runtime.timeScale = Math.min(runtime.timeScale, .72);
+  scheduleGameTimer(() => { runtime.timeScale = skillTimeScale; }, 250);
   const hero = unit.hero;
-  addEffect("shockwave", unit.x, unit.y - 10, hero.accent, { radius: 74, life: 0.48 });
+  const skillFactor = 1 + (heroSkillLevel(hero.id) - 1) * .12;
+  const spec = SKILL_SPECS[hero.id] || { tone: hero.role === "\u8b00\u58eb" ? "thunder" : "slash", color: hero.accent };
+  recordStat("skills");
+  recordTaskProgress("daily-skill");
+  save.battlePass.xp = (save.battlePass.xp || 0) + 3;
+  addEffect("charge", unit.x, unit.y - 18, spec.color || hero.accent, { radius: 44, life: .34 });
+  addEffect("shockwave", unit.x, unit.y - 10, spec.color || hero.accent, { radius: 74, life: 0.48 });
   addEffect("afterimage", unit.x - Math.cos(unit.action?.angle || 0) * 11, unit.y - Math.sin(unit.action?.angle || 0) * 11, hero.accent, { life: 0.3, scale: unit.scale, facing: unit.facing });
-  addEffect("afterimage", unit.x - Math.cos(unit.action?.angle || 0) * 22, unit.y - Math.sin(unit.action?.angle || 0) * 22, hero.accent, { life: 0.22, scale: unit.scale * 0.92, facing: unit.facing });
-  showDialogue(hero.name, hero.skill + "！", hero.avatar);
+  showDialogue(hero.name, hero.skill + "\uff01", hero.avatar);
+  const enemies = livingUnits(runtime.enemies);
+  const closeEnemies = enemies.filter((enemy) => Math.hypot(enemy.x - unit.x, enemy.y - unit.y) < 180);
   if (hero.id === "liubei") {
-    for (const ally of runtime.allies) {
-      if (ally.dead) continue;
-      const heal = ally.maxHp * 0.12;
-      ally.hp = Math.min(ally.maxHp, ally.hp + heal);
-      addNumber(ally.x, ally.y - 35, heal, false, true);
-      addEffect("ring", ally.x, ally.y, "#7be0a5", { radius: 28, life: 0.6 });
-    }
-  } else if (hero.role === "弓兵" || hero.role === "謀士") {
-    const living = runtime.enemies.filter((enemy) => !enemy.dead).slice(0, 4);
-    living.forEach((enemy, index) => {
-      setTimeout(() => {
-        if (!enemy.dead) {
-          applyDamage(unit, enemy, 1.4, 0.25);
-          addEffect("bolt", enemy.x, enemy.y, hero.accent, { radius: 45, life: 0.38 });
-        }
-      }, index * 80);
+    livingUnits(runtime.allies).forEach((ally) => healUnit(ally, ally.maxHp * .12 * skillFactor, unit));
+    addEffect("rally", unit.x, unit.y - 20, "#7be0a5", { radius: 92, life: .72 });
+  } else if (hero.id === "guanyu") {
+    addEffect("slash", unit.x, unit.y - 8, "#d7b84f", { radius: 74, life: .48, angle: unit.action?.angle || 0 });
+    addEffect("slash", unit.x, unit.y - 8, "#f05d3e", { radius: 96, life: .54, angle: (unit.action?.angle || 0) - .48 });
+    closeEnemies.forEach((enemy) => applyDamage(unit, enemy, 2.05, .28, { skill: true }));
+  } else if (hero.id === "zhangfei") {
+    addEffect("stun", unit.x, unit.y - 10, "#e9c05c", { radius: 108, life: .62 });
+    closeEnemies.forEach((enemy) => {
+      const angle = Math.atan2(enemy.y - unit.y, enemy.x - unit.x);
+      enemy.kickX += Math.cos(angle) * 16;
+      enemy.kickY += Math.sin(angle) * 16;
+      applyStatus(enemy, "stun", 1.15, 0, unit);
+      applyDamage(unit, enemy, 1.7, .24, { skill: true });
+    });
+    runtime.shake = Math.max(runtime.shake, 10);
+  } else if (hero.id === "zhaoyun") {
+    for (let i = 1; i <= 4; i += 1) addEffect("afterimage", unit.x - Math.cos(unit.action?.angle || 0) * i * 14, unit.y - Math.sin(unit.action?.angle || 0) * i * 14, hero.accent, { life: .16 + i * .06, scale: unit.scale * (1 - i * .05), facing: unit.facing });
+    (closeEnemies.length ? closeEnemies : [target]).forEach((enemy) => applyDamage(unit, enemy, 1.72, .26, { skill: true, charge: true }));
+  } else if (hero.id === "huangzhong") {
+    enemies.slice(0, 3).forEach((enemy, index) => scheduleGameTimer(() => {
+      if (enemy.dead) return;
+      fireProjectile(unit, enemy, hero.accent, { skill: true });
+      addEffect("bolt", enemy.x, enemy.y, hero.accent, { radius: 45, life: .38 });
+    }, index * 90));
+  } else if (hero.id === "sunshang") {
+    enemies.slice(0, 4).forEach((enemy, index) => {
+      fireProjectile(unit, enemy, hero.accent, { skill: true });
+      if (index % 2 === 0) fireProjectile(unit, enemy, "#ffd47a", { skill: true });
+    });
+    addEffect("volley", unit.x, unit.y - 15, hero.accent, { radius: 82, life: .54 });
+  } else if (hero.id === "caocao") {
+    livingUnits(runtime.allies).forEach((ally) => applyStatus(ally, "haste", 5, .16, unit));
+    enemies.slice(0, 4).forEach((enemy) => applyDamage(unit, enemy, 1.25, .2, { skill: true }));
+    addEffect("rally", unit.x, unit.y - 18, hero.accent, { radius: 90, life: .7 });
+  } else if (hero.id === "xiahoudun") {
+    applyStatus(unit, "guard", 2.5, .25, unit);
+    closeEnemies.forEach((enemy) => applyDamage(unit, enemy, 1.55, .24, { skill: true }));
+    addEffect("guard", unit.x, unit.y - 18, hero.accent, { radius: 48, life: .58 });
+  } else if (hero.id === "zhugeliang") {
+    enemies.slice(0, 5).forEach((enemy, index) => {
+      scheduleGameTimer(() => {
+        if (enemy.dead) return;
+        applyDamage(unit, enemy, 1.45, .24, { skill: true });
+        applyStatus(enemy, "slow", 3, .25, unit);
+        addEffect("bolt", enemy.x, enemy.y - 10, hero.accent, { radius: 48, life: .42 });
+      }, index * 75);
+    });
+    addEffect("rune", unit.x, unit.y - 8, hero.accent, { radius: 92, life: .72 });
+  } else if (hero.id === "diaochan") {
+    enemies.slice(0, 4).forEach((enemy, index) => {
+      applyStatus(enemy, "mark", 4, .15, unit);
+      applyDamage(unit, enemy, 1.35, .3, { skill: true });
+      addEffect("petal", enemy.x, enemy.y - 20, hero.accent, { radius: 42, life: .6, angle: index * .9 });
+    });
+  } else if (hero.id === "lubu") {
+    enemies.forEach((enemy) => {
+      if (Math.hypot(enemy.x - unit.x, enemy.y - unit.y) < 210) applyDamage(unit, enemy, 2.4, .3, { skill: true });
+    });
+    addEffect("meteor", unit.x, unit.y - 20, "#f06a4d", { radius: 132, life: .76 });
+    runtime.shake = Math.max(runtime.shake, 13);
+  } else if (hero.role === "\u5f13\u5175" || hero.role === "\u8b00\u58eb") {
+    enemies.slice(0, 4).forEach((enemy) => {
+      fireProjectile(unit, enemy, hero.accent, { skill: true });
+      applyDamage(unit, enemy, 1.4, .25, { skill: true });
     });
   } else {
-    const living = runtime.enemies.filter((enemy) => !enemy.dead && Math.hypot(enemy.x - unit.x, enemy.y - unit.y) < 150);
-    const skillAngle = Math.atan2(target.y - unit.y, target.x - unit.x);
-    addEffect("slash", unit.x, unit.y - 8, hero.accent, { radius: 72, life: 0.48, angle: skillAngle });
-    if (hero.id === "guanyu") {
-      addEffect("slash", unit.x, unit.y - 8, "#ffcf65", { radius: 58, life: 0.38, angle: skillAngle - 0.55 });
-      addEffect("slash", unit.x, unit.y - 8, "#f05d3e", { radius: 86, life: 0.54, angle: skillAngle + 0.48 });
-    } else if (hero.id === "zhangfei") {
-      runtime.shake = Math.max(runtime.shake, 9);
-      addEffect("shockwave", unit.x, unit.y, "#e9c05c", { radius: 105, life: 0.62 });
-      for (const enemy of living) {
-        const pushAngle = Math.atan2(enemy.y - unit.y, enemy.x - unit.x);
-        enemy.kickX += Math.cos(pushAngle) * 13;
-        enemy.kickY += Math.sin(pushAngle) * 13;
-      }
-    } else if (hero.id === "zhaoyun") {
-      for (let i = 1; i <= 3; i += 1) {
-        addEffect("afterimage", unit.x - Math.cos(skillAngle) * i * 14, unit.y - Math.sin(skillAngle) * i * 14, hero.accent, { life: 0.18 + i * 0.05, scale: unit.scale * (1 - i * 0.06), facing: unit.facing });
-      }
-    }
-    (living.length ? living : [target]).forEach((enemy) => applyDamage(unit, enemy, hero.id === "guanyu" ? 2.05 : 1.7, 0.24));
+    (closeEnemies.length ? closeEnemies : [target]).forEach((enemy) => applyDamage(unit, enemy, 1.7, .24, { skill: true }));
+    addEffect("slash", unit.x, unit.y - 8, hero.accent, { radius: 72, life: .48, angle: unit.action?.angle || 0 });
   }
-  beep(hero.role === "謀士" ? 540 : 170, 0.12, "sawtooth", 0.035);
+  beep(hero.role === "\u8b00\u58eb" ? 540 : 170, 0.12, "sawtooth", 0.035);
+  vibrate(hero.id === "lubu" || hero.id === "zhangfei" ? [18, 30, 18] : 18);
 }
 
 function attack(unit, target) {
-  unit.cooldown = (unit.role === "騎兵" ? 0.78 : unit.role === "弓兵" ? 1.05 : unit.role === "謀士" ? 1.22 : 0.92) / (unit.team === "ally" ? 1 + tacticBonus("wind") : 1);
+  const role = unit.role;
+  const attackInterval = role === "\u9a0e\u5175" ? .78 : role === "\u5f13\u5175" ? 1.05 : role === "\u8b00\u58eb" ? 1.22 : .92;
+  unit.cooldown = attackInterval / ((unit.team === "ally" ? 1 + tacticBonus("wind") : 1) * attackSpeedMultiplier(unit));
   unit.attackCount += 1;
-  const skill = unit.team === "ally" && unit.attackCount >= 5 && unit.skillCooldown <= 0;
-  const ranged = unit.team === "ally" && (unit.role === "弓兵" || unit.role === "謀士");
+  unit.passiveState ||= {};
+  if (unit.passiveState.lastTargetId === target.id) unit.passiveState.targetStreak = (unit.passiveState.targetStreak || 0) + 1;
+  else { unit.passiveState.lastTargetId = target.id; unit.passiveState.targetStreak = 1; }
+  unit.lastTargetId = target.id;
+  unit.targetStreak = unit.passiveState.targetStreak;
+  const skill = unit.team === "ally" && unit.attackCount >= 5 && unit.skillCooldown <= 0 && !hasStatus(unit, "silence");
+  const ranged = unit.team === "ally" && (role === "\u5f13\u5175" || role === "\u8b00\u58eb");
   const angle = Math.atan2(target.y - unit.y, target.x - unit.x);
   unit.action = {
     target,
@@ -350,14 +616,14 @@ function attack(unit, target) {
     ranged,
     angle,
     elapsed: 0,
-    impactAt: skill ? 0.2 : ranged ? 0.145 : 0.095,
-    total: skill ? 0.52 : ranged ? 0.32 : 0.255,
+    impactAt: skill ? .2 : ranged ? .145 : .095,
+    total: skill ? .52 : ranged ? .32 : .255,
     resolved: false
   };
   unit.facing = Math.cos(angle) < 0 ? -1 : 1;
   if (skill) {
-    addEffect("charge", unit.x, unit.y - 13, unit.hero.accent, { radius: 38, life: 0.32 });
-    beep(220, 0.075, "triangle", 0.022);
+    addEffect("charge", unit.x, unit.y - 13, unit.hero.accent, { radius: 38, life: .32 });
+    beep(220, .075, "triangle", .022);
   }
 }
 
@@ -374,10 +640,15 @@ function resolveAttack(unit, action) {
   }
   if (action.ranged) {
     fireProjectile(unit, target, unit.hero.accent);
+    if ((unit.hero.id === "sunshang" || unit.hero.id === "xiahouyuan") && chance(.14)) scheduleGameTimer(() => {
+      if (!target.dead) fireProjectile(unit, target, "#ffd47a");
+    }, 70);
     unit.motionX -= Math.cos(action.angle) * 4;
     unit.motionY -= Math.sin(action.angle) * 4;
   } else {
-    applyDamage(unit, target, 1, unit.team === "ally" ? 0.13 : 0.05);
+    const charge = unit.team === "ally" && unit.hero.id === "machao" && unit.moving;
+    applyDamage(unit, target, 1, unit.team === "ally" ? 0.13 : 0.05, { charge });
+    if (charge) unit.passiveState.chargeUsed = true;
     addEffect("slash", target.x, target.y - 12, unit.team === "ally" ? unit.hero.accent : "#e0b38d", { radius: 27, life: 0.22, angle: action.angle });
     if (unit.team === "ally" && unit.hero.id === "liubei") {
       addEffect("slash", target.x, target.y - 12, "#dce8d8", { radius: 23, life: 0.2, angle: action.angle + Math.PI / 2 });
@@ -441,8 +712,10 @@ function updateAction(unit, delta) {
 
 function updateUnit(unit, targets, delta) {
   if (unit.dead) return;
-  unit.cooldown -= delta;
-  if (unit.team === "ally") unit.skillCooldown = Math.max(0, unit.skillCooldown - delta);
+  tickUnitStatuses(unit, delta);
+  if (unit.dead) return;
+  unit.cooldown -= delta * attackSpeedMultiplier(unit);
+  if (unit.team === "ally") unit.skillCooldown = Math.max(0, unit.skillCooldown - delta * (1 + teamPassiveBonus("cooldown")));
   unit.hitFlash = Math.max(0, unit.hitFlash - delta);
   unit.attackPose = Math.max(0, unit.attackPose - delta);
   unit.hitStun = Math.max(0, unit.hitStun - delta);
@@ -450,21 +723,23 @@ function updateUnit(unit, targets, delta) {
   unit.kickX *= kickDecay;
   unit.kickY *= kickDecay;
   unit.moving = 0;
-  if (unit.hitStun > 0) return;
+  if (unit.hitStun > 0 || hasStatus(unit, "stun")) return;
   if (updateAction(unit, delta)) return;
-  const { target, distance } = nearestTarget(unit, targets);
+  const selected = nearestTarget(unit, targets);
+  const target = selected.target;
+  const distance = selected.distance;
   if (!target) return;
   unit.facing = target.x < unit.x ? -1 : 1;
   if (distance > unit.range) {
     const angle = Math.atan2(target.y - unit.y, target.x - unit.x);
-    const spacing = unit.team === "ally" ? 1 : 0.82;
+    const spacing = unit.team === "ally" ? 1 : .82;
     unit.x += Math.cos(angle) * unit.speed * spacing * delta;
     unit.y += Math.sin(angle) * unit.speed * spacing * delta;
     unit.moving = 1;
     unit.stepTimer -= delta;
     if (unit.stepTimer <= 0) {
-      unit.stepTimer = 0.2 + Math.random() * 0.1;
-      addEffect("dust", unit.x, unit.y + 2, "#978b6c", { radius: 9, life: 0.3 });
+      unit.stepTimer = .2 + Math.random() * .1;
+      addEffect("dust", unit.x, unit.y + 2, "#978b6c", { radius: 9, life: .3 });
     }
     unit.x = clamp(unit.x, 35, 350);
     unit.y = clamp(unit.y, 112, 575);
@@ -481,11 +756,11 @@ function updateProjectiles(delta) {
     const dy = projectile.target.y - 18 - projectile.y;
     const distance = Math.hypot(dx, dy);
     if (distance < 12) {
-      const fakeAttacker = { atk: projectile.damage, team: projectile.team, x: projectile.x, y: projectile.y };
-      applyDamage(fakeAttacker, projectile.target, 1, 0.1);
-      addEffect("impact", projectile.target.x, projectile.target.y - 16, projectile.color, { radius: 22, life: 0.2 });
+      const attacker = projectile.attacker || { atk: projectile.damage, team: projectile.team, x: projectile.x, y: projectile.y };
+      applyDamage(attacker, projectile.target, 1, projectile.skill ? .18 : .1, { skill: projectile.skill });
+      addEffect("impact", projectile.target.x, projectile.target.y - 16, projectile.color, { radius: 22, life: .2 });
       projectile.life = 0;
-    } else {
+    } else if (distance > 0) {
       projectile.x += (dx / distance) * projectile.speed * delta;
       projectile.y += (dy / distance) * projectile.speed * delta;
     }
@@ -500,16 +775,25 @@ function updateEffects(delta) {
     number.y -= 24 * delta;
   }
   for (const unit of [...runtime.allies, ...runtime.enemies]) {
+    if (!unit.dead && Number.isFinite(unit.hpLag)) unit.hpLag = Math.max(unit.hp, unit.hpLag - unit.maxHp * delta * 3.6);
     if (unit.dead && unit.deathTime > 0) {
       unit.deathTime = Math.max(0, unit.deathTime - delta);
       unit.kickX *= Math.exp(-delta * 5);
       unit.kickY += 18 * delta;
     }
   }
-  runtime.effects = runtime.effects.filter((item) => item.life > 0);
+  recycleExpiredEffects();
   runtime.numbers = runtime.numbers.filter((item) => item.life > 0);
   runtime.shake = Math.max(0, runtime.shake - delta * 18);
   runtime.flash = Math.max(0, runtime.flash - delta);
+}
+
+function damageSummary() {
+  return save.formation.map((id) => ({
+    id,
+    name: heroById(id)?.name || id,
+    value: Math.round(runtime.damageStats[id] || 0)
+  })).sort((a, b) => b.value - a.value);
 }
 
 function waveCleared() {
@@ -519,64 +803,68 @@ function waveCleared() {
     const battleStage = activeStageNumber();
     const chapter = chapterForStage();
     const progressed = battleStage >= save.stage;
+    const newlyUnlocked = progressed && HEROES.find((hero) => hero.unlock === battleStage);
+    const reward = {
+      jade: progressed ? 2 : 1,
+      gold: Math.round((140 + battleStage * 30) * (progressed ? 1 : .55)),
+      food: Math.round((55 + battleStage * 9) * (progressed ? 1 : .55)),
+      exp: 30 + battleStage * 4,
+      shards: progressed ? 2 : 1
+    };
+    awardResources(reward);
+    recordStat("wins");
+    recordStat("bosses");
+    recordTaskProgress("weekly-boss");
+    if (newlyUnlocked) recordTaskProgress("weekly-heroes");
+    save.stageStars[battleStage] = 3;
     if (progressed) {
       save.stage = battleStage + 1;
       save.maxStage = Math.max(save.maxStage || 1, save.stage);
       runtime.activeStage = save.stage;
     }
-    const rewardScale = progressed ? 1 : 0.55;
-    save.jade += progressed ? 2 : 1;
-    save.gold += Math.round((140 + battleStage * 30) * rewardScale);
-    save.food += Math.round((55 + battleStage * 9) * rewardScale);
     runtime.waveClears = 0;
     runtime.bossActive = false;
-    addLog(progressed ? "擊破「" + chapter.boss + "」，推進至第 " + save.stage + " 關。" : "重打「" + chapter.boss + "」成功，取得戰功獎勵。");
-    showDialogue("劉備", "眾將辛苦了，整軍後繼續前進。", "avatar-liubei");
-    toast(progressed ? "首領擊破！獲得玉璧 ×2" : "重打成功！獲得部分戰功獎勵");
-    const newlyUnlocked = progressed && HEROES.find((hero) => hero.unlock === battleStage);
-    if (newlyUnlocked) {
-      toast("名將來投：" + newlyUnlocked.name);
-      $("heroNotice").textContent = "1";
-      $("heroNotice").hidden = false;
-    }
-    buildTerrain();
+    runtime.nextStageAfterSettlement = progressed ? save.stage : battleStage;
+    runtime.battleResult = { type: "win", stage: battleStage, boss: chapter.boss, progressed, newlyUnlocked: newlyUnlocked?.name || "", reward, damage: damageSummary() };
+    addLog(progressed ? "\u64ca\u7834\u300c" + chapter.boss + "\u300d\uff0c\u63a8\u9032\u81f3\u7b2c " + save.stage + " \u95dc\u3002" : "\u91cd\u6253\u300c" + chapter.boss + "\u300d\u6210\u529f\uff0c\u53d6\u5f97\u6230\u529f\u734e\u52f5\u3002");
+    showDialogue("\u5289\u5099", "\u773e\u5c07\u8f9b\u82e6\u4e86\uff0c\u6574\u8ecd\u5f8c\u7e7c\u7e8c\u524d\u9032\u3002", "avatar-liubei");
+    if (newlyUnlocked) toast("\u540d\u5c07\u4f86\u6295\uff1a" + newlyUnlocked.name);
     persist();
-    setTimeout(() => {
-      resetAllies();
-      spawnWave(false);
-    }, 1800);
+    window.TaoyuanPlatform?.track?.("battle_result", runtime.battleResult);
+    if (typeof showSettlement === "function") showSettlement(runtime.battleResult);
+    else scheduleGameTimer(() => startStage(runtime.nextStageAfterSettlement), 1800);
   } else {
     runtime.waveClears += 1;
     const stageConfig = stageDefinition();
-    save.gold += stageConfig?.goldBonus || 14 + activeStageNumber() * 3;
-    addLog("清剿第 " + runtime.waveClears + " 波敵軍。");
+    awardResources({ gold: stageConfig?.goldBonus || 14 + activeStageNumber() * 3, shards: 1 });
+    recordTaskProgress("daily-battle");
+    save.battlePass.xp = (save.battlePass.xp || 0) + 1;
+    addLog("\u6e05\u527f\u7b2c " + runtime.waveClears + " \u6ce2\u6575\u8ecd\u3002");
     if (runtime.waveClears >= 3) {
       updateHud();
       if (runtime.auto) {
-        setTimeout(() => spawnWave(true), 1600);
+        scheduleGameTimer(() => spawnWave(true), 1600);
       } else {
         runtime.spawning = false;
-        toast("首領已出現，點擊「關卡首領」迎戰");
+        toast("\u9996\u9818\u5df2\u51fa\u73fe\uff0c\u9ede\u64ca\u300c\u95dc\u5361\u9996\u9818\u300d\u8fce\u6230");
       }
     } else {
-      setTimeout(() => spawnWave(false), 1050);
+      scheduleGameTimer(() => spawnWave(false), 1050);
     }
   }
 }
-
 function partyDefeated() {
   if (runtime.spawning || runtime.allies.length === 0 || runtime.allies.some((ally) => !ally.dead)) return;
   runtime.spawning = true;
   runtime.enemies.length = 0;
-  addLog("我軍暫退整備，未損失關卡進度。");
-  toast("全軍暫退，3 秒後重新集結");
-  showDialogue("張飛", "歇口氣，再跟他們打過！", "avatar-zhangfei");
-  setTimeout(() => {
-    resetAllies();
-    spawnWave(runtime.bossActive);
-  }, 2800);
+  recordStat("losses");
+  runtime.nextStageAfterSettlement = activeStageNumber();
+  runtime.battleResult = { type: "lose", stage: activeStageNumber(), reward: {}, damage: damageSummary() };
+  addLog("\u6211\u8ecd\u66ab\u9000\u6574\u5099\uff0c\u672a\u640d\u5931\u95dc\u5361\u9032\u5ea6\u3002");
+  showDialogue("\u5f35\u98db", "\u6b47\u53e3\u6c23\uff0c\u518d\u8ddf\u4ed6\u5011\u6253\u904e\uff01", "avatar-zhangfei");
+  if (typeof showSettlement === "function") showSettlement(runtime.battleResult);
+  else scheduleGameTimer(() => { resetAllies(); spawnWave(false); }, 1800);
 }
-
 function gainExp(amount) {
   save.exp += amount;
   let needed = 90 + save.level * 35;
@@ -595,6 +883,8 @@ function updateGame(rawDelta) {
   runtime.renderDelta = frameDelta || 1 / 60;
   const delta = frameDelta * runtime.timeScale;
   runtime.elapsed += delta;
+  if (runtime.comboTimer > 0) runtime.comboTimer = Math.max(0, runtime.comboTimer - delta);
+  else runtime.combo = 0;
   if (runtime.hitStop > 0) {
     runtime.hitStop = Math.max(0, runtime.hitStop - frameDelta);
     updateEffects(frameDelta * 0.16);

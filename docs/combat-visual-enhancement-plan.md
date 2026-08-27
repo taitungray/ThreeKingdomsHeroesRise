@@ -112,3 +112,10 @@ graph TD
     C --> C2[戰場地面裂痕與彈道拖尾]
     C --> C3[音效庫升級與打擊音效匹配]
 ```
+
+
+## 實際落地結果補充（2026-08-27）
+
+- 已接入 hit-stop、受擊白閃、暴擊震屏、殘影血條、傷害飄字與狀態 VFX。
+- 16 組 VFX sprite 已對應 slash/bolt/fire/petal/guard/rally/meteor/dust/soul/combo 等演出，無図片時保留幾何圖形降級。
+- WebAudio 合成音效僅作 fallback，並已加入開關、清理與頁面離開時的安全處理。
