@@ -66,5 +66,30 @@ const configSource = [
 ].join("\n");
 fs.mkdirSync(path.join(output, "js"), { recursive: true });
 fs.writeFileSync(path.join(output, "js", "admob-config.js"), configSource, "utf8");
+const firebaseConfig = isRelease
+  ? {
+      apiKey: requiredEnv("TAOYUAN_FIREBASE_API_KEY"),
+      authDomain: requiredEnv("TAOYUAN_FIREBASE_AUTH_DOMAIN"),
+      projectId: requiredEnv("TAOYUAN_FIREBASE_PROJECT_ID"),
+      storageBucket: requiredEnv("TAOYUAN_FIREBASE_STORAGE_BUCKET"),
+      messagingSenderId: requiredEnv("TAOYUAN_FIREBASE_MESSAGING_SENDER_ID"),
+      appId: requiredEnv("TAOYUAN_FIREBASE_WEB_APP_ID"),
+      measurementId: process.env.TAOYUAN_FIREBASE_MEASUREMENT_ID || ""
+    }
+  : {
+      apiKey: "REPLACE_WITH_FIREBASE_WEB_API_KEY",
+      authDomain: "REPLACE_WITH_FIREBASE_AUTH_DOMAIN",
+      projectId: "REPLACE_WITH_FIREBASE_PROJECT_ID",
+      storageBucket: "REPLACE_WITH_FIREBASE_STORAGE_BUCKET",
+      messagingSenderId: "REPLACE_WITH_FIREBASE_MESSAGING_SENDER_ID",
+      appId: "REPLACE_WITH_FIREBASE_WEB_APP_ID",
+      measurementId: ""
+    };
+const firebaseSource = [
+  "\"use strict\";",
+  "window.TAOYUAN_FIREBASE_CONFIG = Object.freeze(" + JSON.stringify(firebaseConfig, null, 2) + ");",
+  ""
+].join("\n");
+fs.writeFileSync(path.join(output, "js", "firebase-config.js"), firebaseSource, "utf8");
 
 console.log((isRelease ? "Release" : "Development") + " web build ready: " + output);

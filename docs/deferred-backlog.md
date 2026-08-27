@@ -23,7 +23,7 @@
 
 ### 需要外部服務或持有人資料
 
-- 雲端存檔、帳號登入、真實排行榜、公會、好友、聊天與跨玩家分享：需要後端、身份驗證、資料庫、濫用防護與隱私政策。
+- Google 登入與 UID 分隔的 Firestore 雲端存檔程式已接上；仍需發布方建立自己的 Firebase project、部署規則、填入 Web／Android 設定並完成實機驗證。真實排行榜、公會、好友、聊天與跨玩家分享仍需另外的後端。
 - 正式 Google Play / App Store IAP：需要商店商品、服務帳號、收據驗證後端或 RevenueCat 專案；目前只保留不會誤發貨的原生橋接器。
 - Android signed AAB、keystore、Play App Signing、internal/closed test：需要發布方自己的金鑰與 Play Console。
 - 正式 AdMob、app-ads.txt、Data safety、隱私政策公開 URL、內容分級與客服信箱：需要發布方帳號與法務確認。
@@ -39,6 +39,6 @@
 ## 待補順序
 
 1. 發布方提供正式 application ID、AdMob / IAP 商品與隱私政策資料。
-2. 建立後端帳號、存檔、排行榜與收據驗證，再接上目前保留的 adapter。
+2. 建立自己的 Firebase project，部署 `firestore.rules`，注入 Google／Firebase 設定並完成跨裝置存檔驗證；排行榜與收據驗證另行接入。
 3. 提供授權音檔、翻譯表與商店截圖規格，補齊內容資產。
 4. 完成 Android 實機與商店測試後，才把上架清單勾選為完成。

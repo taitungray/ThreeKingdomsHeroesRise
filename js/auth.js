@@ -1,55 +1,78 @@
 (function installTaoyuanAuth() {
   "use strict";
-  const AUTH_KEY = "taoyuan-auth-v1";
+
   const LEGACY_SAVE_KEY = "taoyuan-qunying-v2";
-  const ACCOUNT_SAVE_PREFIX = "taoyuan-save-";
-  const state = readState();
-  let mode = "login";
+  const GUEST_STATE_KEY = "taoyuan-guest-profile-v2";
+  const PENDING_MIGRATION_KEY = "taoyuan-cloud-migration-key";
+  const state = {
+    user: null,
+    guest: readGuest(),
+    configured: false,
+    ready: false,
+    listeners: new Set()
+  };
+  let resolveReady;
+  const ready = new Promise((resolve) => { resolveReady = resolve; });
 
-  function readState() {
+  function readGuest() {
     try {
-      const stored = JSON.parse(localStorage.getItem(AUTH_KEY) || "null");
-      if (stored && Array.isArray(stored.accounts)) return { version: 1, currentUserId: stored.currentUserId || null, accounts: stored.accounts };
-    } catch { /* fall through to a clean local profile */ }
-    return { version: 1, currentUserId: null, accounts: [] };
+      const guest = JSON.parse(localStorage.getItem(GUEST_STATE_KEY) || "null");
+      if (guest && typeof guest.id === "string" && typeof guest.displayName === "string") return guest;
+    } catch { /* fall through to no guest session */ }
+    return null;
   }
 
-  function persistState() {
-    localStorage.setItem(AUTH_KEY, JSON.stringify(state));
+  function saveGuest(guest) {
+    state.guest = guest;
+    if (guest) localStorage.setItem(GUEST_STATE_KEY, JSON.stringify(guest));
+    else localStorage.removeItem(GUEST_STATE_KEY);
   }
 
-  function normalizeUsername(value) {
-    return String(value || "").trim().replace(/\s+/g, " ").slice(0, 16);
+  function firebaseConfig() {
+    return window.TAOYUAN_FIREBASE_CONFIG || {};
   }
 
-  function hashPassword(value) {
-    let hash = 2166136261;
-    for (let index = 0; index < value.length; index += 1) {
-      hash ^= value.charCodeAt(index);
-      hash = Math.imul(hash, 16777619);
+  function hasFirebaseConfig() {
+    const config = firebaseConfig();
+    return ["apiKey", "authDomain", "projectId", "messagingSenderId", "appId"]
+      .every((key) => typeof config[key] === "string" && config[key].trim() && !config[key].includes("REPLACE_WITH"));
+  }
+
+  function activeUser() {
+    if (state.user) {
+      return {
+        id: state.user.uid,
+        uid: state.user.uid,
+        username: state.user.displayName || state.user.email || "Google 玩家",
+        displayName: state.user.displayName || "",
+        email: state.user.email || "",
+        photoURL: state.user.photoURL || "",
+        provider: "google",
+        guest: false
+      };
     }
-    return (hash >>> 0).toString(16);
+    return state.guest ? { ...state.guest, provider: "guest", guest: true } : null;
   }
 
-  function activeAccount() {
-    return state.accounts.find((account) => account.id === state.currentUserId) || null;
+  function getSaveKey() {
+    if (state.user?.uid) return "taoyuan-cloud-save-" + state.user.uid;
+    if (state.guest?.id) return "taoyuan-guest-save-" + state.guest.id;
+    return LEGACY_SAVE_KEY;
   }
 
-  function accountSaveKey(id) {
-    return ACCOUNT_SAVE_PREFIX + id;
+  function getMigrationSaveKey() {
+    const pending = localStorage.getItem(PENDING_MIGRATION_KEY);
+    if (pending && pending !== getSaveKey()) return pending;
+    if (state.user) return localStorage.getItem(LEGACY_SAVE_KEY) ? LEGACY_SAVE_KEY : null;
+    return null;
   }
 
-  function migrateLegacySave(id) {
-    const targetKey = accountSaveKey(id);
-    if (localStorage.getItem(targetKey)) return;
-    const legacy = localStorage.getItem(LEGACY_SAVE_KEY);
-    if (legacy) localStorage.setItem(targetKey, legacy);
+  function setMigrationKey(key) {
+    if (key && key !== getSaveKey()) localStorage.setItem(PENDING_MIGRATION_KEY, key);
   }
 
-  function selectAccount(id) {
-    state.currentUserId = id;
-    migrateLegacySave(id);
-    persistState();
+  function clearMigrationKey() {
+    localStorage.removeItem(PENDING_MIGRATION_KEY);
   }
 
   function setMessage(message, type = "error") {
@@ -59,112 +82,182 @@
     element.className = "auth-message " + type;
   }
 
-  function setMode(nextMode) {
-    mode = ["login", "register", "reset"].includes(nextMode) ? nextMode : "login";
-    document.querySelectorAll("[data-auth-mode]").forEach((button) => button.classList.toggle("active", button.dataset.authMode === mode));
-    const confirmWrap = document.getElementById("authPasswordConfirmWrap");
-    const submit = document.getElementById("authSubmit");
-    const guest = document.getElementById("authGuest");
-    const title = document.getElementById("authModeTitle");
-    if (confirmWrap) confirmWrap.hidden = mode === "login";
-    if (submit) submit.textContent = mode === "login" ? "進入軍府" : mode === "register" ? "建立本機帳號" : "更新本機密碼";
-    if (guest) guest.hidden = mode !== "login";
-    if (title) title.textContent = mode === "login" ? "登入軍府" : mode === "register" ? "建立新軍府" : "重設本機密碼";
-    setMessage("");
+  function updateUI() {
+    const screen = document.getElementById("authScreen");
+    const googleButton = document.getElementById("googleLoginButton");
+    const configNote = document.getElementById("authConfigNote");
+    const closeButton = document.getElementById("authClose");
+    const user = activeUser();
+    if (screen) screen.hidden = Boolean(user);
+    if (closeButton) closeButton.hidden = !user;
+    if (googleButton) googleButton.disabled = !state.configured;
+    if (configNote) {
+      configNote.hidden = state.configured;
+      configNote.textContent = "尚未設定 Firebase 專案；目前只能使用訪客本機存檔。";
+    }
   }
 
-  function open(options = {}) {
+  function notify() {
+    updateUI();
+    const user = activeUser();
+    state.listeners.forEach((listener) => {
+      try { listener(user); } catch (error) { console.error("Auth listener failed", error); }
+    });
+  }
+
+  function isCancelled(error) {
+    const code = String(error?.code || error?.errorCode || "").toLowerCase();
+    return code === "auth/popup-closed-by-user"
+      || code === "auth/cancelled-popup-request"
+      || code === "auth/user-cancelled"
+      || code.includes("cancel");
+  }
+
+  async function googleLogin() {
+    if (!state.configured || !window.fbAuth || !window.firebase) {
+      setMessage("Google 登入尚未設定，請先完成 Firebase 專案設定。", "error");
+      return false;
+    }
+    window.TaoyuanGameState?.persist?.();
+    setMigrationKey(getSaveKey());
+    const nativePlugin = window.Capacitor?.isNativePlatform?.() && window.Capacitor?.Plugins?.NativeGoogleAuth;
+    try {
+      if (nativePlugin) {
+        const result = await window.Capacitor.Plugins.NativeGoogleAuth.signIn();
+        if (!result?.idToken) throw new Error("Google 沒有回傳登入憑證");
+        const credential = window.firebase.auth.GoogleAuthProvider.credential(result.idToken);
+        await window.fbAuth.signInWithCredential(credential);
+      } else {
+        const provider = new window.firebase.auth.GoogleAuthProvider();
+        provider.setCustomParameters({ prompt: "select_account" });
+        try {
+          await window.fbAuth.signInWithPopup(provider);
+        } catch (error) {
+          if (error?.code !== "auth/popup-blocked") throw error;
+          await window.fbAuth.signInWithRedirect(provider);
+          return true;
+        }
+      }
+      setMessage("Google 登入成功，正在載入雲端軍府…", "success");
+      window.location.reload();
+      return true;
+    } catch (error) {
+      if (!isCancelled(error)) {
+        console.error("Google 登入失敗", error);
+        setMessage("Google 登入失敗：" + (error?.message || "請稍後再試"), "error");
+      }
+      return false;
+    }
+  }
+
+  async function logout() {
+    try {
+      window.TaoyuanGameState?.persist?.();
+      if (window.TaoyuanCloud?.uploadNow && state.user) await window.TaoyuanCloud.uploadNow();
+      if (window.Capacitor?.isNativePlatform?.() && window.Capacitor?.Plugins?.NativeGoogleAuth) {
+        try { await window.Capacitor.Plugins.NativeGoogleAuth.signOut(); } catch (error) { console.warn("Native Google 登出失敗", error); }
+      }
+      if (window.fbAuth) await window.fbAuth.signOut();
+    } catch (error) {
+      console.error("登出失敗", error);
+      setMessage("登出失敗：" + (error?.message || "請稍後再試"), "error");
+      return false;
+    }
+    saveGuest(null);
+    localStorage.removeItem(PENDING_MIGRATION_KEY);
+    window.location.reload();
+    return true;
+  }
+
+  function guestLogin() {
+    if (!state.guest) {
+      const number = String(Date.now()).slice(-6);
+      saveGuest({
+        id: "guest-" + Date.now().toString(36),
+        displayName: "訪客" + number,
+        createdAt: Date.now()
+      });
+    }
+    window.location.reload();
+  }
+
+  function open() {
     const screen = document.getElementById("authScreen");
     if (!screen) return;
-    const close = document.getElementById("authClose");
-    if (close) close.hidden = !activeAccount();
     screen.hidden = false;
-    setMode(options.mode || "login");
-    document.getElementById("authUsername")?.focus();
+    document.getElementById("googleLoginButton")?.focus();
   }
 
   function close() {
-    if (!activeAccount()) return;
+    if (!activeUser()) return;
     const screen = document.getElementById("authScreen");
     if (screen) screen.hidden = true;
   }
 
-  function createAccount(username, password, guest = false) {
-    const id = (guest ? "guest-" : "user-") + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 7);
-    const account = { id, username, passwordHash: hashPassword(password), guest, createdAt: Date.now() };
-    state.accounts.push(account);
-    selectAccount(id);
-    return account;
-  }
-
-  function submit(event) {
-    event.preventDefault();
-    const usernameInput = document.getElementById("authUsername");
-    const passwordInput = document.getElementById("authPassword");
-    const confirmInput = document.getElementById("authPasswordConfirm");
-    const username = normalizeUsername(usernameInput?.value);
-    const password = String(passwordInput?.value || "");
-    const confirm = String(confirmInput?.value || "");
-    if (username.length < 2) return setMessage("請輸入 2–16 個字元的軍府名稱");
-    if (password.length < 4) return setMessage("本機密碼至少需要 4 個字元");
-    if (mode !== "login" && password !== confirm) return setMessage("兩次輸入的密碼不一致");
-    const found = state.accounts.find((account) => account.username.toLocaleLowerCase() === username.toLocaleLowerCase());
-    if (mode === "login") {
-      if (!found || found.passwordHash !== hashPassword(password)) return setMessage("軍府名稱或密碼不正確");
-      selectAccount(found.id);
-      location.reload();
-      return;
-    }
-    if (mode === "register") {
-      if (found) return setMessage("這個軍府名稱已經存在");
-      createAccount(username, password);
-      location.reload();
-      return;
-    }
-    if (!found) return setMessage("找不到這個本機軍府名稱");
-    found.passwordHash = hashPassword(password);
-    selectAccount(found.id);
-    location.reload();
-  }
-
-  function guestLogin() {
-    let number = 1;
-    let username = "旅人" + String(number).padStart(3, "0");
-    while (state.accounts.some((account) => account.username === username)) {
-      number += 1;
-      username = "旅人" + String(number).padStart(3, "0");
-    }
-    createAccount(username, "guest-" + Date.now(), true);
-    location.reload();
-  }
-
-  function logout() {
-    state.currentUserId = null;
-    persistState();
-    location.reload();
-  }
-
   function render() {
-    document.querySelectorAll("[data-auth-mode]").forEach((button) => button.addEventListener("click", () => setMode(button.dataset.authMode)));
-    document.getElementById("authForm")?.addEventListener("submit", submit);
+    document.getElementById("googleLoginButton")?.addEventListener("click", googleLogin);
     document.getElementById("authGuest")?.addEventListener("click", guestLogin);
     document.getElementById("authClose")?.addEventListener("click", close);
-    const screen = document.getElementById("authScreen");
-    if (screen) screen.hidden = Boolean(activeAccount());
-    setMode("login");
+    updateUI();
+    if (!state.configured) setMessage("請使用 Google 登入以啟用雲端存檔，或先以訪客試玩。", "info");
+  }
+
+  function initializeFirebase() {
+    if (!hasFirebaseConfig() || !window.firebase) {
+      state.configured = false;
+      state.ready = true;
+      resolveReady(null);
+      return;
+    }
+    try {
+      if (!window.firebase.apps.length) window.firebase.initializeApp(firebaseConfig());
+      window.fbAuth = window.firebase.auth();
+      window.fbDb = window.firebase.firestore();
+      state.configured = true;
+      window.fbAuth.setPersistence(window.firebase.auth.Auth.Persistence.LOCAL).catch((error) => {
+        console.warn("Firebase Auth persistence unavailable", error);
+      });
+      window.fbAuth.onAuthStateChanged((user) => {
+        state.user = user || null;
+        if (state.user) saveGuest(null);
+        state.ready = true;
+        notify();
+        resolveReady(state.user);
+      });
+    } catch (error) {
+      console.error("Firebase 初始化失敗", error);
+      state.configured = false;
+      state.ready = true;
+      resolveReady(null);
+    }
   }
 
   const api = {
-    getSaveKey: () => activeAccount() ? accountSaveKey(activeAccount().id) : LEGACY_SAVE_KEY,
-    getActiveUser: activeAccount,
-    isAuthenticated: () => Boolean(activeAccount()),
+    ready,
+    getSaveKey,
+    getMigrationSaveKey,
+    clearMigrationKey,
+    getActiveUser: activeUser,
+    getFirebaseUser: () => state.user,
+    isAuthenticated: () => Boolean(activeUser()),
+    isCloudAuthenticated: () => Boolean(state.user),
+    isConfigured: () => state.configured,
+    getAccountCount: () => (state.user || state.guest ? 1 : 0),
+    onStateChange: (listener) => {
+      if (typeof listener !== "function") return () => {};
+      state.listeners.add(listener);
+      if (state.ready) queueMicrotask(() => listener(activeUser()));
+      return () => state.listeners.delete(listener);
+    },
     open,
     close,
-    logout,
-    setMode,
-    getAccountCount: () => state.accounts.length
+    googleLogin,
+    guestLogin,
+    logout
   };
   window.TaoyuanAuth = Object.freeze(api);
+
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", render, { once: true });
   else render();
+  initializeFirebase();
 }());

@@ -99,6 +99,19 @@ function startGameLoop() {
   if (!runtime.backgrounded && !document.hidden && !runtime.rafId) runtime.rafId = requestAnimationFrame(gameLoop);
 }
 
+window.addEventListener("taoyuan-save-replaced", () => {
+  runtime.activeStage = Math.max(1, Number(save.stage) || 1);
+  runtime.waveClears = 0;
+  runtime.bossActive = false;
+  runtime.spawning = false;
+  runtime.enemies = [];
+  runtime.projectiles = [];
+  runtime.numbers = [];
+  runtime.damageStats = {};
+  resetAllies();
+  showEnemyPreview(activeStageNumber());
+  updateHud();
+});
 document.addEventListener("visibilitychange", () => {
   if (document.hidden) {
     runtime.backgrounded = true;

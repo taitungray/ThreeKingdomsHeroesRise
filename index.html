@@ -16,26 +16,19 @@
       <div class="auth-card">
         <div class="auth-brand">
           <img class="auth-brand-icon" src="assets/icon.png" alt="三國：群英再起 App icon">
-          <p class="auth-kicker">桃園軍府 · LOCAL PROFILE</p>
-          <h1>三國：群英再起</h1>
-          <p>建立你的本機軍府，保留每位武將的征戰進度。</p>
+          <p class="auth-kicker">本地軍府 · CLOUD SAVE</p>
+          <h1 id="authModeTitle">三國：群英再起</h1>
+          <p>使用 Google 帳號登入，跨裝置保留你的武將、關卡與軍資。</p>
         </div>
-        <div class="auth-tabs" role="tablist" aria-label="帳號操作">
-          <button type="button" data-auth-mode="login" role="tab">登入</button>
-          <button type="button" data-auth-mode="register" role="tab">註冊</button>
-          <button type="button" data-auth-mode="reset" role="tab">重設密碼</button>
+        <div class="auth-provider-card">
+          <button id="googleLoginButton" class="google-login-button" type="button"><span class="google-mark" aria-hidden="true">G</span><span>使用 Google 登入</span></button>
+          <p class="auth-provider-copy">登入後會自動下載雲端存檔，遊戲中的進度也會自動同步。</p>
         </div>
-        <h2 id="authModeTitle">登入軍府</h2>
-        <form id="authForm" class="auth-form">
-          <label class="auth-field"><span>軍府名稱</span><input id="authUsername" name="username" type="text" maxlength="16" autocomplete="username" placeholder="例如：玄德軍府" required></label>
-          <label class="auth-field"><span>本機密碼</span><input id="authPassword" name="password" type="password" minlength="4" autocomplete="current-password" placeholder="至少 4 個字元" required></label>
-          <label id="authPasswordConfirmWrap" class="auth-field" hidden><span>再次確認密碼</span><input id="authPasswordConfirm" name="passwordConfirm" type="password" minlength="4" autocomplete="new-password" placeholder="再輸入一次密碼"></label>
-          <button id="authSubmit" class="seal-button auth-submit" type="submit">進入軍府</button>
-        </form>
-        <button id="authGuest" class="stone-button auth-guest" type="button">訪客試玩</button>
+        <button id="authGuest" class="stone-button auth-guest" type="button">訪客試玩（僅本機存檔）</button>
         <button id="authClose" class="text-button auth-close" type="button" hidden>返回遊戲</button>
         <p id="authMessage" class="auth-message" aria-live="polite"></p>
-        <p class="auth-note">這是本機帳號流程：帳號、密碼雜湊與遊戲進度只保存在此裝置，尚未連接雲端驗證。</p>
+        <p id="authConfigNote" class="auth-config-note" hidden></p>
+        <p class="auth-note">Google 登入由 Firebase Authentication 處理；遊戲存檔只寫入此專案的 Firestore UID 文件。本機訪客存檔不會上傳。</p>
       </div>
     </section>
     <section id="battleScreen" class="battle-screen">
@@ -173,19 +166,45 @@
   <script src="js/admob.js"></script>
   <script src="js/platform.js"></script>
   <script src="js/iap.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+  <script src="js/firebase-config.js"></script>
   <script src="js/auth.js"></script>
-  <script src="js/audio.js"></script>
-  <script src="data/game-data.js"></script>
-  <script src="data/shop-data.js"></script>
-  <script src="js/game/game-core.js"></script>
-  <script src="js/game/game-combat.js"></script>
-  <script src="js/game/game-render.js"></script>
-  <script src="js/game/game-ui.js"></script>
-  <script src="js/game/game-main.js"></script>
   <script>
+    (async function bootTaoyuanGame() {
+      const scripts = [
+        "js/audio.js",
+        "data/game-data.js",
+        "data/shop-data.js",
+        "js/game/game-core.js",
+        "js/game/game-combat.js",
+        "js/game/game-render.js",
+        "js/game/game-ui.js",
+        "js/cloud-save.js",
+        "js/game/game-main.js"
+      ];
+      const loadScript = (source) => new Promise((resolve, reject) => {
+        const script = document.createElement("script");
+        script.src = source;
+        script.onload = resolve;
+        script.onerror = () => reject(new Error("無法載入 " + source));
+        document.body.appendChild(script);
+      });
+      try {
+        await window.TaoyuanAuth?.ready;
+        for (const source of scripts) await loadScript(source);
+      } catch (error) {
+        console.error("遊戲啟動失敗", error);
+        const message = document.getElementById("authMessage");
+        if (message) {
+          message.textContent = "遊戲資源載入失敗，請重新整理。";
+          message.className = "auth-message error";
+        }
+      }
+    }());
     if ("serviceWorker" in navigator && location.protocol !== "file:") {
       window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}), { once: true });
     }
-  </script>
-</body>
+  </script></body>
 </html>

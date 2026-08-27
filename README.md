@@ -31,7 +31,7 @@ npm run dev
 - 武將頁可升級角色；編隊頁可替換出戰成員；戰法頁可強化全隊效果。
 - 武將詳情內有紙娃娃配置：可輪換兵器、戰甲、坐騎與信物；外觀及對應數值加成會即時同步至隊伍。
 - 高階坐騎有獨立物種輪廓、馬鎧、鬃毛、裝飾與輕量像素 VFX，不只換色。
-- 進度與離線收益會儲存在瀏覽器 `localStorage`。
+- 訪客進度會儲存在瀏覽器 `localStorage`；Google 登入後會以 Firebase UID 分隔本機快取並同步到 Cloud Firestore。
 - 戰役頁可進入目前關卡或重打已通關章節；重打只給部分戰功，不會倒退最高進度。
 - `data/game-data.js` 集中 50 名武將、66 件紙娃娃裝備、軍令、20 個章節與 100 個關卡的可調整資料。
 - 執行邏輯已拆成 js/game/ 的 core、combat、render、ui、main 五個模組；模組邊界與載入順序見 docs/architecture.md。
@@ -40,7 +40,7 @@ npm run dev
 
 - capacitor.config.json、manifest.json、sw.js 與 www/ 已準備好直式 Android/PWA 包裝。
 - js/admob.js 只提供使用者主動觸發的 rewarded ad 接口；開發環境固定用 Google 測試 ID，尚未啟用正式廣告。
-- 正式版請先閱讀 docs/platform-and-release.md、docs/ads-integration.md 與 docs/google-play-submission.md，填入自己的 application ID、AdMob ID、publisher line、隱私政策 URL 與簽名設定。
+- 正式版請先閱讀 docs/platform-and-release.md、docs/cloud-auth-setup.md、docs/ads-integration.md 與 docs/google-play-submission.md，填入自己的 Firebase、application ID、AdMob ID、publisher line、隱私政策 URL 與簽名設定。
 - UI 與後續製作必須遵守 docs/ui-display-rules.md、docs/production-rules.md；需要截圖或畫面驗收時使用 docs/visual-qa.md。
 - 不會從 IncenseAshes 複製 Firebase 憑證、keystore、upload certificate、正式廣告 ID 或商店素材。
 

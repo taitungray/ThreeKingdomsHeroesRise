@@ -3,25 +3,26 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>三國：群英再起｜隱私權政策</title>
-  <style>
-    :root { color-scheme: dark; font-family: system-ui, sans-serif; background: #171a16; color: #f3ead1; }
-    body { max-width: 760px; margin: 0 auto; padding: 32px 20px 64px; line-height: 1.75; }
-    h1, h2 { color: #e4c77a; } a { color: #f0bd60; }
-    .note { border: 1px solid #805d3a; padding: 12px 16px; background: #261f18; }
-  </style>
+  <title>三國：群英再起｜隱私權與資料說明</title>
+  <link rel="stylesheet" href="styles.css">
 </head>
-<body>
-  <h1>三國：群英再起｜隱私權政策</h1>
-  <p>更新日期：2026-08-27</p>
-  <div class="note">本專案目前是 Web/H5 prototype。遊戲內的本機帳號僅用於在同一台裝置分隔存檔，不代表雲端身分驗證。</div>
-  <h2>本機帳號與存檔</h2>
-  <p>你可以使用訪客試玩、建立本機帳號、登入、重設本機密碼、切換帳號或登出。軍府名稱、密碼雜湊與遊戲進度會保存在瀏覽器或 App WebView 的 localStorage，不會由目前版本主動上傳到伺服器。清除網站資料、解除安裝 App 或更換裝置可能會使本機資料消失。</p>
-  <h2>音樂、音效與裝置權限</h2>
-  <p>背景音樂與戰鬥音效由瀏覽器 Web Audio API 即時產生；第一次觸碰畫面後才會播放，以符合瀏覽器自動播放規則。遊戲可依你的設定使用通知、震動與廣告等平台功能；未授權時會維持可遊玩的離線流程。</p>
-  <h2>廣告與付費</h2>
-  <p>測試版本使用測試用 AdMob 設定。正式發布前必須替換正式廣告識別碼、補齊 Google Play Data safety 與實際資料處理說明，並確認隱私權政策與 SDK 行為一致。</p>
-  <h2>聯絡方式</h2>
-  <p>正式發布前請將支援信箱替換為實際地址：<a href="mailto:REPLACE_WITH_SUPPORT_EMAIL">REPLACE_WITH_SUPPORT_EMAIL</a></p>
+<body class="legal-page">
+  <main class="legal-card">
+    <p class="eyebrow">三國：群英再起</p>
+    <h1>隱私權與資料說明</h1>
+    <p class="note">本頁說明目前 Web/H5 與 Android 版本的登入、雲端存檔、廣告與本機資料處理方式。</p>
+    <h2>Google 登入</h2>
+    <p>玩家可使用 Google 帳號登入。Google Authentication／Firebase Authentication 會處理登入驗證；本遊戲不接收或保存 Google 密碼。遊戲只取得 Firebase UID、顯示名稱、Email 與登入 provider，用於辨識雲端存檔與顯示帳號。</p>
+    <h2>雲端存檔</h2>
+    <p>登入 Google 後，遊戲進度會保存到本專案 Firebase Cloud Firestore 的個人文件：<code>taoyuan_qunying_saves/{Firebase UID}</code>。文件內容包含關卡、武將、軍資、成就、設定及同步時間等遊戲資料；Firestore 規則只允許登入者讀寫自己的 UID 文件。</p>
+    <p>遊戲啟動時會下載雲端存檔，遊戲中保存時會延遲合併上傳；登出前會嘗試上傳最後一次進度。沒有 Firebase 設定或未登入時，訪客資料只存於此裝置，不會上傳。</p>
+    <h2>本機資料</h2>
+    <p>Firebase Auth 的登入工作階段與遊戲本機快取會使用瀏覽器或 App WebView 的本機儲存。清除網站資料、解除安裝 App 或更換裝置可能清除尚未同步的訪客資料。</p>
+    <h2>廣告、音效與診斷</h2>
+    <p>遊戲可能在玩家主動選擇後顯示 rewarded ad；開發版本使用 Google 測試廣告設定。音效由裝置 WebAudio 產生。錯誤與玩家主動提交的問題回報可能由目前平台接口記錄，正式上架前會依實際 SDK 行為更新 Google Play Data safety。</p>
+    <h2>聯絡方式</h2>
+    <p>正式發布前請將支援信箱替換成實際地址：<a href="mailto:REPLACE_WITH_SUPPORT_EMAIL">REPLACE_WITH_SUPPORT_EMAIL</a></p>
+    <p><a href="index.html">返回遊戲</a></p>
+  </main>
 </body>
 </html>

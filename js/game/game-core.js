@@ -192,6 +192,7 @@ const defaultSave = () => ({
   lastSeen: Date.now(),
   heroSort: "power",
   renderQuality: "high",
+  lastUpdatedAt: 0,
   stamina: { current: 20, max: 20, lastAt: Date.now() },
   tower: { floor: 0, best: 0 },
   dungeons: { date: localDateKey(), claimed: {} },
@@ -496,8 +497,27 @@ function recycleExpiredEffects() {
 
 function persist() {
   save.lastSeen = Date.now();
+  save.lastUpdatedAt = save.lastSeen;
   localStorage.setItem(SAVE_KEY, JSON.stringify(save));
+  window.TaoyuanCloud?.queueUpload?.(save);
 }
+
+function replaceSave(nextSave) {
+  if (!nextSave || typeof nextSave !== "object" || Array.isArray(nextSave)) return false;
+  const fresh = defaultSave();
+  Object.keys(save).forEach((key) => delete save[key]);
+  Object.assign(save, fresh, nextSave);
+  window.TaoyuanAudio?.configure?.({ sound: save.sound, music: save.music });
+  window.dispatchEvent(new CustomEvent("taoyuan-save-replaced"));
+  return true;
+}
+
+window.TaoyuanGameState = Object.freeze({
+  getSave: () => save,
+  getSaveKey: () => SAVE_KEY,
+  persist,
+  replaceSave
+});
 
 function enemyGeneralById(id) {
   return (GAME_DATA.enemyGenerals || []).find((general) => general.id === id) || null;

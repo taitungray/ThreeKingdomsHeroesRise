@@ -633,10 +633,11 @@ function challengeArena(opponentId) {
 function renderSettings() {
   const activeUser = window.TaoyuanAuth?.getActiveUser?.();
   const accountLabel = activeUser ? String(activeUser.username).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;") : "未登入";
-  const accountType = activeUser?.guest ? "訪客軍府 · 本機獨立存檔" : "密碼帳號 · 本機獨立存檔";
+  const accountType = activeUser?.guest ? "訪客軍府 · 本機存檔" : "Google 帳號 · 雲端同步";
+  const cloudStatus = window.TaoyuanCloud?.getStatusText?.() || (activeUser?.guest ? "訪客存檔不會上傳" : "等待雲端連線");
   const accountHtml = activeUser
-    ? '<section class="auth-account-card"><div class="auth-account-mark">府</div><div class="auth-account-copy"><strong>' + accountLabel + '</strong><small>' + accountType + '</small></div><div class="auth-account-actions"><button class="stone-button compact-button" type="button" data-action="auth-switch">切換帳號</button><button class="stone-button compact-button" type="button" data-action="auth-logout">登出</button></div></section>'
-    : '<section class="auth-account-card"><div class="auth-account-mark">府</div><div class="auth-account-copy"><strong>尚未登入</strong><small>登入以啟用獨立存檔</small></div><button class="seal-button compact-button" type="button" data-action="auth-switch">登入</button></section>';
+    ? '<section class="auth-account-card"><div class="auth-account-mark">府</div><div class="auth-account-copy"><strong>' + accountLabel + '</strong><small>' + accountType + '</small><small id="cloudSaveStatus">' + cloudStatus + '</small></div><div class="auth-account-actions"><button class="stone-button compact-button" type="button" data-action="auth-switch">切換帳號</button><button class="stone-button compact-button" type="button" data-action="auth-logout">登出</button></div></section>'
+    : '<section class="auth-account-card"><div class="auth-account-mark">府</div><div class="auth-account-copy"><strong>尚未登入</strong><small>使用 Google 登入以啟用雲端存檔</small><small id="cloudSaveStatus">' + cloudStatus + '</small></div><button class="seal-button compact-button" type="button" data-action="auth-switch">登入</button></section>';
   setPanel("\u8ecd\u52d9\u8a2d\u5b9a", accountHtml + '<div class="setting-list">' +
     '<button class="setting-item" type="button" data-action="setting-toggle" data-setting="music"><span><strong>背景音樂</strong><br><small>桃園軍府主題旋律，首次觸碰後播放</small></span><i class="toggle ' + (save.music ? "on" : "") + '"></i></button>' +
     '<button class="setting-item" type="button" data-action="setting-toggle" data-setting="sound"><span><strong>\u97f3\u6548</strong><br><small>\u653b\u64ca\u3001\u6280\u80fd\u8207\u6309\u9215\u56de\u994b</small></span><i class="toggle ' + (save.sound ? "on" : "") + '"></i></button>' +

@@ -4,4 +4,5 @@
     <string name="title_activity_main">三國：群英再起</string>
     <string name="package_name">com.taitungray.taoyuanqunying</string>
     <string name="custom_url_scheme">com.taitungray.taoyuanqunying</string>
+    <string name="google_web_client_id">REPLACE_WITH_GOOGLE_WEB_CLIENT_ID</string>
 </resources>

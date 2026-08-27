@@ -1186,7 +1186,65 @@ button { touch-action: manipulation; }
   font-size: 11px;
   line-height: 1.55;
 }
-.auth-tabs {
+.auth-provider-card {
+  display: grid;
+  gap: 8px;
+  margin: 14px 0 10px;
+  padding: 12px;
+  border: 2px solid #655338;
+  background: linear-gradient(135deg, #e8dbb5, #c9b98d);
+  box-shadow: inset 0 0 0 1px #f4e8c8;
+}
+.google-login-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  width: 100%;
+  min-height: 46px;
+  border: 2px solid #493a29;
+  color: #30281f;
+  background: #fffaf0;
+  box-shadow: 0 3px 0 #765d3d;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.google-login-button:active { transform: translateY(2px); box-shadow: 0 1px 0 #765d3d; }
+.google-login-button:disabled { opacity: .58; cursor: not-allowed; }
+.google-mark {
+  display: grid;
+  place-items: center;
+  width: 25px;
+  height: 25px;
+  border: 1px solid #bcae91;
+  color: #4285f4;
+  background: #fff;
+  font-family: Arial, sans-serif;
+  font-size: 17px;
+  font-weight: 900;
+}
+.auth-provider-copy {
+  margin: 0;
+  color: #66553a;
+  font-size: 10px;
+  line-height: 1.5;
+}
+.auth-config-note {
+  margin: 8px 2px 0;
+  padding: 7px 8px;
+  border-left: 3px solid #9b2f2f;
+  color: #753326;
+  background: #ead7bc;
+  font-size: 10px;
+  line-height: 1.5;
+  text-align: left;
+}
+.auth-account-copy small + small { display: block; margin-top: 3px; color: #66563d; }
+.cloud-save-status.online { color: #2d6948; }
+.cloud-save-status.syncing { color: #8b5e24; }
+.cloud-save-status.error { color: #9b2f2f; }.auth-tabs {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   height: 40px;
