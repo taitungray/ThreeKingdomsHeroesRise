@@ -18,7 +18,7 @@ function hexColor(value, fallback) {
 }
 
 function imageMarkup(base64, x, y, width, height) {
-  return '<image href="data:image/png;base64,' + base64 + '" x="' + x + '" y="' + y + '" width="' + width + '" height="' + height + '" preserveAspectRatio="none"/>';
+  return '<image href="data:image/webp;base64,' + base64 + '" x="' + x + '" y="' + y + '" width="' + width + '" height="' + height + '" preserveAspectRatio="none"/>';
 }
 
 function enemyBodyMarkup(type) {
@@ -90,7 +90,7 @@ async function main() {
   const data = context.window.THREE_KINGDOMS_DATA;
   const heroes = data.heroes;
   const heroSpecs = heroes.map((hero) => {
-    const bodyPath = path.join(root, hero.combatSprite || ("assets/characters/combat-body-" + hero.id + "-v1.png"));
+    const bodyPath = path.join(root, hero.combatSprite || ("assets/characters/combat-body-" + hero.id + "-v1.webp"));
     if (!fs.existsSync(bodyPath)) throw new Error("Missing combat body for " + hero.id);
     return {
       id: hero.id,
@@ -107,7 +107,7 @@ async function main() {
   }));
   const bossAssetByGeneral = { zhangjiao: "zhangjiao", dongzhuo: "dongzhuo", lvbu: "lvbu", menghuo: "menghuo" };
   const bossSpecs = Object.entries(bossAssetByGeneral).map(([id, assetId]) => {
-    const bodyPath = path.join(root, "assets", "characters", "boss-" + assetId + "-v1.png");
+    const bodyPath = path.join(root, "assets", "characters", "boss-" + assetId + "-v1.webp");
     if (!fs.existsSync(bodyPath)) throw new Error("Missing boss body for " + assetId);
     const general = data.enemyGenerals.find((item) => item.id === id);
     return {
@@ -140,8 +140,8 @@ async function main() {
       cells.join(""),
       '</svg>'
     ].join("");
-    const outputName = "attack-" + spec.id + "-v1.png";
-    await sharp(Buffer.from(svg)).png({ compressionLevel: 9 }).toFile(path.join(outputDir, outputName));
+    const outputName = "attack-" + spec.id + "-v1.webp";
+    await sharp(Buffer.from(svg)).webp({ lossless: true }).toFile(path.join(outputDir, outputName));
     manifest.assets.push({ id: spec.id, kind: spec.kind, path: "assets/characters/" + outputName });
     process.stdout.write("generated " + outputName + "\n");
   }

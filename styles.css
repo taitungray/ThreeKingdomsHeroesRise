@@ -882,47 +882,47 @@ button { touch-action: manipulation; }
 .pixel-avatar.portrait-asset:not(.large) > .mount-mark { display: none !important; }
 .pixel-avatar.portrait-asset-liubei {
   background-color: #315f43;
-  background-image: url("assets/characters/portrait-liubei-v1.png");
+  background-image: url("assets/characters/portrait-liubei-v1.webp");
 }
 .pixel-avatar.portrait-asset-guanyu {
   background-color: #63352f;
-  background-image: url("assets/characters/portrait-guanyu-v1.png");
+  background-image: url("assets/characters/portrait-guanyu-v1.webp");
 }
 .pixel-avatar.portrait-asset-zhaoyun {
   background-color: #385c83;
-  background-image: url("assets/characters/portrait-zhaoyun-v1.png");
+  background-image: url("assets/characters/portrait-zhaoyun-v1.webp");
 }
 .pixel-avatar.portrait-asset-zhangfei {
   background-color: #713d35;
-  background-image: url("assets/characters/portrait-zhangfei-v1.png");
+  background-image: url("assets/characters/portrait-zhangfei-v1.webp");
 }
 .pixel-avatar.portrait-asset-huangzhong {
   background-color: #856c35;
-  background-image: url("assets/characters/portrait-huangzhong-v1.png");
+  background-image: url("assets/characters/portrait-huangzhong-v1.webp");
 }
 .pixel-avatar.portrait-asset-caocao {
   background-color: #434568;
-  background-image: url("assets/characters/portrait-caocao-v1.png");
+  background-image: url("assets/characters/portrait-caocao-v1.webp");
 }
 .pixel-avatar.portrait-asset-sunshang {
   background-color: #6f3e58;
-  background-image: url("assets/characters/portrait-sunshang-v1.png");
+  background-image: url("assets/characters/portrait-sunshang-v1.webp");
 }
 .pixel-avatar.portrait-asset-xiahoudun {
   background-color: #385373;
-  background-image: url("assets/characters/portrait-xiahoudun-v1.png");
+  background-image: url("assets/characters/portrait-xiahoudun-v1.webp");
 }
 .pixel-avatar.portrait-asset-zhugeliang {
   background-color: #496c63;
-  background-image: url("assets/characters/portrait-zhugeliang-v1.png");
+  background-image: url("assets/characters/portrait-zhugeliang-v1.webp");
 }
 .pixel-avatar.portrait-asset-diaochan {
   background-color: #674562;
-  background-image: url("assets/characters/portrait-diaochan-v1.png");
+  background-image: url("assets/characters/portrait-diaochan-v1.webp");
 }
 .pixel-avatar.portrait-asset-lubu {
   background-color: #6e2f35;
-  background-image: url("assets/characters/portrait-lubu-v1.png");
+  background-image: url("assets/characters/portrait-lubu-v1.webp");
 }
 .hero-skill-card {
   margin: 0 0 10px;
@@ -1023,22 +1023,22 @@ button { touch-action: manipulation; }
 /* Equipment crop icons share the same 48px source grid and keep nearest-neighbor edges. */
 .paper-slot > i.slot-mark { width: 24px; height: 24px; border: 1px solid #6e492e; background-color: #4a4034; background-position: center; background-size: 100% 100%; background-repeat: no-repeat; image-rendering: pixelated; }
 .paper-slot > i.slot-mark::before, .paper-slot > i.slot-mark::after { display: none; }
-.item-icon-twin > i.slot-mark { background-image: url("assets/characters/equipment-weapon-twin-v1.png"); }
-.item-icon-guandao > i.slot-mark { background-image: url("assets/characters/equipment-weapon-guandao-v1.png"); }
-.item-icon-serpent > i.slot-mark { background-image: url("assets/characters/equipment-weapon-serpent-v1.png"); }
-.item-icon-lance > i.slot-mark { background-image: url("assets/characters/equipment-weapon-lance-v1.png"); }
-.item-icon-bow > i.slot-mark { background-image: url("assets/characters/equipment-weapon-bow-v1.png"); }
-.item-icon-fan > i.slot-mark { background-image: url("assets/characters/equipment-weapon-fan-v1.png"); }
-.item-icon-rings > i.slot-mark { background-image: url("assets/characters/equipment-weapon-rings-v1.png"); }
-.item-icon-halberd > i.slot-mark { background-image: url("assets/characters/equipment-weapon-halberd-v1.png"); }
-.item-icon-oath > i.slot-mark { background-image: url("assets/characters/equipment-armor-oath-v1.png"); }
-.item-icon-iron > i.slot-mark { background-image: url("assets/characters/equipment-armor-iron-v1.png"); }
-.item-icon-silk > i.slot-mark { background-image: url("assets/characters/equipment-armor-silk-v1.png"); }
-.item-icon-crimson > i.slot-mark { background-image: url("assets/characters/equipment-armor-crimson-v1.png"); }
-.item-icon-jade > i.slot-mark { background-image: url("assets/characters/equipment-accessory-jade-v1.png"); }
-.item-icon-dragon > i.slot-mark { background-image: url("assets/characters/equipment-accessory-dragon-v1.png"); }
-.item-icon-war > i.slot-mark { background-image: url("assets/characters/equipment-accessory-war-v1.png"); }
-.item-icon-feather > i.slot-mark { background-image: url("assets/characters/equipment-accessory-feather-v1.png"); }
+.item-icon-twin > i.slot-mark { background-image: url("assets/characters/equipment-weapon-twin-v1.webp"); }
+.item-icon-guandao > i.slot-mark { background-image: url("assets/characters/equipment-weapon-guandao-v1.webp"); }
+.item-icon-serpent > i.slot-mark { background-image: url("assets/characters/equipment-weapon-serpent-v1.webp"); }
+.item-icon-lance > i.slot-mark { background-image: url("assets/characters/equipment-weapon-lance-v1.webp"); }
+.item-icon-bow > i.slot-mark { background-image: url("assets/characters/equipment-weapon-bow-v1.webp"); }
+.item-icon-fan > i.slot-mark { background-image: url("assets/characters/equipment-weapon-fan-v1.webp"); }
+.item-icon-rings > i.slot-mark { background-image: url("assets/characters/equipment-weapon-rings-v1.webp"); }
+.item-icon-halberd > i.slot-mark { background-image: url("assets/characters/equipment-weapon-halberd-v1.webp"); }
+.item-icon-oath > i.slot-mark { background-image: url("assets/characters/equipment-armor-oath-v1.webp"); }
+.item-icon-iron > i.slot-mark { background-image: url("assets/characters/equipment-armor-iron-v1.webp"); }
+.item-icon-silk > i.slot-mark { background-image: url("assets/characters/equipment-armor-silk-v1.webp"); }
+.item-icon-crimson > i.slot-mark { background-image: url("assets/characters/equipment-armor-crimson-v1.webp"); }
+.item-icon-jade > i.slot-mark { background-image: url("assets/characters/equipment-accessory-jade-v1.webp"); }
+.item-icon-dragon > i.slot-mark { background-image: url("assets/characters/equipment-accessory-dragon-v1.webp"); }
+.item-icon-war > i.slot-mark { background-image: url("assets/characters/equipment-accessory-war-v1.webp"); }
+.item-icon-feather > i.slot-mark { background-image: url("assets/characters/equipment-accessory-feather-v1.webp"); }
 .paper-slot-weapon { border-color: #8b6d39; }
 .item-icon-guandao > i.slot-mark, .item-icon-halberd > i.slot-mark { box-shadow: 0 0 0 1px #c99538, 0 0 8px #e0ae4c55; }
 .paper-slot-armor { border-color: #61756e; }

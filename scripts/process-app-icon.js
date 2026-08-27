@@ -2,11 +2,11 @@ const path = require('path');
 const sharp = require('sharp');
 
 const projectRoot = path.resolve(__dirname, '..');
-const sourcePath = path.join(projectRoot, 'assets', 'icon-source-user.png');
-const outputPath = path.join(projectRoot, 'assets', 'icon.png');
+const sourcePath = path.join(projectRoot, 'assets', 'icon-source-user.webp');
+const outputPath = path.join(projectRoot, 'assets', 'icon.webp');
 const size = 1024;
 const cornerRadius = 202;
-const pwaSizes = [48, 72, 96, 128, 192, 256, 512];
+const pwaSizes = [192, 512];
 
 const maskSvg = Buffer.from(
   `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
@@ -17,7 +17,7 @@ const maskSvg = Buffer.from(
 sharp(sourcePath)
   .resize(size, size, { fit: 'fill' })
   .composite([{ input: maskSvg, blend: 'dest-in' }])
-  .png({ compressionLevel: 9 })
+  .webp({ lossless: true })
   .toFile(outputPath)
   .then((metadata) => Promise.all([
     metadata,

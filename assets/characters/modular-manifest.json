@@ -86,7 +86,7 @@
         38
       ],
       "source": "sprite-assets",
-      "pathTemplate": "assets/characters/combat-body-{id}-v1.png",
+      "pathTemplate": "assets/characters/combat-body-{id}-v1.webp",
       "generatedFamilies": [
         "liubei",
         "guanyu",
@@ -164,7 +164,7 @@
         28
       ],
       "source": "equipment-icon-assets",
-      "pathTemplate": "assets/characters/equipment-weapon-{id}-v1.png",
+      "pathTemplate": "assets/characters/equipment-weapon-{id}-v1.webp",
       "generatedIcons": [
         "twin",
         "guandao",
@@ -186,7 +186,7 @@
         30
       ],
       "source": "sprite-assets",
-      "pathTemplate": "assets/characters/mount-{id}-v1.png",
+      "pathTemplate": "assets/characters/mount-{id}-v1.webp",
       "generatedIds": [
         "foot",
         "grey",
@@ -207,7 +207,7 @@
   },
   "bosses": {
     "source": "sprite-assets",
-    "pathTemplate": "assets/characters/boss-{id}-v1.png",
+    "pathTemplate": "assets/characters/boss-{id}-v1.webp",
     "generatedIds": [
       "zhangjiao",
       "dongzhuo",

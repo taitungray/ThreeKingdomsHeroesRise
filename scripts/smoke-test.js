@@ -6,6 +6,15 @@ const path = require("node:path");
 const vm = require("node:vm");
 
 const root = path.resolve(__dirname, "..");
+function collectFiles(directory) {
+  return fs.readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
+    const absolute = path.join(directory, entry.name);
+    return entry.isDirectory() ? collectFiles(absolute) : [absolute];
+  });
+}
+const imageRoots = [path.join(root, "assets"), path.join(root, "android", "app", "src", "main", "res")];
+const nonWebpImageFiles = imageRoots.flatMap(collectFiles).filter((file) => /\.(png|jpe?g|gif)$/i.test(file));
+assert.equal(nonWebpImageFiles.length, 0, "all project raster assets must use WebP");
 const dataContext = { window: {} };
 vm.runInNewContext(fs.readFileSync(path.join(root, "data", "game-data.js"), "utf8"), dataContext, { filename: "game-data.js" });
 const data = dataContext.window.THREE_KINGDOMS_DATA;
@@ -73,17 +82,17 @@ assert.ok(attackManifest.assets.every((asset) => fs.existsSync(path.join(root, a
 assert.ok(fs.existsSync(path.join(root, "assets", "characters", "equipment-manifest.json")), "equipment asset manifest missing");
 assert.ok(fs.existsSync(path.join(root, "assets", "backgrounds", "terrain-manifest.json")), "terrain asset manifest missing");
 assert.ok(fs.existsSync(path.join(root, "assets", "vfx", "vfx-manifest.json")), "VFX asset manifest missing");
-assert.ok(fs.readdirSync(path.join(root, "assets", "characters")).filter((file) => file.startsWith("mount-") && file.endsWith(".png")).length >= 14, "mount sprite assets must cover the mount pool");
-assert.ok(fs.readdirSync(path.join(root, "assets", "vfx")).filter((file) => file.startsWith("vfx-") && file.endsWith(".png")).length >= 16, "VFX sprite assets must cover the effect vocabulary");
-assert.ok(fs.readdirSync(path.join(root, "assets", "backgrounds")).filter((file) => file.startsWith("terrain-tile-") && file.endsWith(".png")).length >= 16, "terrain tile assets must cover the chapter palette");
-assert.ok(["zhangjiao", "dongzhuo", "lvbu", "menghuo"].every((id) => fs.existsSync(path.join(root, "assets", "characters", "boss-" + id + "-v1.png"))), "boss sprite assets must cover the boss set");
+assert.ok(fs.readdirSync(path.join(root, "assets", "characters")).filter((file) => file.startsWith("mount-") && file.endsWith(".webp")).length >= 14, "mount sprite assets must cover the mount pool");
+assert.ok(fs.readdirSync(path.join(root, "assets", "vfx")).filter((file) => file.startsWith("vfx-") && file.endsWith(".webp")).length >= 16, "VFX sprite assets must cover the effect vocabulary");
+assert.ok(fs.readdirSync(path.join(root, "assets", "backgrounds")).filter((file) => file.startsWith("terrain-tile-") && file.endsWith(".webp")).length >= 16, "terrain tile assets must cover the chapter palette");
+assert.ok(["zhangjiao", "dongzhuo", "lvbu", "menghuo"].every((id) => fs.existsSync(path.join(root, "assets", "characters", "boss-" + id + "-v1.webp"))), "boss sprite assets must cover the boss set");
 const authSource = fs.readFileSync(path.join(root, "js", "auth.js"), "utf8");
 const audioSource = fs.readFileSync(path.join(root, "js", "audio.js"), "utf8");
 assert.ok(authSource.includes("TaoyuanAuth") && authSource.includes("googleLogin") && authSource.includes("getSaveKey"), "Google auth module must expose cloud account saves");
 const cloudSource = fs.readFileSync(path.join(root, "js", "cloud-save.js"), "utf8");
 assert.ok(cloudSource.includes("taoyuan_qunying_saves") && cloudSource.includes("uploadToCloud") && cloudSource.includes("syncOnStartup"), "cloud save module must expose UID-scoped Firestore sync");
 assert.ok(audioSource.includes("startMusic") && audioSource.includes("sfx"), "audio module must expose music and sound effects");
-assert.ok(fs.existsSync(path.join(root, "assets", "icon.png")), "app icon source missing");
+assert.ok(fs.existsSync(path.join(root, "assets", "icon.webp")), "app icon source missing");
 assert.ok(fs.existsSync(path.join(root, "assets", "icons", "icon-192.webp")) && fs.existsSync(path.join(root, "assets", "icons", "icon-512.webp")), "PWA icon variants missing");
 const styleSource = fs.readFileSync(path.join(root, "styles.css"), "utf8");
 for (const marker of ["Character portrait pass: distinct facial silhouettes", ".portrait-eyes::before", ".avatar-xiahoudun .portrait-eyes::before", ".portrait-rune"]) {

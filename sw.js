@@ -1,4 +1,4 @@
-const CACHE_NAME = "taoyuan-qunying-v3";
+const CACHE_NAME = "taoyuan-qunying-v4";
 const PRECACHE = [
   "./",
   "./index.html",
@@ -21,7 +21,7 @@ const PRECACHE = [
   "./js/game/game-render.js",
   "./js/game/game-ui.js",
   "./js/game/game-main.js",
-  "./assets/icon.png",
+  "./assets/icon.webp",
   "./assets/icons/icon-192.webp",
   "./assets/icons/icon-512.webp"
 ];

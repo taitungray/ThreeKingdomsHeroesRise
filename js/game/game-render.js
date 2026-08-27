@@ -24,7 +24,7 @@ const VFX_ASSET_BY_TYPE = { afterimage: 2, dust: 12, impact: 15, shockwave: 14, 
 const BOSS_SPRITE_BY_GENERAL = { zhangjiao: "zhangjiao", simayi: "zhangjiao", dongzhuo: "dongzhuo", yuanshao: "dongzhuo", lvbu: "lvbu", menghuo: "menghuo", zhurong: "menghuo" };
 function terrainTileAsset(chapterIndex) {
   const tileId = TERRAIN_TILE_BY_CHAPTER[chapterIndex % TERRAIN_TILE_BY_CHAPTER.length] ?? 0;
-  return ASSETS.get("assets/backgrounds/terrain-tile-" + tileId + "-v1.png");
+  return ASSETS.get("assets/backgrounds/terrain-tile-" + tileId + "-v1.webp");
 }
 function drawTerrainTileLayer(chapterIndex) {
   const tile = terrainTileAsset(chapterIndex);
@@ -331,7 +331,7 @@ function drawWeapon(unit, color) {
   }
   ctx.translate(-7, 17);
   const weaponAssetId = { twin: "twin", guandao: "guandao", serpent: "serpent", lance: "lance", bow: "bow", fan: "fan", rings: "rings", halberd: "halberd" }[equippedWeapon];
-  const weaponImage = weaponAssetId ? ASSETS.get("assets/characters/equipment-weapon-" + weaponAssetId + "-v1.png") : null;
+  const weaponImage = weaponAssetId ? ASSETS.get("assets/characters/equipment-weapon-" + weaponAssetId + "-v1.webp") : null;
   if (weaponImage) {
     ctx.drawImage(weaponImage, -15, -46, 40, 40);
     ctx.restore();
@@ -653,7 +653,7 @@ function drawDetailedMount(mount, unit, heroId, walkCycle) {
 function drawMountOrFeet(unit, heroId, walkCycle, mountId = "") {
   const mounted = (unit.role === "\u9a0e\u5175" || unit.type === "boss") && mountId !== "foot";
   const resolvedMountId = mountId || (mounted ? "grey" : "foot");
-  const mountImage = ASSETS.get("assets/characters/mount-" + resolvedMountId + "-v1.png");
+  const mountImage = ASSETS.get("assets/characters/mount-" + resolvedMountId + "-v1.webp");
   if (mountImage) {
     const stride = unit.moving ? Math.round(walkCycle * 2) : 0;
     ctx.save();
@@ -1415,7 +1415,7 @@ function drawUnit(unit) {
   const accent = unit.team === "ally" ? unit.hero.accent : unit.accent;
   const spritePromise = unit.team === "ally" ? ASSETS.get(unit.hero.combatSprite) : null;
   const attackSpriteId = unit.team === "ally" ? heroId : unit.type === "boss" ? "boss-" + (BOSS_SPRITE_BY_GENERAL[unit.enemyGeneralId] || "zhangjiao") : (unit.type || "bandit");
-  const attackSpritePath = "assets/characters/attack-" + attackSpriteId + "-v1.png";
+  const attackSpritePath = "assets/characters/attack-" + attackSpriteId + "-v1.webp";
   const attackSprite = ASSETS.get(attackSpritePath);
   const useAttackSprite = Boolean(unit.action && attackSprite);
   const actionTransform = Boolean(unit.action && !useAttackSprite);
@@ -1429,7 +1429,7 @@ function drawUnit(unit) {
     ctx.scale(1 + pose * 0.035, 1 - pose * 0.045);
   }
   const bossSpriteId = unit.type === "boss" ? BOSS_SPRITE_BY_GENERAL[unit.enemyGeneralId] : null;
-  const bossSprite = bossSpriteId ? ASSETS.get("assets/characters/boss-" + bossSpriteId + "-v1.png") : null;
+  const bossSprite = bossSpriteId ? ASSETS.get("assets/characters/boss-" + bossSpriteId + "-v1.webp") : null;
   if (!(unit.type === "boss" && bossSprite)) drawMountOrFeet(unit, visualId, walkCycle, loadout?.mount);
 
   if (useAttackSprite) {
@@ -1484,14 +1484,14 @@ function preloadConfiguredAssets() {
     return all;
   }, []);
   const mountIds = ["foot", "grey", "redhare", "jadelion", "whitehorse", "blackhorse", "war-elephant", "cloud-deer", "hex-mark", "thunder-horse", "armored-rhino", "crimson-deer", "flying-horse", "black-panther"];
-  const mountPaths = mountIds.map((id) => "assets/characters/mount-" + id + "-v1.png");
+  const mountPaths = mountIds.map((id) => "assets/characters/mount-" + id + "-v1.webp");
   const weaponIds = ["twin", "guandao", "serpent", "lance", "bow", "fan", "rings", "halberd"];
-  const weaponPaths = weaponIds.map((id) => "assets/characters/equipment-weapon-" + id + "-v1.png");
+  const weaponPaths = weaponIds.map((id) => "assets/characters/equipment-weapon-" + id + "-v1.webp");
   const attackIds = [...HEROES.map((hero) => hero.id), "bandit", "brute", "cavalry", "archer", "strategist", "boss-zhangjiao", "boss-dongzhuo", "boss-lvbu", "boss-menghuo"];
-  const attackPaths = attackIds.map((id) => "assets/characters/attack-" + id + "-v1.png");
-  const terrainPaths = Array.from({ length: 16 }, (_, index) => "assets/backgrounds/terrain-tile-" + index + "-v1.png");
-  const vfxPaths = Array.from({ length: 16 }, (_, index) => "assets/vfx/vfx-" + index + "-v1.png");
-  const bossPaths = ["zhangjiao", "dongzhuo", "lvbu", "menghuo"].map((id) => "assets/characters/boss-" + id + "-v1.png");
+  const attackPaths = attackIds.map((id) => "assets/characters/attack-" + id + "-v1.webp");
+  const terrainPaths = Array.from({ length: 16 }, (_, index) => "assets/backgrounds/terrain-tile-" + index + "-v1.webp");
+  const vfxPaths = Array.from({ length: 16 }, (_, index) => "assets/vfx/vfx-" + index + "-v1.webp");
+  const bossPaths = ["zhangjiao", "dongzhuo", "lvbu", "menghuo"].map((id) => "assets/characters/boss-" + id + "-v1.webp");
   ASSETS.preload([...paths, ...mountPaths, ...weaponPaths, ...attackPaths, ...terrainPaths, ...vfxPaths, ...bossPaths]);
 }
 preloadConfiguredAssets();
@@ -1505,7 +1505,7 @@ function drawEffects({ groundOnly = false } = {}) {
     const progress = 1 - effect.life / effect.maxLife;
     const alpha = Math.sin(progress * Math.PI);
     const assetIndex = VFX_ASSET_BY_TYPE[effect.type];
-    const vfxImage = assetIndex === undefined ? null : ASSETS.get("assets/vfx/vfx-" + assetIndex + "-v1.png");
+    const vfxImage = assetIndex === undefined ? null : ASSETS.get("assets/vfx/vfx-" + assetIndex + "-v1.webp");
     if (vfxImage) {
       ctx.save();
       ctx.globalAlpha = alpha * (effect.type === "status" ? 0.72 : 0.9);
