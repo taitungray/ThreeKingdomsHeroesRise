@@ -27,9 +27,12 @@
 | P0-REPLAY | 已有一場結算 | 重試或下一關 | runtime 完整 reset；沒有屍體、兵器、VFX、timer 或雙 loop |
 | P0-BG | 戰鬥進行中 | 背景 90 秒以上再回前景 | 不建立第二 loop；離線收益與戰鬥狀態依規則處理 |
 | P0-SAVE | 成長／換裝／領獎後 | 重新載入 | schema v3 正確還原，未重複發獎，無資料遺失 |
+| P0-PANEL | 武將／編隊／設定等面板已開啟 | 自動戰鬥跨波、結算或進入下一關 | 面板不被自動關閉、不搶焦點、不重設捲動或選取狀態 |
 | P0-CONSOLE | 完整跑完勝／敗各一場 | 監看 console | 無 error、資產 404、vibrate intervention 或 frame failure |
 
 瀏覽器測試必須記錄內容來源：`npm run dev` 測根目錄 source；完成 `node build.js` 後才用 `npm run dev:www` 測同步產物。禁止讓舊 `www/` 混入 source QA。
+
+`npm run test:combat-browser` 若只執行數秒 smoke，只能證明 boot、draw 與移動，不能代替 P0 戰鬥驗收。完整 gate 必須明確斷言 Boss 至少實際繪製一次、我方與敵方各完成 death → removed、勝／敗結算可見且獎勵正確、面板跨關保持，並保存固定尺寸畫面證據。
 
 ## 3. 戰鬥渲染矩陣
 

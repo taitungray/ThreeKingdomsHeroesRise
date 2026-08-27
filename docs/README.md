@@ -2,12 +2,13 @@
 
 狀態：文件治理的單一入口。這裡只說明文件放哪裡、誰有權威，以及內容如何流轉。
 
-## 先看這四份
+## 先看這五份
 
 | 想知道什麼 | 文件 | 內容邊界 |
 |---|---|---|
 | 必須遵守什麼 | [製作與工程規範](standards/production-rules.md) | 強制規則，不放進度與完成聲明 |
 | 現在遊戲實際是什麼 | [目前遊戲規格](specs/current-game-spec.md) | 可由程式、資料或證據核對的現況 |
+| 整個遊戲要調整成什麼 | [全遊戲調整計畫](work/game-adjustment-plan.md) | 產品方向、垂直切片、製作階段與完成定義 |
 | 接下來要做什麼 | [目前工作清單](work/active-backlog.md) | 尚未完成的工作、優先級與完成條件 |
 | 現在有哪些錯誤 | [已知問題](issues/known-issues.md) | 已重現缺陷、證據、狀態與關閉條件 |
 
@@ -42,6 +43,7 @@ docs/
 
 ### 工作、問題與 QA
 
+- [全遊戲調整計畫](work/game-adjustment-plan.md)
 - [目前工作清單](work/active-backlog.md)
 - [已知問題](issues/known-issues.md)
 - [QA 測試矩陣](qa/qa-test-matrix.md)
