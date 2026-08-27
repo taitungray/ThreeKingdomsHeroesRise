@@ -114,3 +114,6 @@ function drawUnit(unit) {
 - 方案 A 已接入：body、武器與坐騎以拆件合成，Boss 使用獨立大圖，全部使用 nearest-neighbor 與 foot-center anchor。
 - `game-render.js` 的 `drawUnit` 已改由 `TaoyuanAssets` 管理圖片載入、快取與 fallback，同一套渲染尺寸適用於不同角色。
 - 50 名武將皆已有 combat body path，圖片核心渲染與程式降級可同時運作。
+## 實作補充：攻擊不使用單張靜態圖（2026-08-27）
+
+戰鬥角色的本體 PNG 保留作為身份與服裝層；攻擊演出由 Canvas 逐幀驅動，依 8 方向套用身體位移、蓄力／出招／收招姿勢、手臂與武器掃掠。遠程角色另有弓弦拉伸，謀士技能另有手部法術環，並保留既有坐騎、裝備與 VFX 疊加。

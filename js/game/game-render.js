@@ -236,13 +236,99 @@ function drawSkillEnergyBar(unit, visualX, visualY) {
   if (ready) drawPixelRect(x + Math.max(0, Math.ceil(width * ratio) - 5), y, 5, 1, "#fff2a7");
 }
 
+function directionWorldAngle(unit, attack = false) {
+  const index = attack && unit.action ? unit.action.direction : unit.direction;
+  const fallback = unit.facing < 0 ? 4 : 0;
+  return (Number.isFinite(index) ? index : fallback) * Math.PI / 4;
+}
+
+function directionLocalAngle(unit, attack = false) {
+  const worldAngle = directionWorldAngle(unit, attack);
+  return Math.atan2(Math.sin(worldAngle) * unit.facing, Math.cos(worldAngle) * unit.facing);
+}
+
+function attackPoseProgress(unit) {
+  return clamp(Number(unit.attackPose) || 0, 0, 1);
+}
+
+// The body bitmap remains the identity layer; these animated limbs, hand
+// trails, and spell cues make the attack itself a sequence of poses.
+function drawAttackPose(unit, accent, useAttackSprite = false) {
+  if (!unit.action || unit.dead || useAttackSprite) return;
+  const action = unit.action;
+  const pose = attackPoseProgress(unit);
+  const angle = directionLocalAngle(unit, true);
+  const forwardX = Math.cos(angle);
+  const forwardY = Math.sin(angle);
+  const sideX = -forwardY;
+  const sideY = forwardX;
+  const ranged = action.ranged;
+  const frameJolt = unit.attackFrame === 2 ? 2 : unit.attackFrame === 3 ? 1 : 0;
+  const reach = (ranged ? 9 : action.skill ? 15 : 13) * pose;
+  const pull = action.phase === "anticipation" ? -reach * 0.78 : reach;
+  const shoulderX = 5;
+  const shoulderY = -24;
+  const handX = shoulderX + forwardX * pull + sideX * 2;
+  const handY = shoulderY + forwardY * pull + sideY * 2 - frameJolt;
+  ctx.save();
+  ctx.lineCap = "square";
+  ctx.lineJoin = "miter";
+  drawPixelLine(shoulderX, shoulderY, handX, handY, "#241e19", ranged ? 4 : 5);
+  drawPixelLine(shoulderX, shoulderY, handX, handY, accent, 2);
+
+  const offShoulderX = -5;
+  const offShoulderY = -23;
+  const offReach = (ranged ? 7 : 8) * pose;
+  const offPull = action.phase === "anticipation" ? -offReach * 0.45 : offReach * 0.7;
+  const offHandX = offShoulderX + forwardX * offPull - sideX * 3;
+  const offHandY = offShoulderY + forwardY * offPull - sideY * 3 - frameJolt;
+  drawPixelLine(offShoulderX, offShoulderY, offHandX, offHandY, "#241e19", 4);
+  drawPixelLine(offShoulderX, offShoulderY, offHandX, offHandY, accent, 1.5);
+  drawPixelRect(Math.round(handX - 1), Math.round(handY - 1), 3, 3, "#e1b34d");
+
+  if (pose > 0.18 && action.phase !== "anticipation") {
+    const trail = ranged ? 10 : 16;
+    const trailAlpha = Math.min(0.8, pose * 0.9);
+    ctx.globalAlpha = trailAlpha;
+    drawPixelLine(handX - forwardX * 3, handY - forwardY * 3, handX - forwardX * trail + sideX * 3, handY - forwardY * trail + sideY * 3, accent, ranged ? 1 : 2);
+    if (!ranged) drawPixelLine(handX - forwardX * 5, handY - forwardY * 5, handX - forwardX * (trail + 5) - sideX * 2, handY - forwardY * (trail + 5) - sideY * 2, "#f5d276", 1);
+    ctx.globalAlpha = 1;
+  }
+  if (ranged && pose > 0.2) {
+    const bowX = shoulderX + forwardX * 4;
+    const bowY = shoulderY + forwardY * 4;
+    const bowSide = 6 + pose * 3;
+    drawPixelLine(bowX + sideX * bowSide, bowY + sideY * bowSide, bowX - sideX * bowSide, bowY - sideY * bowSide, accent, 1);
+    drawPixelLine(bowX + sideX * bowSide, bowY + sideY * bowSide, handX, handY, "#e6d7aa", 1);
+    drawPixelLine(bowX - sideX * bowSide, bowY - sideY * bowSide, handX, handY, "#e6d7aa", 1);
+  }
+  if (action.skill && pose > 0.24) {
+    ctx.globalAlpha = 0.45 + pose * 0.45;
+    ctx.strokeStyle = accent;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.arc(handX, handY, 3 + pose * 4, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
+  ctx.restore();
+}
+
 function drawWeapon(unit, color) {
   const heroId = unit.team === "ally" ? unit.hero.id : "enemy";
   const visualId = unit.team === "ally" ? (unit.hero.visual || heroId) : "enemy";
   const equippedWeapon = unit.team === "ally" ? heroLoadout(heroId).weapon : null;
   ctx.save();
   ctx.translate(7, -17);
-  ctx.rotate(unit.weaponSwing);
+  if (unit.action) {
+    const pose = attackPoseProgress(unit);
+    const swing = unit.action.phase === "anticipation" ? -0.6 * pose : 0.95 * pose;
+    // Weapon art is authored pointing upward; rotate that base pose into the
+    // current eight-direction attack vector, then animate its sweep.
+    ctx.rotate(directionLocalAngle(unit, true) + Math.PI / 2 + swing);
+  } else {
+    ctx.rotate(unit.weaponSwing);
+  }
   ctx.translate(-7, 17);
   const weaponAssetId = { twin: "twin", guandao: "guandao", serpent: "serpent", lance: "lance", bow: "bow", fan: "fan", rings: "rings", halberd: "halberd" }[equippedWeapon];
   const weaponImage = weaponAssetId ? ASSETS.get("assets/characters/equipment-weapon-" + weaponAssetId + "-v1.png") : null;
@@ -1325,15 +1411,32 @@ function drawUnit(unit) {
   }
   const deathSquash = unit.dead ? 1 - deathProgress * 0.32 : 1;
   ctx.scale(unit.scale * unit.facing * (1 + unit.squashX), unit.scale * deathSquash * (1 + unit.squashY));
-
   const body = unit.team === "ally" ? unit.hero.color : unit.color;
   const accent = unit.team === "ally" ? unit.hero.accent : unit.accent;
   const spritePromise = unit.team === "ally" ? ASSETS.get(unit.hero.combatSprite) : null;
+  const attackSpriteId = unit.team === "ally" ? heroId : unit.type === "boss" ? "boss-" + (BOSS_SPRITE_BY_GENERAL[unit.enemyGeneralId] || "zhangjiao") : (unit.type || "bandit");
+  const attackSpritePath = "assets/characters/attack-" + attackSpriteId + "-v1.png";
+  const attackSprite = ASSETS.get(attackSpritePath);
+  const useAttackSprite = Boolean(unit.action && attackSprite);
+  const actionTransform = Boolean(unit.action && !useAttackSprite);
+  if (actionTransform) {
+    const pose = attackPoseProgress(unit);
+    const angle = directionLocalAngle(unit, true);
+    const frameOffset = unit.action.phase === "anticipation" ? -pose * 3.5 : pose * (unit.action.ranged ? 2.5 : 5.5);
+    const frameJolt = unit.attackFrame === 2 ? -1.5 : unit.attackFrame === 3 ? 0.8 : 0;
+    ctx.translate(Math.cos(angle) * frameOffset, Math.sin(angle) * frameOffset + frameJolt);
+    ctx.rotate(-Math.sin(angle) * 0.08 * pose);
+    ctx.scale(1 + pose * 0.035, 1 - pose * 0.045);
+  }
   const bossSpriteId = unit.type === "boss" ? BOSS_SPRITE_BY_GENERAL[unit.enemyGeneralId] : null;
   const bossSprite = bossSpriteId ? ASSETS.get("assets/characters/boss-" + bossSpriteId + "-v1.png") : null;
   if (!(unit.type === "boss" && bossSprite)) drawMountOrFeet(unit, visualId, walkCycle, loadout?.mount);
 
-  if (unit.team === "ally") {
+  if (useAttackSprite) {
+    const column = clamp(Number(unit.action.direction) || 0, 0, 7);
+    const row = clamp(Number(unit.attackFrame) || 0, 0, 4);
+    ctx.drawImage(attackSprite, column * 64, row * 64, 64, 64, -32, -64, 64, 64);
+  } else if (unit.team === "ally") {
     const spriteImage = spritePromise;
     if (spriteImage) ctx.drawImage(spriteImage, -16, -38, 32, 38);
     else {
@@ -1350,6 +1453,7 @@ function drawUnit(unit) {
     else drawEnemyBody(unit, body, accent, idleCycle);
     drawEnemyDetails(unit, idleCycle);
   }
+  drawAttackPose(unit, accent, useAttackSprite);
   if (unit.hitFlash > 0) {
     ctx.globalCompositeOperation = "screen";
     ctx.globalAlpha = Math.min(0.82, unit.hitFlash * 5);
@@ -1362,6 +1466,7 @@ function drawUnit(unit) {
     ctx.globalCompositeOperation = "source-over";
   }
   if (!(unit.type === "boss" && bossSprite)) drawWeapon(unit, accent);
+  if (actionTransform) ctx.restore();
   ctx.restore();
   if (!unit.dead) {
     const barY = unit.renderY + bob + unit.kickY;
@@ -1382,17 +1487,21 @@ function preloadConfiguredAssets() {
   const mountPaths = mountIds.map((id) => "assets/characters/mount-" + id + "-v1.png");
   const weaponIds = ["twin", "guandao", "serpent", "lance", "bow", "fan", "rings", "halberd"];
   const weaponPaths = weaponIds.map((id) => "assets/characters/equipment-weapon-" + id + "-v1.png");
+  const attackIds = [...HEROES.map((hero) => hero.id), "bandit", "brute", "cavalry", "archer", "strategist", "boss-zhangjiao", "boss-dongzhuo", "boss-lvbu", "boss-menghuo"];
+  const attackPaths = attackIds.map((id) => "assets/characters/attack-" + id + "-v1.png");
   const terrainPaths = Array.from({ length: 16 }, (_, index) => "assets/backgrounds/terrain-tile-" + index + "-v1.png");
   const vfxPaths = Array.from({ length: 16 }, (_, index) => "assets/vfx/vfx-" + index + "-v1.png");
   const bossPaths = ["zhangjiao", "dongzhuo", "lvbu", "menghuo"].map((id) => "assets/characters/boss-" + id + "-v1.png");
-  ASSETS.preload([...paths, ...mountPaths, ...weaponPaths, ...terrainPaths, ...vfxPaths, ...bossPaths]);
+  ASSETS.preload([...paths, ...mountPaths, ...weaponPaths, ...attackPaths, ...terrainPaths, ...vfxPaths, ...bossPaths]);
 }
 preloadConfiguredAssets();
 
-function drawEffects() {
+function drawEffects({ groundOnly = false } = {}) {
   ctx.save();
   ctx.globalCompositeOperation = "screen";
   for (const effect of runtime.effects) {
+    const isGroundEffect = effect.type === "dust";
+    if (groundOnly !== isGroundEffect) continue;
     const progress = 1 - effect.life / effect.maxLife;
     const alpha = Math.sin(progress * Math.PI);
     const assetIndex = VFX_ASSET_BY_TYPE[effect.type];
@@ -1563,7 +1672,7 @@ function drawEffects() {
       }
     }
   }
-  for (const projectile of runtime.projectiles) {
+  if (!groundOnly) for (const projectile of runtime.projectiles) {
     const dx = projectile.target && !projectile.target.dead ? projectile.target.x - projectile.x : 1;
     const dy = projectile.target && !projectile.target.dead ? projectile.target.y - projectile.y : 0;
     const angle = Math.atan2(dy, dx);
@@ -1584,6 +1693,7 @@ function drawEffects() {
     ctx.restore();
   }
   ctx.restore();
+  if (groundOnly) return;
 
   for (const number of runtime.numbers) {
     ctx.globalAlpha = clamp(number.life / number.maxLife * 1.5, 0, 1);
@@ -1668,6 +1778,8 @@ function render() {
   drawBackground();
   drawBattleTitle();
   drawResourceDrops();
+  // Walking dust belongs to the ground plane, below mounts and character bodies.
+  drawEffects({ groundOnly: true });
   const units = [...runtime.allies, ...runtime.enemies].filter((unit) => !unit.dead || unit.deathTime > 0).sort((a, b) => a.y - b.y);
   for (const unit of units) drawUnit(unit);
   drawEffects();

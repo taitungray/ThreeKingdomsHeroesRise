@@ -1,4 +1,4 @@
-const CACHE_NAME = "taoyuan-qunying-v1";
+const CACHE_NAME = "taoyuan-qunying-v2";
 const PRECACHE = [
   "./",
   "./index.html",
@@ -7,7 +7,12 @@ const PRECACHE = [
   "./manifest.json",
   "./privacy.html",
   "./js/admob.js",
-  "./js/admob-config.js"
+  "./js/admob-config.js",
+  "./js/auth.js",
+  "./js/audio.js",
+  "./assets/icon.png",
+  "./assets/icons/icon-192.webp",
+  "./assets/icons/icon-512.webp"
 ];
 
 self.addEventListener("install", (event) => {

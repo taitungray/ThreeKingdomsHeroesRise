@@ -18,6 +18,9 @@ $("panelContent").addEventListener("click", (event) => {
   const button = event.target.closest("[data-action]");
   if (button) handlePanelAction(button);
 });
+document.addEventListener("pointerdown", (event) => {
+  if (event.target?.closest?.("button")) window.TaoyuanAudio?.sfx?.("click");
+}, { passive: true });
 
 $("autoButton").addEventListener("click", () => {
   runtime.auto = !runtime.auto;
@@ -136,8 +139,19 @@ $("tutorialSkip").addEventListener("click", () => {
   persist();
   $("tutorialLayer").hidden = true;
 });
-$("settlementPrimary").addEventListener("click", (event) => closeSettlement(event.currentTarget.dataset.settlementAction));
-$("settlementSecondary").addEventListener("click", (event) => closeSettlement(event.currentTarget.dataset.settlementAction));
+document.addEventListener("click", (event) => {
+  const button = event.target?.closest?.("#settlementPrimary, #settlementSecondary");
+  if (!button || $("settlementModal").hidden) return;
+  closeSettlement(button.dataset.settlementAction || "close");
+});
+$("settlementPrimary").addEventListener("click", () => {
+  if ($("settlementModal").hidden) return;
+  closeSettlement($("settlementPrimary").dataset.settlementAction || "close");
+});
+$("settlementSecondary").addEventListener("click", () => {
+  if ($("settlementModal").hidden) return;
+  closeSettlement($("settlementSecondary").dataset.settlementAction || "close");
+});
 document.addEventListener("keydown", (event) => {
   if (event.key !== "Escape") return;
   if (!$("tutorialLayer").hidden) return;

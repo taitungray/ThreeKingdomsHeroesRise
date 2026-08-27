@@ -6,11 +6,38 @@
   <meta name="theme-color" content="#171a16">
   <title>三國：群英再起｜像素三國放置 RPG</title>
   <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" sizes="1024x1024" href="assets/icon.png">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <main id="gameApp" class="game-app" aria-label="三國：群英再起遊戲">
     <div id="loadingScreen" class="loading-screen" role="status" aria-live="polite"><span class="loading-seal">&#x6843;</span><strong>&#x4e09;&#x570b;&#xff1a;&#x7fa4;&#x82f1;&#x518d;&#x8d77;</strong><small>&#x6574;&#x8ecd;&#x4e2d;&#x2026;</small></div>
+    <section id="authScreen" class="auth-screen" aria-labelledby="authModeTitle" hidden>
+      <div class="auth-card">
+        <div class="auth-brand">
+          <img class="auth-brand-icon" src="assets/icon.png" alt="三國：群英再起 App icon">
+          <p class="auth-kicker">桃園軍府 · LOCAL PROFILE</p>
+          <h1>三國：群英再起</h1>
+          <p>建立你的本機軍府，保留每位武將的征戰進度。</p>
+        </div>
+        <div class="auth-tabs" role="tablist" aria-label="帳號操作">
+          <button type="button" data-auth-mode="login" role="tab">登入</button>
+          <button type="button" data-auth-mode="register" role="tab">註冊</button>
+          <button type="button" data-auth-mode="reset" role="tab">重設密碼</button>
+        </div>
+        <h2 id="authModeTitle">登入軍府</h2>
+        <form id="authForm" class="auth-form">
+          <label class="auth-field"><span>軍府名稱</span><input id="authUsername" name="username" type="text" maxlength="16" autocomplete="username" placeholder="例如：玄德軍府" required></label>
+          <label class="auth-field"><span>本機密碼</span><input id="authPassword" name="password" type="password" minlength="4" autocomplete="current-password" placeholder="至少 4 個字元" required></label>
+          <label id="authPasswordConfirmWrap" class="auth-field" hidden><span>再次確認密碼</span><input id="authPasswordConfirm" name="passwordConfirm" type="password" minlength="4" autocomplete="new-password" placeholder="再輸入一次密碼"></label>
+          <button id="authSubmit" class="seal-button auth-submit" type="submit">進入軍府</button>
+        </form>
+        <button id="authGuest" class="stone-button auth-guest" type="button">訪客試玩</button>
+        <button id="authClose" class="text-button auth-close" type="button" hidden>返回遊戲</button>
+        <p id="authMessage" class="auth-message" aria-live="polite"></p>
+        <p class="auth-note">這是本機帳號流程：帳號、密碼雜湊與遊戲進度只保存在此裝置，尚未連接雲端驗證。</p>
+      </div>
+    </section>
     <section id="battleScreen" class="battle-screen">
       <canvas id="battleCanvas" width="390" height="720" aria-label="像素武將自動戰鬥場景"></canvas>
 
@@ -146,6 +173,8 @@
   <script src="js/admob.js"></script>
   <script src="js/platform.js"></script>
   <script src="js/iap.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/audio.js"></script>
   <script src="data/game-data.js"></script>
   <script src="data/shop-data.js"></script>
   <script src="js/game/game-core.js"></script>

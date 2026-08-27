@@ -6,6 +6,19 @@ const ALLY_UNIT_SCALE = 0.88;
 const ENEMY_UNIT_SCALE = 0.82;
 const BOSS_UNIT_SCALE = 1.30;
 
+// Keep battlefield poses in eight stable directions so an attack reads as a
+// directional action instead of a left/right mirrored idle sprite.
+function directionIndex(angle) {
+  const octant = Math.round(angle / (Math.PI / 4));
+  return (octant + 8) % 8;
+}
+
+function setUnitDirection(unit, angle) {
+  if (!Number.isFinite(angle)) return;
+  unit.direction = directionIndex(angle);
+  unit.facing = Math.cos(angle) < 0 ? -1 : 1;
+}
+
 function buildTerrain() {
   runtime.terrain.length = 0;
   let seed = activeStageNumber() * 92821 + 17;
@@ -215,6 +228,11 @@ function makeAlly(heroId, slot, index) {
     passiveState: { lethalGuardUsed: false, chargeUsed: false, lastTargetId: "", targetStreak: 0 },
     hitFlash: 0,
     attackPose: 0,
+    attackFrame: 0,
+    direction: 4,
+    attackDirection: 4,
+    attackAngle: Math.PI,
+    hitAngle: Math.PI,
     action: null,
     hitStun: 0,
     kickX: 0,
@@ -283,6 +301,11 @@ function makeEnemy(index, boss = false) {
     attackCount: 0,
     hitFlash: 0,
     attackPose: 0,
+    attackFrame: 0,
+    direction: 0,
+    attackDirection: 0,
+    attackAngle: 0,
+    hitAngle: 0,
     action: null,
     hitStun: 0,
     kickX: 0,
@@ -323,6 +346,7 @@ function spawnWave(boss = false) {
     showDialogue("關羽", "兄長，敵將已現身。關某請戰！", "avatar-guanyu");
     addLog("遭遇首領「" + chapter.boss + "」。");
     beep(95, 0.3, "sawtooth", 0.04);
+    window.TaoyuanAudio?.sfx?.("boss");
   }
   updateHud();
 }
@@ -481,6 +505,8 @@ function applyDamage(attacker, target, multiplier = 1, criticalChanceBase = 0.12
   const sourceX = Number.isFinite(attacker.x) ? attacker.x : target.x;
   const sourceY = Number.isFinite(attacker.y) ? attacker.y : target.y + 1;
   const knockAngle = Math.atan2(target.y - sourceY, target.x - sourceX);
+  target.hitAngle = knockAngle;
+  target.direction = directionIndex(knockAngle);
   const knockForce = critical ? 10 : finalMultiplier > 1.25 ? 7 : 4;
   target.kickX = Math.cos(knockAngle) * knockForce;
   target.kickY = Math.sin(knockAngle) * knockForce;
@@ -633,6 +659,7 @@ function useHeroSkill(unit, target) {
     addEffect("slash", unit.x, unit.y - 8, hero.accent, { radius: 72, life: .48, angle: unit.action?.angle || 0 });
   }
   beep(hero.role === "\u8b00\u58eb" ? 540 : 170, 0.12, "sawtooth", 0.035);
+  window.TaoyuanAudio?.sfx?.("skill");
   vibrate(hero.id === "lubu" || hero.id === "zhangfei" ? [18, 30, 18] : 18);
 }
 
@@ -654,12 +681,16 @@ function attack(unit, target) {
     skill,
     ranged,
     angle,
+    direction: directionIndex(angle),
+    phase: "anticipation",
     elapsed: 0,
     impactAt: skill ? .2 : ranged ? .145 : .095,
     total: skill ? .52 : ranged ? .32 : .255,
     resolved: false
   };
-  unit.facing = Math.cos(angle) < 0 ? -1 : 1;
+  unit.attackDirection = directionIndex(angle);
+  unit.attackAngle = angle;
+  setUnitDirection(unit, angle);
   if (skill) {
     addEffect("charge", unit.x, unit.y - 13, unit.hero.accent, { radius: 38, life: .32 });
     beep(220, .075, "triangle", .022);
@@ -714,9 +745,13 @@ function updateAction(unit, delta) {
   const windup = clamp(action.elapsed / action.impactAt, 0, 1);
   const directionX = Math.cos(action.angle);
   const directionY = Math.sin(action.angle);
+  unit.direction = action.direction;
+  unit.attackFrame = Math.min(4, Math.floor((action.elapsed / action.total) * 5));
 
   if (action.elapsed < action.impactAt) {
+    action.phase = "anticipation";
     const anticipation = Math.sin(windup * Math.PI * 0.5);
+    unit.attackPose = anticipation;
     const pullback = action.skill ? 7 : 4;
     unit.motionX = -directionX * pullback * anticipation;
     unit.motionY = -directionY * pullback * anticipation;
@@ -724,11 +759,13 @@ function updateAction(unit, delta) {
     unit.squashY = 0.09 * anticipation;
     unit.weaponSwing = -0.75 * anticipation;
   } else {
+    action.phase = "strike";
     if (!action.resolved) {
       action.resolved = true;
       resolveAttack(unit, action);
     }
     const recovery = clamp((action.elapsed - action.impactAt) / (action.total - action.impactAt), 0, 1);
+    unit.attackPose = Math.pow(1 - recovery, 1.45);
     const snap = Math.pow(1 - recovery, 2);
     const lunge = action.ranged ? -4 : action.skill ? 20 : 11;
     unit.motionX = directionX * lunge * snap;
@@ -745,6 +782,8 @@ function updateAction(unit, delta) {
     unit.squashX = 0;
     unit.squashY = 0;
     unit.weaponSwing = 0;
+    unit.attackPose = 0;
+    unit.attackFrame = 0;
   }
   return true;
 }
@@ -768,9 +807,10 @@ function updateUnit(unit, targets, delta) {
   const target = selected.target;
   const distance = selected.distance;
   if (!target) return;
-  unit.facing = target.x < unit.x ? -1 : 1;
+  const targetAngle = Math.atan2(target.y - unit.y, target.x - unit.x);
+  setUnitDirection(unit, targetAngle);
   if (distance > unit.range) {
-    const angle = Math.atan2(target.y - unit.y, target.x - unit.x);
+    const angle = targetAngle;
     const spacing = unit.team === "ally" ? 1 : .82;
     unit.x += Math.cos(angle) * unit.speed * spacing * delta;
     unit.y += Math.sin(angle) * unit.speed * spacing * delta;

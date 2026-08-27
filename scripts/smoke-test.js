@@ -55,11 +55,21 @@ const gameSource = runtimeModules.map((file) => {
   assert.ok(fs.existsSync(modulePath), `runtime module missing: ${file}`);
   return fs.readFileSync(modulePath, "utf8");
 }).join("\n");
-for (const marker of ["function spawnResourceDrops", "function updateResourceDrops", "function drawResourceDrops", "runtime.drops", "function roleAdvantage", "function targetPriorityScore", "function damageSummary", "function heroSkillCost", "function drawWeatherOverlay", "function damageStatsHtml", "data-action=\"hero-skill\"", "function startStage", "function enemyGeneralById", "function showEnemyPreview", "enemyPreviewList", "enemyPreviewLabel", "waveGeneralIndex", "classList.add(\"show\", \"persistent\")", "function activeStageNumber", "function stageDefinition", "function waveCleared", "function partyDefeated", "skillCooldown", "function showOfflineReward", "function renderCollection", "function renderEvents", "function upgradeHeroStar", "function breakthroughHero", "function renderFrameSection", "function heroProgression", "function renderDungeons", "function challengeTower", "function sweepStage", "function refineHeroEquipment", "function refillStamina", "function drawCompactHeroDetails", "const spriteX = unit.scale < 1", "const gait = unit.moving ? walkCycle : 0", "function drawMountLeg", "function drawSkillEnergyBar", "const y = Math.round(visualY +", "const ALLY_UNIT_SCALE = 0.88", "const ENEMY_UNIT_SCALE = 0.82", "const BOSS_UNIT_SCALE = 1.30", "unit.type !== \"boss\"", "const boss = unit.type === \"boss\""]) {
+for (const marker of ["function spawnResourceDrops", "function updateResourceDrops", "function drawResourceDrops", "runtime.drops", "function roleAdvantage", "function targetPriorityScore", "function damageSummary", "function heroSkillCost", "function drawWeatherOverlay", "function damageStatsHtml", "data-action=\"hero-skill\"", "function startStage", "function enemyGeneralById", "function showEnemyPreview", "enemyPreviewList", "enemyPreviewLabel", "waveGeneralIndex", "classList.add(\"show\", \"persistent\")", "function activeStageNumber", "function stageDefinition", "function waveCleared", "function partyDefeated", "skillCooldown", "function showOfflineReward", "function renderAchievements", "function renderCollection", "function renderEvents", "function upgradeHeroStar", "function breakthroughHero", "function renderFrameSection", "function heroProgression", "function renderDungeons", "function challengeTower", "function sweepStage", "function refineHeroEquipment", "function refillStamina", "function drawCompactHeroDetails", "const spriteX = unit.scale < 1", "const gait = unit.moving ? walkCycle : 0", "function drawMountLeg", "function drawSkillEnergyBar", "const y = Math.round(visualY +", "const ALLY_UNIT_SCALE = 0.88", "const ENEMY_UNIT_SCALE = 0.82", "const BOSS_UNIT_SCALE = 1.30", "function directionIndex", "attackSpritePath", "const useAttackSprite", "const attackPaths", "attackFrame", "function directionLocalAngle", "function drawAttackPose", "const actionTransform = Boolean(unit.action && !useAttackSprite)", "unit.type !== \"boss\"", "const boss = unit.type === \"boss\""]) {
   assert.ok(gameSource.includes(marker), `game loop marker missing: ${marker}`);
 }
 assert.ok(fs.statSync(path.join(root, "game.js")).size < 2000, "legacy game.js should stay a small compatibility marker");
 assert.ok(fs.existsSync(path.join(root, "assets", "characters", "modular-manifest.json")), "modular asset manifest missing");
+const attackManifestPath = path.join(root, "assets", "characters", "attack-manifest.json");
+assert.ok(fs.existsSync(attackManifestPath), "attack sprite manifest missing");
+const attackManifest = JSON.parse(fs.readFileSync(attackManifestPath, "utf8"));
+assert.equal(attackManifest.cellSize, 64, "attack sprite cells must use the shared 64px grid");
+assert.equal(attackManifest.columns, 8, "attack sprite sheets must expose eight directions");
+assert.equal(attackManifest.rows, 5, "attack sprite sheets must expose five action frames");
+const requiredAttackIds = [...data.heroes.map((hero) => hero.id), "bandit", "brute", "cavalry", "archer", "strategist", "boss-zhangjiao", "boss-dongzhuo", "boss-lvbu", "boss-menghuo"];
+assert.equal(attackManifest.assets.length, requiredAttackIds.length, "every combat character needs an attack sprite sheet");
+assert.ok(requiredAttackIds.every((id) => attackManifest.assets.some((asset) => asset.id === id)), "attack sprite manifest must cover heroes, enemy types and bosses");
+assert.ok(attackManifest.assets.every((asset) => fs.existsSync(path.join(root, asset.path))), "declared attack sprite assets must exist");
 assert.ok(fs.existsSync(path.join(root, "assets", "characters", "equipment-manifest.json")), "equipment asset manifest missing");
 assert.ok(fs.existsSync(path.join(root, "assets", "backgrounds", "terrain-manifest.json")), "terrain asset manifest missing");
 assert.ok(fs.existsSync(path.join(root, "assets", "vfx", "vfx-manifest.json")), "VFX asset manifest missing");
@@ -67,6 +77,12 @@ assert.ok(fs.readdirSync(path.join(root, "assets", "characters")).filter((file) 
 assert.ok(fs.readdirSync(path.join(root, "assets", "vfx")).filter((file) => file.startsWith("vfx-") && file.endsWith(".png")).length >= 16, "VFX sprite assets must cover the effect vocabulary");
 assert.ok(fs.readdirSync(path.join(root, "assets", "backgrounds")).filter((file) => file.startsWith("terrain-tile-") && file.endsWith(".png")).length >= 16, "terrain tile assets must cover the chapter palette");
 assert.ok(["zhangjiao", "dongzhuo", "lvbu", "menghuo"].every((id) => fs.existsSync(path.join(root, "assets", "characters", "boss-" + id + "-v1.png"))), "boss sprite assets must cover the boss set");
+const authSource = fs.readFileSync(path.join(root, "js", "auth.js"), "utf8");
+const audioSource = fs.readFileSync(path.join(root, "js", "audio.js"), "utf8");
+assert.ok(authSource.includes("TaoyuanAuth") && authSource.includes("getSaveKey"), "local auth module must expose account-scoped saves");
+assert.ok(audioSource.includes("startMusic") && audioSource.includes("sfx"), "audio module must expose music and sound effects");
+assert.ok(fs.existsSync(path.join(root, "assets", "icon.png")), "app icon source missing");
+assert.ok(fs.existsSync(path.join(root, "assets", "icons", "icon-192.webp")) && fs.existsSync(path.join(root, "assets", "icons", "icon-512.webp")), "PWA icon variants missing");
 const styleSource = fs.readFileSync(path.join(root, "styles.css"), "utf8");
 for (const marker of ["Character portrait pass: distinct facial silhouettes", ".portrait-eyes::before", ".avatar-xiahoudun .portrait-eyes::before", ".portrait-rune"]) {
   assert.ok(styleSource.includes(marker), "portrait style marker missing: " + marker);
@@ -77,6 +93,9 @@ const dataPosition = indexSource.indexOf("data/game-data.js");
 const modulePositions = runtimeModules.map((file) => indexSource.indexOf(`js/game/${file}`));
 assert.ok(dataPosition >= 0 && modulePositions.every((position) => position > dataPosition), "data must load before runtime modules");
 assert.ok(modulePositions.every((position, index) => index === 0 || position > modulePositions[index - 1]), "runtime modules must load in dependency order");
+assert.ok(indexSource.includes("id=\"authScreen\"") && indexSource.includes("id=\"authForm\"") && indexSource.includes("id=\"authGuest\"") && indexSource.includes("js/auth.js") && indexSource.includes("js/audio.js"), "auth and audio UI hooks missing");
+const manifest = JSON.parse(fs.readFileSync(path.join(root, "manifest.json"), "utf8"));
+assert.ok(manifest.icons?.some((icon) => icon.src === "assets/icons/icon-192.webp") && manifest.icons?.some((icon) => icon.src === "assets/icons/icon-512.webp"), "manifest must reference generated PWA icons");
 assert.ok(indexSource.includes("id=\"loadingScreen\"") && indexSource.includes("id=\"settlementModal\"") && indexSource.includes("id=\"tutorialLayer\"") && indexSource.includes("id=\"stageName\"") && indexSource.includes("id=\"enemyPreview\"") && indexSource.includes("id=\"enemyPreviewList\"") && indexSource.includes("id=\"enemyPreviewLabel\""), "stage title and enemy preview UI hooks missing");
 assert.ok(indexSource.includes('id="doubleOffline"') && indexSource.includes('id="dailyDot"') && indexSource.includes('data-panel="collection"') && indexSource.includes('data-panel="tower"') && indexSource.includes('data-panel="dungeon"'), "local progression UI hooks missing");
 assert.ok(fs.existsSync(path.join(root, "docs", "reference-analysis.md")), "reference analysis document missing");

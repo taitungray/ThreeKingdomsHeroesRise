@@ -146,7 +146,7 @@ const CHAPTERS_FALLBACK = [
 const CHAPTERS = GAME_DATA.chapters || CHAPTERS_FALLBACK;
 const STAGES_PER_CHAPTER = Math.max(1, Math.ceil((GAME_DATA.stages?.length || CHAPTERS.length * 2) / CHAPTERS.length));
 
-const SAVE_KEY = "taoyuan-qunying-v2";
+const SAVE_KEY = window.TaoyuanAuth?.getSaveKey?.() || "taoyuan-qunying-v2";
 const EFFECT_POOL_SIZE = 160;
 
 function createEffectRecord() {
@@ -185,6 +185,7 @@ const defaultSave = () => ({
   arena: { wins: 0, attempts: 0, claimed: [], week: localWeekKey() },
   battlePass: { xp: 0, claimed: [] },
   sound: true,
+  music: true,
   effects: true,
   vibration: true,
   notifications: false,
@@ -245,6 +246,7 @@ function loadSave() {
 }
 
 const save = loadSave();
+window.TaoyuanAudio?.configure?.({ sound: save.sound, music: save.music });
 
 function refillStamina() {
   if (!save.stamina) save.stamina = { current: 20, max: 20, lastAt: Date.now() };
@@ -587,31 +589,11 @@ function addLog(message) {
 }
 
 function startAmbientAudio() {
-  if (!save.sound || runtime.ambientTimerId) return;
-  runtime.ambientTimerId = window.setInterval(() => {
-    if (document.hidden || runtime.backgrounded || !save.sound) return;
-    const base = runtime.bossActive ? 92 : 138;
-    beep(base, .12, "triangle", .008);
-    scheduleGameTimer(() => beep(base * 1.5, .1, "sine", .006), 180);
-  }, 4200);
+  window.TaoyuanAudio?.startMusic?.();
 }
 
 function beep(frequency = 280, duration = 0.045, type = "square", gain = 0.025) {
   if (!save.sound) return;
-  startAmbientAudio();
-  try {
-    runtime.audio ||= new (window.AudioContext || window.webkitAudioContext)();
-    const oscillator = runtime.audio.createOscillator();
-    const volume = runtime.audio.createGain();
-    oscillator.type = type;
-    oscillator.frequency.value = frequency;
-    volume.gain.setValueAtTime(gain, runtime.audio.currentTime);
-    volume.gain.exponentialRampToValueAtTime(0.0001, runtime.audio.currentTime + duration);
-    oscillator.connect(volume).connect(runtime.audio.destination);
-    oscillator.start();
-    oscillator.stop(runtime.audio.currentTime + duration);
-  } catch {
-    // Audio is optional in restricted WebViews.
-  }
+  window.TaoyuanAudio?.tone?.(frequency, duration, type, gain, "sfx");
 }
 

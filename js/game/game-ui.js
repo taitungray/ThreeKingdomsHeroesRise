@@ -507,6 +507,7 @@ function showSettlement(result) {
   $("settlementPrimary").dataset.settlementAction = win ? "continue" : "retry";
   $("settlementSecondary").dataset.settlementAction = win ? "retry" : "close";
   modal.hidden = false;
+  window.TaoyuanAudio?.sfx?.(win ? "reward" : "cancel");
 }
 
 function closeSettlement(action) {
@@ -630,17 +631,23 @@ function challengeArena(opponentId) {
 }
 
 function renderSettings() {
-  setPanel("\u8ecd\u52d9\u8a2d\u5b9a", '<div class="setting-list">' +
-    '<button class="setting-item" type="button" data-action="setting-toggle" data-setting="sound"><span><strong>\u97f3\u6548</strong><br><small>\u653b\u64ca\u3001\u6280\u80fd\u8207\u6309\u9215\u56de\u9948</small></span><i class="toggle ' + (save.sound ? "on" : "") + '"></i></button>' +
+  const activeUser = window.TaoyuanAuth?.getActiveUser?.();
+  const accountLabel = activeUser ? String(activeUser.username).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;") : "未登入";
+  const accountType = activeUser?.guest ? "訪客軍府 · 本機獨立存檔" : "密碼帳號 · 本機獨立存檔";
+  const accountHtml = activeUser
+    ? '<section class="auth-account-card"><div class="auth-account-mark">府</div><div class="auth-account-copy"><strong>' + accountLabel + '</strong><small>' + accountType + '</small></div><div class="auth-account-actions"><button class="stone-button compact-button" type="button" data-action="auth-switch">切換帳號</button><button class="stone-button compact-button" type="button" data-action="auth-logout">登出</button></div></section>'
+    : '<section class="auth-account-card"><div class="auth-account-mark">府</div><div class="auth-account-copy"><strong>尚未登入</strong><small>登入以啟用獨立存檔</small></div><button class="seal-button compact-button" type="button" data-action="auth-switch">登入</button></section>';
+  setPanel("\u8ecd\u52d9\u8a2d\u5b9a", accountHtml + '<div class="setting-list">' +
+    '<button class="setting-item" type="button" data-action="setting-toggle" data-setting="music"><span><strong>背景音樂</strong><br><small>桃園軍府主題旋律，首次觸碰後播放</small></span><i class="toggle ' + (save.music ? "on" : "") + '"></i></button>' +
+    '<button class="setting-item" type="button" data-action="setting-toggle" data-setting="sound"><span><strong>\u97f3\u6548</strong><br><small>\u653b\u64ca\u3001\u6280\u80fd\u8207\u6309\u9215\u56de\u994b</small></span><i class="toggle ' + (save.sound ? "on" : "") + '"></i></button>' +
     '<button class="setting-item" type="button" data-action="setting-toggle" data-setting="effects"><span><strong>\u6230\u9b25\u7279\u6548</strong><br><small>\u5200\u5149\u3001\u6cd5\u8853\u8207\u9023\u64ca\u8868\u73fe</small></span><i class="toggle ' + (save.effects ? "on" : "") + '"></i></button>' +
     '<button class="setting-item" type="button" data-action="setting-toggle" data-setting="vibration"><span><strong>\u89f8\u611f\u632f\u52d5</strong><br><small>\u50c5\u5728\u88dd\u7f6e\u652f\u63f4\u6642\u555f\u7528</small></span><i class="toggle ' + (save.vibration ? "on" : "") + '"></i></button>' +
     '<button class="setting-item" type="button" data-action="notification-request"><span><strong>\u8ecd\u60c5\u901a\u77e5</strong><br><small>\u76ee\u524d\u72c0\u614b\uff1a' + (save.notifications ? "\u5df2\u958b\u555f" : "\u672a\u958b\u555f") + '</small></span><b>\u8a2d\u5b9a</b></button>' +
     '<div class="setting-item"><span><strong>\u73a9\u5bb6\u540d\u7a31</strong><br><small>\u5c40\u90e8\u5b58\u6a94\uff0c\u4e0d\u4e0a\u50b3</small></span><button class="stone-button compact-button" type="button" data-action="rename-player">\u4fee\u6539</button></div>' +
     '<div class="setting-item"><span><strong>\u904b\u884c\u6a21\u5f0f</strong><br><small>\u80cc\u666f\u56de\u6536\u52d5\u756b\uff0c\u4fdd\u8b77\u4f4e\u968e\u88dd\u7f6e</small></span><b>H5 SAFE</b></div>' +
     '</div><button class="setting-item" type="button" data-action="quality-toggle"><span><strong>\u756b\u9762\u54c1\u8cea</strong><br><small>\u4f4e\u529f\u8017\u6a21\u5f0f\u6703\u6e1b\u5c11\u7279\u6548\u7e6a\u88fd</small></span><b>' + (save.renderQuality === "low" ? "LOW" : "HIGH") + '</b></button><p class="section-caption">\u5b58\u6a94\u8207 App</p><button class="stone-button" type="button" data-action="report-issue">\u554f\u984c\u56de\u5831</button> <button class="stone-button" type="button" data-action="save-now">\u7acb\u5373\u4fdd\u5b58</button> <button class="stone-button" type="button" data-action="restore-purchases">\u6062\u5fa9\u8cfc\u8cb7</button> <button class="seal-button" type="button" data-action="reset-save">\u91cd\u7f6e\u9032\u5ea6</button>');
-  $("panelContent").insertAdjacentHTML("beforeend", '<p class="panel-footnote">BUILD ' + APP_VERSION + '</p><button class="stone-button wide-button" type="button" data-action="version-check">\\u6aa2\\u67e5\\u7248\\u672c</button>');
+  $("panelContent").insertAdjacentHTML("beforeend", '<p class="panel-footnote">BUILD ' + APP_VERSION + '</p><button class="stone-button wide-button" type="button" data-action="version-check">\u6aa2\u67e5\u7248\u672c</button>');
 }
-
 function renderMail() {
   const unlockedStory = STORY_BEATS.filter((beat) => save.maxStage >= beat.stage);
   setPanel("\u8ecd\u4ef6", '<div class="mail-card ' + (save.mailClaimed ? "claimed" : "") + '"><i></i><div><h3>\u7fa9\u52c7\u8ecd\u51fa\u5f81\u88dc\u7d66</h3><p>\u6dbc\u90e1\u767e\u59d3\u9001\u4f86\u9285\u9322 300\u3001\u7ce7\u8349 120</p></div><button class="seal-button" type="button" data-action="mail-claim"' + (save.mailClaimed ? " disabled" : "") + '>' + (save.mailClaimed ? UI_TEXT.claimed : UI_TEXT.claim) + '</button></div><p class="section-caption">\u6b77\u53f2\u5287\u60c5</p><div class="story-list">' + (unlockedStory.length ? unlockedStory.map((beat) => '<article class="story-card"><span class="story-stage">' + beat.stage + '</span><div><strong>' + beat.speaker + '</strong><p>' + beat.text + '</p></div></article>').join("") : '<div class="record-item">\u7e7c\u7e8c\u5f81\u6230\uff0c\u5373\u53ef\u89e3\u9396\u53f2\u8a69\u7247\u6bb5\u3002</div>') + '</div>');
@@ -696,6 +703,20 @@ function achievementData() {
   return catalog.map(([id, name, desc, key, target, reward]) => ({ id, name, desc, value: value[key], target, reward: Object.entries(reward).map(([type, amount]) => label[type] + " \u00d7" + amount).join("\u00b7"), ...reward }));
 }
 
+function renderAchievements() {
+  const achievements = achievementData();
+  const claimed = save.achievementClaimed || [];
+  const claimedCount = claimed.length;
+  const cards = achievements.map((achievement) => {
+    const progress = Math.min(achievement.target, Math.max(0, achievement.value || 0));
+    const complete = progress >= achievement.target;
+    const isClaimed = claimed.includes(achievement.id);
+    const actionClass = complete && !isClaimed ? "seal-button" : "stone-button";
+    const actionText = isClaimed ? "已領取" : complete ? "領取" : "未達成";
+    return '<article class="achievement-item ' + (complete ? "complete" : "") + '"><div><h3>' + achievement.name + '</h3><p>' + achievement.desc + '</p><div class="progress-track"><i style="width:' + Math.round(progress / achievement.target * 100) + '%"></i></div><small>' + progress + ' / ' + achievement.target + ' · ' + achievement.reward + '</small></div><button class="' + actionClass + ' compact-button" type="button" data-action="achievement-claim" data-achievement="' + achievement.id + '"' + (!complete || isClaimed ? " disabled" : "") + '>' + actionText + '</button></article>';
+  }).join("");
+  setPanel("成就", '<p class="section-caption">完成征戰目標，領取額外軍資。</p><div class="achievement-summary">已領取 ' + claimedCount + ' / ' + achievements.length + '</div><div class="achievement-list">' + cards + '</div>');
+}
 
 function renderRecord() {
   setPanel("\u6230\u5831",
@@ -978,7 +999,9 @@ function handlePanelAction(button) {
     updateHud();
     toast(tactic.name + "\u5347\u81f3 Lv." + save.tactics[id]);
     renderTactics();
-  } else if (action === "setting-toggle") { save[button.dataset.setting] = !save[button.dataset.setting]; persist(); renderSettings();
+  } else if (action === "setting-toggle") { save[button.dataset.setting] = !save[button.dataset.setting]; if (button.dataset.setting === "sound" || button.dataset.setting === "music") window.TaoyuanAudio?.configure?.({ sound: save.sound, music: save.music }); persist(); renderSettings();
+  } else if (action === "auth-switch") { window.TaoyuanAuth?.open?.({ mode: "login" });
+  } else if (action === "auth-logout") { persist(); window.TaoyuanAuth?.logout?.();
   } else if (action === "notification-request") { window.TaoyuanPlatform.requestNotifications().then((permission) => { save.notifications = permission === "granted"; persist(); renderSettings(); toast(save.notifications ? "\u901a\u77e5\u5df2\u958b\u555f" : "\u901a\u77e5\u672a\u6388\u6b0a"); });
   } else if (action === "rename-player") { const name = window.prompt("\u8acb\u8f38\u5165\u4e3b\u516c\u540d\u7a31", save.playerName || "\u7384\u5fb7"); if (name?.trim()) { save.playerName = name.trim().slice(0, 10); persist(); updateHud(); renderSettings(); }
   } else if (action === "mail-claim") { if (save.mailClaimed) return; save.mailClaimed = true; recordTaskProgress("daily-mail"); awardResources({ gold: 300, food: 120 }); persist(); updateHud(); toast("\u7372\u5f97\u9285\u9322 300\u3001\u7ce7\u8349 120"); renderMail();
