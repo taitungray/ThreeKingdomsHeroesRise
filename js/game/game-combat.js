@@ -396,6 +396,43 @@ function addEffect(type, x, y, color = "#fff", options = {}) {
   runtime.effects.push(effect);
 }
 
+function spawnResourceDrops(x, y, reward = {}) {
+  const entries = [
+    { kind: "gold", amount: reward.gold },
+    { kind: "food", amount: reward.food },
+    { kind: "jade", amount: reward.jade },
+    { kind: "shards", amount: reward.shards }
+  ];
+  for (const entry of entries) {
+    if (!(entry.amount > 0)) continue;
+    const life = 2.05 + Math.random() * 0.35;
+    const index = runtime.drops.length;
+    runtime.drops.push({
+      kind: entry.kind,
+      amount: Math.max(1, Math.round(entry.amount)),
+      x: x + (index % 5 - 2) * 9 + (Math.random() - 0.5) * 5,
+      y: y + (Math.floor(index / 5) % 2) * 4,
+      age: Math.random() * 0.18,
+      phase: Math.random() * Math.PI * 2,
+      life,
+      maxLife: life
+    });
+  }
+  if (runtime.drops.length > 36) runtime.drops.splice(0, runtime.drops.length - 36);
+}
+
+function updateResourceDrops(delta) {
+  for (const drop of runtime.drops) {
+    drop.age += delta;
+    drop.life -= delta;
+  }
+  runtime.drops = runtime.drops.filter((drop) => drop.life > 0);
+}
+
+function clearResourceDrops() {
+  runtime.drops.length = 0;
+}
+
 function fireProjectile(attacker, target, color, options = {}) {
   runtime.projectiles.push({
     x: attacker.x,
@@ -488,7 +525,9 @@ function killUnit(target, attacker) {
     const gold = target.type === "boss" ? 105 + battleStage * 22 : 4 + battleStage;
     const food = target.type === "boss" ? 46 + battleStage * 8 : chance(0.35) ? 2 : 0;
     const expMultiplier = save.formation.includes("xunyu") ? 1.1 : 1;
-    awardResources({ gold, food, exp: Math.round((target.type === "boss" ? 55 + battleStage * 6 : 5) * expMultiplier) });
+    const reward = { gold, food, exp: Math.round((target.type === "boss" ? 55 + battleStage * 6 : 5) * expMultiplier) };
+    awardResources(reward);
+    spawnResourceDrops(target.x, target.y, reward);
     recordStat("kills");
     save.battlePass.xp = (save.battlePass.xp || 0) + (target.type === "boss" ? 10 : 1);
     if (attacker?.hero?.id === "weiyan" || attacker?.hero?.id === "guanxing") applyStatus(attacker, "haste", 3, .12, attacker);
@@ -812,6 +851,8 @@ function waveCleared() {
       shards: progressed ? 2 : 1
     };
     awardResources(reward);
+    const dropSource = runtime.enemies.find((unit) => unit.type === "boss") || runtime.enemies[runtime.enemies.length - 1];
+    spawnResourceDrops(dropSource?.x || 195, dropSource?.y || 330, reward);
     recordStat("wins");
     recordStat("bosses");
     recordTaskProgress("weekly-boss");
@@ -836,7 +877,10 @@ function waveCleared() {
   } else {
     runtime.waveClears += 1;
     const stageConfig = stageDefinition();
-    awardResources({ gold: stageConfig?.goldBonus || 14 + activeStageNumber() * 3, shards: 1 });
+    const waveReward = { gold: stageConfig?.goldBonus || 14 + activeStageNumber() * 3, shards: 1 };
+    awardResources(waveReward);
+    const dropSource = runtime.enemies[runtime.enemies.length - 1];
+    spawnResourceDrops(dropSource?.x || 195, dropSource?.y || 330, waveReward);
     recordTaskProgress("daily-battle");
     save.battlePass.xp = (save.battlePass.xp || 0) + 1;
     addLog("\u6e05\u527f\u7b2c " + runtime.waveClears + " \u6ce2\u6575\u8ecd\u3002");
@@ -888,6 +932,7 @@ function updateGame(rawDelta) {
   if (runtime.hitStop > 0) {
     runtime.hitStop = Math.max(0, runtime.hitStop - frameDelta);
     updateEffects(frameDelta * 0.16);
+    updateResourceDrops(frameDelta * 0.16);
     return;
   }
   if (runtime.auto && !runtime.spawning) {
@@ -896,6 +941,7 @@ function updateGame(rawDelta) {
   }
   updateProjectiles(delta);
   updateEffects(delta);
+  updateResourceDrops(delta);
   waveCleared();
   partyDefeated();
   if (runtime.dialogueTimer > 0) {

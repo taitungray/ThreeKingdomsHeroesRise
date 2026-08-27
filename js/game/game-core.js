@@ -423,6 +423,7 @@ const runtime = {
   numbers: [],
   damageStats: {},
   projectiles: [],
+  drops: [],
   terrain: [],
   waveClears: 0,
   bossActive: false,

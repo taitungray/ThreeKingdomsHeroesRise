@@ -325,6 +325,7 @@ function startStage(stage, reason = "") {
   runtime.spawning = false;
   runtime.enemies = [];
   runtime.projectiles = [];
+  clearResourceDrops();
   clearEffects();
   runtime.numbers = [];
   runtime.damageStats = {};
@@ -515,6 +516,7 @@ function closeSettlement(action) {
   runtime.spawning = false;
   runtime.enemies = [];
   runtime.projectiles = [];
+  clearResourceDrops();
   runtime.waveClears = 0;
   runtime.bossActive = false;
   if (action === "close") { updateHud(); if (result?.type === "lose") openPanel("campaign"); return; }

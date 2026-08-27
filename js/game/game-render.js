@@ -1600,6 +1600,51 @@ function drawEffects() {
   ctx.globalAlpha = 1;
 }
 
+function drawResourceDrops() {
+  if (!runtime.drops.length) return;
+  const styles = {
+    gold: { main: "#e6b94f", light: "#fff1a1", dark: "#714225", label: "金" },
+    food: { main: "#8ab45d", light: "#e4f0a3", dark: "#3c5d38", label: "糧" },
+    jade: { main: "#62b5b0", light: "#d4fff0", dark: "#245e62", label: "玉" },
+    shards: { main: "#b27ad3", light: "#f2d0ff", dark: "#552d6f", label: "碎" }
+  };
+  ctx.save();
+  ctx.textAlign = "center";
+  ctx.font = "700 10px ui-monospace, Consolas, monospace";
+  for (const drop of runtime.drops) {
+    const style = styles[drop.kind] || styles.gold;
+    const progress = 1 - drop.life / drop.maxLife;
+    const alpha = drop.life < 0.42 ? clamp(drop.life / 0.42, 0, 1) : 1;
+    const bob = Math.sin(drop.age * 7 + drop.phase) * 2;
+    const x = Math.round(drop.x);
+    const y = Math.round(drop.y - bob - Math.min(5, progress * 5));
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = "#17141188";
+    ctx.beginPath();
+    ctx.ellipse(x, y + 9, 9, 3, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = style.dark;
+    ctx.fillRect(x - 7, y - 5, 14, 11);
+    ctx.fillStyle = style.main;
+    ctx.fillRect(x - 5, y - 8, 10, 10);
+    ctx.fillStyle = style.light;
+    ctx.fillRect(x - 3, y - 7, 4, 2);
+    ctx.fillStyle = style.dark;
+    ctx.fillRect(x - 1, y - 3, 3, 3);
+    ctx.strokeStyle = "#22170f";
+    ctx.lineWidth = 2;
+    ctx.strokeText("+" + formatNumber(drop.amount), x, y - 12);
+    ctx.fillStyle = style.light;
+    ctx.fillText("+" + formatNumber(drop.amount), x, y - 12);
+    ctx.font = "800 8px ui-monospace, Consolas, monospace";
+    ctx.fillStyle = "#fff4c5";
+    ctx.fillText(style.label, x, y + 4);
+    ctx.font = "700 10px ui-monospace, Consolas, monospace";
+  }
+  ctx.globalAlpha = 1;
+  ctx.restore();
+}
+
 function drawBattleTitle() {
   const chapter = chapterForStage();
   const stageConfig = stageDefinition(activeStageNumber());
@@ -1622,6 +1667,7 @@ function render() {
   }
   drawBackground();
   drawBattleTitle();
+  drawResourceDrops();
   const units = [...runtime.allies, ...runtime.enemies].filter((unit) => !unit.dead || unit.deathTime > 0).sort((a, b) => a.y - b.y);
   for (const unit of units) drawUnit(unit);
   drawEffects();
