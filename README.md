@@ -36,14 +36,15 @@ npm run dev
 - 訪客進度會儲存在瀏覽器 `localStorage`；Google 登入後會以 Firebase UID 分隔本機快取並同步到 Cloud Firestore。
 - 戰役頁可進入目前關卡或重打已通關章節；重打只給部分戰功，不會倒退最高進度。
 - `data/game-data.js` 集中 50 名武將、66 件紙娃娃裝備、軍令、20 個章節與 100 個關卡的可調整資料。
-- 執行邏輯已拆成 js/game/ 的 core、combat、render、ui、main 五個模組；模組邊界與載入順序見 docs/architecture.md。
+- 執行邏輯已拆成 js/game/ 的 core、combat、render、ui、main 五個模組；模組邊界與載入順序見 `docs/specs/architecture.md`。
 
 ## 發布準備
 
 - capacitor.config.json、manifest.json、sw.js 與 www/ 已準備好直式 Android/PWA 包裝。
 - js/admob.js 只提供使用者主動觸發的 rewarded ad 接口；開發環境固定用 Google 測試 ID，尚未啟用正式廣告。
-- 正式版請先閱讀 docs/platform-and-release.md、docs/cloud-auth-setup.md、docs/ads-integration.md 與 docs/google-play-submission.md，填入自己的 Firebase、application ID、AdMob ID、publisher line、隱私政策 URL 與簽名設定。
-- UI 與後續製作必須遵守 `docs/ui-display-rules.md`、`docs/production-rules.md`；目前可驗證狀態與發布阻擋見 `docs/current-game-spec.md`，測試矩陣見 `docs/qa-test-matrix.md`，需要截圖或畫面驗收時使用 `docs/visual-qa.md`。
+- 所有文件先從 `docs/README.md` 進入；規範、目前規格、工作清單、已知問題、QA、發布與歷史資料已分目錄管理。
+- 正式版依 `docs/release/README.md` 完成 Firebase、application ID、AdMob、publisher line、隱私政策與簽名設定。
+- UI 與後續製作遵守 `docs/standards/`；現況見 `docs/specs/current-game-spec.md`，待辦見 `docs/work/active-backlog.md`，問題見 `docs/issues/known-issues.md`。
 - 不會從 IncenseAshes 複製 Firebase 憑證、keystore、upload certificate、正式廣告 ID 或商店素材。
 
 先使用 SETUP_ANDROID.bat／npm run setup:android 建立 Android wrapper，再使用 START_ANDROID_APP.bat／npm run start:android 啟動裝置或模擬器；打包APK.bat／npm run build:android 會輸出到 builds/。

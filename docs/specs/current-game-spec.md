@@ -1,0 +1,47 @@
+# 三國：群英再起目前遊戲規格
+
+狀態：CURRENT。更新日期：2026-08-28。本文件只描述目前可由程式、資料、manifest 或測試核對的事實；規範、待辦、問題細節與歷史方案各自放在對應目錄。
+
+## 產品與核心循環
+
+- `已確認`：直式 Web/H5 三國放置 RPG。
+- `已確認`：核心循環為訪客／登入 → 配置武將與裝備 → 自動戰鬥 → 三個普通波次 → Boss → 結算資源與關卡 → 成長後再戰。
+- `已確認`：資料目前包含至少 50 名武將、20 章／100 關、普通敵人池、每波敵將與 Boss 敵將。
+
+## 主畫面與操作
+
+- `已確認`：主畫面包含頂部主公、速度、關卡資訊，右側四個快捷與更多抽屜，Canvas 戰場，資源／首領列，以及五個底部頁籤。
+- `已確認`：戰鬥支援自動進行、速度切換、波次、Boss、勝敗結算與重試／下一關路徑。
+- `已確認`：專案目前沒有 `navigator.vibrate` 呼叫。
+
+## Runtime 與戰鬥渲染
+
+- `已確認`：載入順序為 data → core → combat → render → UI → main；`game.js` 只保留相容性標記。
+- `已確認`：單位狀態包含移動、攻擊 action、受擊、死亡、技能、波次與結算資料。
+- `已確認`：角色 body、portrait、attack、mount、Boss、VFX、terrain 與 combat weapon 有 WebP／manifest 管理，Canvas 使用 nearest-neighbor。
+- `已確認`：Canvas transform 洩漏已修正，source 與同步後 `www` 的真實 Chrome transform gate 通過。
+- `已確認`：攻擊圖集目前未通過 body coverage gate，renderer 以 `ATTACK_SPRITES_APPROVED = false` 隔離，暫時使用 body、action transform 與外部兵器路徑。
+- `不一致`：UI 動作規範禁止全畫面震動，但 runtime 仍保留 shake 路徑。
+
+## 成長、內容與面板
+
+- `已確認`：資料與 UI 路徑包含武將、編隊、戰法、戰役、每日／每週、簽到、商城、圖鑑、演武、塔、副本、成就、活動、戰報、裝備、精煉、升星、突破、頭框、稱號與寶物。
+- `缺少證據`：上述系統尚未全部完成成功、失敗、雙擊、重載與獎勵防重的執行報告；函式或面板存在不等於品質通過。
+
+## 存檔、離線與雲端
+
+- `已確認`：本地存檔 schema version 為 3，載入支援 v2／v3 並補入預設欄位。
+- `已確認`：存檔包含資源、關卡、武將、編隊、裝備、任務、活動、商城與離線狀態；`persist()` 先寫 localStorage，再排入雲端同步。
+- `缺少證據`：正式 Firebase、跨裝置衝突、原生 Google bridge、正式 Firestore 規則與實機重連尚未驗證。
+
+## 目前品質判定
+
+目前判定：`FAIL／不可發布`。
+
+主要事實：攻擊圖集被隔離；兵器與敵人身分仍有視覺錯誤；我方、普通敵人與 Boss 尚未完成 idle／move／attack／hit／death 的完整證據矩陣；正式平台帳號、政策與實機流程也未完成。
+
+詳細缺陷見 [已知問題](../issues/known-issues.md)，行動順序見 [目前工作清單](../work/active-backlog.md)，發布門檻見 [QA 測試矩陣](../qa/qa-test-matrix.md)。
+
+## 維護方式
+
+玩法、資料契約、存檔 schema、主要 UI 結構或 runtime 邊界改變時更新本檔。不要在本檔排工作或記錄長篇除錯；規範改到 `standards/`，待辦改到 `work/`，問題改到 `issues/`。

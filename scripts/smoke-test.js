@@ -134,11 +134,17 @@ assert.ok(fs.existsSync(path.join(root, "android", "app", "src", "main", "java",
 const manifest = JSON.parse(fs.readFileSync(path.join(root, "manifest.json"), "utf8"));
 assert.ok(manifest.icons?.some((icon) => icon.src === "assets/icons/icon-192.webp") && manifest.icons?.some((icon) => icon.src === "assets/icons/icon-512.webp"), "manifest must reference generated PWA icons");
 assert.ok(indexSource.includes('id="doubleOffline"') && indexSource.includes('id="dailyDot"') && indexSource.includes('data-panel="collection"') && indexSource.includes('data-panel="tower"') && indexSource.includes('data-panel="dungeon"'), "local progression UI hooks missing");
-assert.ok(fs.existsSync(path.join(root, "docs", "reference-analysis.md")), "reference analysis document missing");
-assert.ok(fs.existsSync(path.join(root, "docs", "architecture.md")), "architecture document missing");
-assert.ok(fs.existsSync(path.join(root, "docs", "game-completion-plan.md")), "completion plan document missing");
-for (const requiredDoc of ["current-game-spec.md", "issues-and-prevention.md", "qa-test-matrix.md", "reference-integration-audit.md", "combat-character-render-contract.md"]) {
-  assert.ok(fs.existsSync(path.join(root, "docs", requiredDoc)), `authority document missing: ${requiredDoc}`);
+assert.ok(fs.existsSync(path.join(root, "docs", "reference", "reference-analysis.md")), "reference analysis document missing");
+assert.ok(fs.existsSync(path.join(root, "docs", "specs", "architecture.md")), "architecture document missing");
+for (const requiredDoc of [
+  ["specs", "current-game-spec.md"],
+  ["work", "active-backlog.md"],
+  ["issues", "known-issues.md"],
+  ["qa", "qa-test-matrix.md"],
+  ["reference", "reference-integration-audit.md"],
+  ["standards", "combat-character-render-contract.md"]
+]) {
+  assert.ok(fs.existsSync(path.join(root, "docs", ...requiredDoc)), `authority document missing: ${requiredDoc.join("/")}`);
 }
 
 assert.ok(indexSource.includes('data-panel="events"') && indexSource.includes('id="eventDot"'), "events panel hooks missing");
