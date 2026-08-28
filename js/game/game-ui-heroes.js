@@ -113,6 +113,19 @@ function renderHeroDetail(heroId, previewMax = false) {
     ? '<span class="level-tag" style="background:linear-gradient(135deg,#c69234,#f0d376);color:#2b1900;margin-left:6px;">' + synergy.name + '</span>'
     : '';
 
+  const relatedBonds = BONDS.filter((bond) => bond.heroes.includes(heroId));
+  const heroBondsHtml = relatedBonds.length
+    ? '<p class="section-caption">名將緣分</p><div class="collection-list" style="margin-bottom:10px;">' + relatedBonds.map((bond) => {
+        const active = activeBonds().some((b) => b.id === bond.id);
+        const members = bond.heroes.map((hid) => {
+          const h = heroById(hid);
+          const inTeam = save.formation.includes(hid);
+          return '<span style="color:' + (inTeam ? 'var(--gold,#d7b84f)' : '#888') + ';margin-right:4px;">' + (h?.name || hid) + (inTeam ? '✓' : '') + '</span>';
+        }).join("");
+        return '<article class="collection-card ' + (active ? 'active' : '') + '" style="padding:6px 10px;"><div><strong>' + bond.name + '</strong><small>' + bond.desc + '</small><div style="font-size:11px;margin-top:2px;">陣容：' + members + '</div></div><em style="font-size:11px;color:' + (active ? 'var(--gold,#d7b84f)' : '#666') + ';">' + (active ? '已啟動' : '未成陣') + '</em></article>';
+      }).join("") + '</div>'
+    : '';
+
   setPanel("武將詳情",
     headerNotice +
     '<section class="detail-hero">' +
@@ -130,6 +143,7 @@ function renderHeroDetail(heroId, previewMax = false) {
     '</section>' +
     '<p class="section-caption">戰法與被動</p>' +
     '<div class="hero-skill-card"><div><strong>戰法 · ' + hero.skill + ' Lv.' + skillLevel + '</strong><span>冷卻 ' + Number(hero.skillCooldown || 5).toFixed(1) + ' 秒</span></div><p><b>效果</b> · ' + (HERO_SKILL_META[hero.id]?.effect || "根據兵種發揮") + '</p><p><b>範圍</b> · ' + (HERO_SKILL_META[hero.id]?.area || hero.role) + '</p><p><b>被動</b> · ' + (hero.passive || "尚未記載") + '</p></div>' +
+    heroBondsHtml +
     (unlocked ? paperDollHtml(hero) : '<div class="record-item" style="margin-top:10px;">' + synergy.desc + '</div>') +
     '<div class="action-row">' +
       (unlocked ?

@@ -53,6 +53,9 @@ function updateHud() {
   const stageTitle = stageConfig?.name || "關卡 " + stage;
   setHudText("stageCompactLabel", chapterNumber + "-" + chapterStage);
   if ($("enemyPreviewStage")) setHudText("enemyPreviewStage", stageTitle);
+  const curChapter = CHAPTERS[Math.min(CHAPTERS.length - 1, Math.floor((save.stage - 1) / STAGES_PER_CHAPTER))];
+  const targetStage = stageDefinition(save.stage);
+  setHudText("questText", "目標：第 " + save.stage + " 關 · " + (targetStage?.name || curChapter?.name || "征戰"));
   const living = runtime.enemies.reduce((count, enemy) => count + (enemy.dead ? 0 : 1), 0);
   const waveText = runtime.bossActive ? "首領戰" : "第 " + (runtime.waveClears + 1) + " 波";
   setHudText("waveChip", waveText + " · 敵 " + living);

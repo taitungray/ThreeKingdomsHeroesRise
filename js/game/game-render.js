@@ -2141,6 +2141,65 @@ function drawWaveTransitionOverlay() {
   ctx.restore();
 }
 
+function drawSkillCutIn() {
+  const cutIn = runtime.skillCutIn;
+  if (!cutIn || !save.effects || reducedMotionActive()) return;
+  const progress = 1 - cutIn.life / cutIn.maxLife;
+  const alpha = Math.sin(Math.min(progress * 2.2, 1) * Math.PI);
+  const slideIn = progress < 0.25 ? (1 - progress / 0.25) * 60 : 0;
+
+  ctx.save();
+  ctx.globalAlpha = alpha * 0.92;
+
+  const grad = ctx.createLinearGradient(0, 190, 390, 246);
+  grad.addColorStop(0, "rgba(20, 16, 26, 0)");
+  grad.addColorStop(0.25, "rgba(42, 28, 16, 0.88)");
+  grad.addColorStop(0.75, "rgba(42, 28, 16, 0.88)");
+  grad.addColorStop(1, "rgba(20, 16, 26, 0)");
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 192, 390, 54);
+
+  ctx.strokeStyle = "#f0c65e";
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(25, 192);
+  ctx.lineTo(365, 192);
+  ctx.moveTo(25, 246);
+  ctx.lineTo(365, 246);
+  ctx.stroke();
+
+  const portrait = cutIn.hero?.portrait ? ASSETS.get(cutIn.hero.portrait) : null;
+  const avatarX = 52 + slideIn;
+  const avatarY = 219;
+  if (portrait) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(avatarX, avatarY, 22, 0, Math.PI * 2);
+    ctx.clip();
+    ctx.drawImage(portrait, avatarX - 22, avatarY - 22, 44, 44);
+    ctx.restore();
+    ctx.strokeStyle = "#ffdf79";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(avatarX, avatarY, 22, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+
+  ctx.textAlign = "left";
+  ctx.font = "bold 13px DFKai-SB, KaiTi, serif";
+  ctx.fillStyle = "#ffdd80";
+  ctx.fillText("【無雙奧義】" + (cutIn.hero?.name || "名將"), avatarX + 32, 211);
+
+  ctx.font = "900 20px DFKai-SB, KaiTi, serif";
+  ctx.strokeStyle = "#240e06";
+  ctx.lineWidth = 3.5;
+  ctx.strokeText((cutIn.skillName || "大招") + "！", avatarX + 32, 235);
+  ctx.fillStyle = "#fff4d4";
+  ctx.fillText((cutIn.skillName || "大招") + "！", avatarX + 32, 235);
+
+  ctx.restore();
+}
+
 function render() {
   ctx.save();
   drawBackground();
@@ -2152,6 +2211,7 @@ function render() {
   for (const unit of units) drawUnit(unit);
   drawEffects();
   drawWaveTransitionOverlay();
+  drawSkillCutIn();
   ctx.restore();
   if (runtime.flash > 0 && save.effects) {
     ctx.save();

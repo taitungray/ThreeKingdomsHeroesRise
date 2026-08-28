@@ -463,19 +463,22 @@ function nearestTarget(unit, targets) {
   return { target: best, distance: bestDistance };
 }
 
-function addNumber(x, y, value, critical = false, heal = false) {
-  const spreadX = (Math.random() - 0.5) * 30;
-  const spreadY = (Math.random() - 0.5) * 10;
+function addNumber(x, y, value, critical = false, heal = false, options = {}) {
+  const spreadX = options.isTag ? 0 : (Math.random() - 0.5) * 24;
+  const spreadY = options.isTag ? -6 : (Math.random() - 0.5) * 8;
+  const isText = typeof value === "string" && isNaN(Number(value));
+  const displayText = isText ? value : ((heal ? "+" : "") + Math.round(Number(value)));
   runtime.numbers.push({
     x: x + spreadX,
     y: y - 8 + spreadY,
-    value: (heal ? "+" : "") + Math.round(value),
+    value: displayText,
     life: critical ? 0.9 : 0.75,
     maxLife: critical ? 0.9 : 0.75,
-    color: heal ? "#88e899" : critical ? "#ffe16b" : "#fff1da",
-    size: critical ? 28 : 17,
-    angle: critical ? (Math.random() - 0.5) * 0.28 : (Math.random() - 0.5) * 0.12,
-    pop: critical ? 1.18 : 1
+    color: options.color || (heal ? "#88e899" : critical ? "#ffd84d" : "#fff1da"),
+    size: options.size || (isText ? 20 : critical ? 28 : 17),
+    angle: isText ? 0 : critical ? (Math.random() - 0.5) * 0.22 : (Math.random() - 0.5) * 0.1,
+    pop: critical ? 1.25 : 1,
+    isTag: isText || options.isTag
   });
 }
 
@@ -630,6 +633,8 @@ function killUnit(target, attacker) {
   target.deathSpin = chance(0.5) ? -1 : 1;
   target.kickX *= 1.6;
   target.kickY -= 5;
+  const isBossOrElite = target.type === "boss" || target.isBoss || target.enemyGeneralId;
+  addNumber(target.x, target.y - 36, isBossOrElite ? "破敵!" : "斬!", true, false, { color: isBossOrElite ? "#f5d05a" : "#ff6b6b", size: isBossOrElite ? 22 : 16, isTag: true });
   addEffect("burst", target.x, target.y - 12, target.team === "enemy" ? "#b94934" : "#75a7ca", { radius: 42, life: 0.55 });
   addEffect("dust", target.x, target.y + 2, "#b7a77d", { radius: target.type === "boss" ? 42 : 25, life: 0.55 });
   addEffect("soul", target.x, target.y - 25, target.team === "enemy" ? "#f0c66b" : "#86c8db", { radius: 20, life: 0.72 });
@@ -649,9 +654,10 @@ function killUnit(target, attacker) {
       beep(135, 0.22, "square", 0.045);
     }
   } else if (attacker && target.hero) {
-    addLog(target.hero.name + "\u529b\u7aed\uff0c\u7b49\u5f85\u91cd\u65b0\u6574\u8ecd\u3002");
+    addLog(target.hero.name + "力竭，等待重新整軍。");
   }
 }
+
 function useHeroSkill(unit, target) {
   unit.attackCount = 0;
   unit.skillCooldown = (unit.hero.skillCooldown || 5) / (1 + teamPassiveBonus("cooldown"));
@@ -659,6 +665,12 @@ function useHeroSkill(unit, target) {
   applyLocalImpact(unit, 6);
   runtime.flash = reducedMotionActive() ? 0 : 0.13;
   runtime.flashColor = unit.hero.accent;
+  runtime.skillCutIn = {
+    hero: unit.hero,
+    skillName: unit.hero.skill,
+    life: 0.65,
+    maxLife: 0.65
+  };
   const hero = unit.hero;
   const skillFactor = 1 + (heroSkillLevel(hero.id) - 1) * .12;
   const spec = SKILL_SPECS[hero.id] || { tone: hero.role === "\u8b00\u58eb" ? "thunder" : "slash", color: hero.accent };
@@ -1165,6 +1177,10 @@ function updateGame(rawDelta) {
   updateResourceDrops(delta);
   updateWaveTransition(frameDelta);
   updateEnemyEntry(delta);
+  if (runtime.skillCutIn) {
+    runtime.skillCutIn.life -= frameDelta;
+    if (runtime.skillCutIn.life <= 0) runtime.skillCutIn = null;
+  }
   waveCleared();
   partyDefeated();
   if (runtime.dialogueTimer > 0) {
