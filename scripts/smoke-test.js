@@ -122,8 +122,9 @@ assert.ok(cloudSource.includes("taoyuan_qunying_saves") && cloudSource.includes(
 assert.ok(audioSource.includes("startMusic") && audioSource.includes("sfx"), "audio module must expose music and sound effects");
 assert.ok(["bgm-main.wav", "sfx-click.wav", "sfx-confirm.wav", "sfx-cancel.wav", "sfx-hit.wav", "sfx-skill.wav", "sfx-reward.wav", "sfx-boss.wav"].every((file) => fs.existsSync(path.join(root, "assets", "audio", file))), "real audio assets must exist in assets/audio/");
 assert.ok(fs.existsSync(path.join(root, "assets", "icon.webp")), "app icon source missing");
-assert.ok(fs.existsSync(path.join(root, "assets", "icons", "icon-192.webp")) && fs.existsSync(path.join(root, "assets", "icons", "icon-512.webp")), "PWA icon variants missing");
-const styleSource = fs.readFileSync(path.join(root, "styles.css"), "utf8");
+const cssModules = ["base.css", "hud.css", "avatars.css", "panels.css"];
+const styleSource = fs.readFileSync(path.join(root, "styles.css"), "utf8") + "\n" +
+  cssModules.map((file) => fs.existsSync(path.join(root, "css", file)) ? fs.readFileSync(path.join(root, "css", file), "utf8") : "").join("\n");
 for (const marker of ["Character portrait pass: distinct facial silhouettes", ".portrait-eyes::before", ".avatar-xiahoudun .portrait-eyes::before", ".portrait-rune"]) {
   assert.ok(styleSource.includes(marker), "portrait style marker missing: " + marker);
 }

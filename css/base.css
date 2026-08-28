@@ -1,0 +1,195 @@
+:root {
+  --ink: #171512;
+  --paper: #dfcda0;
+  --paper-light: #f5e8bd;
+  --gold: #e0b653;
+  --jade: #79c69c;
+  --red: #ad3d31;
+  --text: #fff2cf;
+  --surface-field: #4f604d;
+  --surface-paper: #d2bd8e;
+  --surface-iron: #1a211a;
+  --accent-danger: #cb4e3f;
+  --accent-reward: #e0b653;
+  --line-dark: #111510;
+  --line-mid: #65583c;
+  --line-light: #c6a965;
+  --iron-1: #30372e;
+  --iron-2: #171d17;
+  --wood-1: #6a452d;
+  --wood-2: #342219;
+  --red-1: #b64a38;
+  --red-2: #6f241e;
+  --paper-1: #f0dfb5;
+  --paper-2: #bba477;
+  --touch-target: 44px;
+  --motion-fast: 100ms;
+  --motion-panel: 200ms;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --panel-ink: #2a2218;
+  --panel-muted: #5a4630;
+  --panel-cinnabar: #7a2e24;
+  --panel-line: #6e5634;
+  --panel-paper: #efe1b6;
+  --panel-paper-deep: #cbb58a;
+  --type-display: 22px;
+  --type-heading: 18px;
+  --type-body: 15px;
+  --type-meta: 14px;
+  --type-button: 16px;
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 50% 12%, #4b4a3e 0 3%, transparent 30%),
+    repeating-linear-gradient(135deg, #10130f 0 2px, #171a15 2px 5px);
+  color: var(--text);
+  font-family: "Microsoft JhengHei", "PingFang TC", "Noto Sans TC", sans-serif;
+  touch-action: manipulation;
+}
+button { color: inherit; font: inherit; border: 0; cursor: pointer; user-select: none; touch-action: manipulation; }
+button:focus-visible { outline: 3px solid #fff0a0; outline-offset: 2px; }
+[hidden] { display: none !important; }
+
+.game-app {
+  position: relative;
+  width: min(100vw, 430px);
+  height: 100dvh;
+  min-height: 0;
+  margin: 0 auto;
+  overflow: hidden;
+  background: #263528;
+  box-shadow: 0 0 0 2px #0a0c09, 0 0 0 5px #392e20, 0 0 46px #000e;
+  isolation: isolate;
+}
+.game-app::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 35;
+  pointer-events: none;
+  border: 4px solid transparent;
+  border-image: linear-gradient(#d4b56a, #5a4328, #c9a24a) 1;
+  box-shadow: inset 0 0 28px #000c;
+}
+
+/* 按鈕系列 */
+.seal-button, .stone-button {
+  min-height: 44px;
+  padding: 8px 16px;
+  border: 2px solid #3a241a;
+  border-radius: 6px;
+  color: #fff0c1;
+  font-family: "DFKai-SB", "KaiTi", serif;
+  font-size: 16px;
+  font-weight: bold;
+  letter-spacing: 1px;
+  background: linear-gradient(180deg, var(--red-1), var(--red-2));
+  box-shadow: inset 0 0 0 1px #e2a26a, 0 3px 0 #2a1711;
+  text-shadow: 1px 1px #40130f;
+  transition: transform 0.1s ease, filter 0.1s ease, box-shadow 0.1s ease;
+}
+.seal-button:active { transform: translateY(2px); filter: brightness(0.9); }
+.stone-button {
+  border-color: #272d24;
+  color: #f1e5bd;
+  background: linear-gradient(180deg, #626b5a, #2d382d);
+  box-shadow: inset 0 0 0 1px #a8a17e, 0 3px 0 #161b15;
+  text-shadow: 1px 1px #141a14;
+}
+.stone-button:active { transform: translateY(2px); filter: brightness(0.9); }
+.seal-button:disabled, .stone-button:disabled { opacity: 1; filter: saturate(.25) brightness(.78); color: #bbb9a6; border-color: #4d4d43; box-shadow: inset 0 0 0 1px #797968, 0 2px 0 #252620; }
+
+.compact-button {
+  min-height: 44px !important;
+  padding: 6px 10px !important;
+  font-size: 14px !important;
+  white-space: nowrap;
+  border: 1px solid #765b37;
+  color: #633126;
+  background: linear-gradient(#ebd9ab, #b99f6d);
+  box-shadow: inset 0 0 0 1px #fff0c2;
+}
+.compact-button small { display: block; font-size: 12px; line-height: 1.2; font-weight: 700; }
+.wide-button { width: 100%; min-height: 48px; margin-top: 10px; font-size: var(--type-button); }
+.text-button { display: block; min-height: 38px; margin: 10px auto 0; color: #70482d; border: 0; background: transparent; font-size: 11px; text-decoration: underline; text-underline-offset: 3px; }
+
+/* 提示與 Toast */
+.toast {
+  position: absolute;
+  z-index: 100;
+  left: 50%;
+  bottom: calc(130px + var(--safe-bottom));
+  width: max-content;
+  max-width: min(86%, 340px);
+  padding: 8px 16px;
+  border: 1px solid #c59c4d;
+  color: #ffe7a1;
+  text-align: center;
+  background: #1a241aeF;
+  box-shadow: 0 4px 14px #000b, inset 0 0 0 1px #d9ba6d33;
+  font-size: 14px;
+  opacity: 0;
+  transform: translate(-50%, 12px);
+  transition: opacity .2s, transform .2s;
+  pointer-events: none;
+}
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+/* Loading 畫面 */
+.loading-screen {
+  position: absolute;
+  z-index: 90;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 10px;
+  color: #f7e9ba;
+  background: radial-gradient(circle at 50% 34%, #87502f 0 4%, transparent 18%), linear-gradient(145deg, #111711, #2e3b2d 55%, #151a15);
+  text-align: center;
+  transition: opacity .28s ease;
+}
+.loading-screen[hidden] { display: none; }
+.loading-screen strong { font-family: "DFKai-SB", "KaiTi", serif; font-size: 26px; letter-spacing: 4px; color: #ffe6a3; text-shadow: 0 2px 8px #000, 0 0 12px rgba(245, 203, 93, 0.6); }
+.loading-screen small { color: #c9b36e; font-size: 12px; letter-spacing: 2px; }
+.loading-seal {
+  display: block;
+  width: 64px;
+  height: 64px;
+  background-image: url("../assets/icons/seal-taoyuan.webp");
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+  border: 0 !important;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.8) !important;
+  color: transparent !important;
+  font-size: 0 !important;
+  border-radius: 8px;
+  transform: rotate(-3deg);
+  animation: seal-float 3s ease-in-out infinite;
+}
+@keyframes seal-float {
+  0%, 100% { transform: rotate(-3deg) translateY(0); }
+  50% { transform: rotate(-1deg) translateY(-4px); }
+}
+
+.rotate-hint { display: none; position: absolute; z-index: 200; inset: 0; place-items: center; align-content: center; color: #ede4cb; text-align: center; background: #171914; }
+.rotate-hint i { width: 55px; height: 85px; border: 3px solid #bfae7e; border-radius: 7px; transform: rotate(-25deg); animation: phone-turn 1.6s ease-in-out infinite; }
+.rotate-hint p { margin: 24px 0 0; line-height: 1.6; }
+.rotate-hint small { color: #a99e83; }
+@keyframes phone-turn { 50% { transform: rotate(0); } }
+
+@media (orientation: landscape) and (max-height: 540px) { .rotate-hint { display: grid; } }
+@media (min-width: 700px) {
+  .game-app { height: min(100dvh, 900px); margin-top: max(0px, calc((100dvh - 900px) / 2)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}

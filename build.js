@@ -45,6 +45,7 @@ fs.mkdirSync(output, { recursive: true });
 copyDirectoryIfPresent("assets");
 copyDirectoryIfPresent("data");
 copyDirectoryIfPresent("js");
+copyDirectoryIfPresent("css");
 
 const adConfig = isRelease
   ? {

@@ -20,7 +20,8 @@
 
 ## Runtime 與戰鬥渲染
 
-- `已確認`：載入順序為 data → core → combat → render → UI → main；`game.js` 只保留相容性標記。
+- `已確認`：載入順序為 audio → data（game-data, hero-biographies, battle-quotes, shop-data）→ core → combat → render → UI（base, heroes, modes, panels）→ cloud-save → main；`game.js` 只保留相容性標記。
+- `已確認`：CSS 採模組化拆分架構（`css/base.css`、`css/hud.css`、`css/avatars.css`、`css/panels.css`），由 `styles.css` 統一匯總，兼顧開發維護性與發布建置效能。
 - `已確認`：單位狀態包含移動、攻擊 action、受擊、死亡、技能、波次與結算資料。
 - `已確認`：角色 body、portrait、attack、mount、Boss、VFX、terrain 與 combat weapon 有 WebP／manifest 管理，Canvas 使用 nearest-neighbor。
 - `已確認`：Canvas transform 洩漏已修正，source 與同步後 `www` 的真實 Chrome transform gate 通過。

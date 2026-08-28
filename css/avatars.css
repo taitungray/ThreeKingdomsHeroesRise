@@ -1,0 +1,126 @@
+/* 像素頭像基礎結構 */
+.pixel-avatar {
+  --helm: #4e8d58;
+  --cloth: #ecdec2;
+  --hair: #30251d;
+  --skin: #d69b6c;
+  position: relative;
+  display: inline-block;
+  flex: 0 0 auto;
+  width: 45px;
+  height: 45px;
+  overflow: hidden;
+  border: 2px solid #231b12;
+  border-radius: 4px;
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  image-rendering: pixelated;
+  box-shadow: inset 0 0 0 1px #d7c681, 0 2px 4px #000a;
+}
+.pixel-avatar::before {
+  content: "";
+  position: absolute;
+  z-index: 3;
+  left: 32%;
+  top: 0;
+  width: 36%;
+  height: 24%;
+  background: var(--helm);
+  border: 2px solid #1b1a14;
+  border-bottom: 0;
+}
+.pixel-avatar::after {
+  content: "";
+  position: absolute;
+  z-index: 3;
+  left: 33%;
+  top: 66%;
+  width: 34%;
+  height: 9%;
+  background: #884638;
+  box-shadow: 0 .23em 0 var(--hair);
+}
+.pixel-avatar i {
+  position: absolute;
+  z-index: 2;
+  left: 3px;
+  right: 3px;
+  bottom: 0;
+  height: 16%;
+  background: var(--cloth);
+  clip-path: polygon(0 100%, 18% 0, 40% 55%, 50% 15%, 60% 55%, 82% 0, 100% 100%);
+}
+.pixel-avatar .avatar-detail { position: absolute; z-index: 2; inset: 0; display: block; pointer-events: none; image-rendering: pixelated; }
+.pixel-avatar .avatar-detail::before, .pixel-avatar .avatar-detail::after { content: ""; position: absolute; display: block; pointer-events: none; }
+.avatar-locked { filter: grayscale(1) brightness(.55); --helm: #555; --cloth: #474747; }
+.avatar-locked .avatar-detail::before, .avatar-locked .avatar-detail::after { opacity: .3; }
+
+/* Character portrait pass: distinct facial silhouettes */
+.avatar-liubei { --helm: #5a955b; --cloth: #e8e1c5; --hair: #342519; --skin: #d9a071; }
+.avatar-guanyu { --helm: #29694e; --cloth: #2f8662; --hair: #311713; --skin: #bd6448; }
+.avatar-zhangfei { --helm: #a84c35; --cloth: #626a72; --hair: #201811; --skin: #b87852; }
+.avatar-zhaoyun { --helm: #d7d4c6; --cloth: #4a80b9; --hair: #20262e; --skin: #d6a27a; }
+.avatar-caocao { --helm: #6d4891; --cloth: #3b415e; --hair: #26201b; --skin: #d09a71; }
+.avatar-sunshang { --helm: #c64f69; --cloth: #f0b55f; --hair: #4c2727; --skin: #e0a67f; }
+.avatar-xiahoudun { --helm: #375a86; --cloth: #2a4a78; --hair: #212026; --skin: #bd805b; }
+.avatar-diaochan { --helm: #b95092; --cloth: #8c5bb2; --hair: #42223d; --skin: #e2ab83; }
+.avatar-lubu { --helm: #8e2028; --cloth: #962b2b; --hair: #251716; --skin: #c9825b; }
+.avatar-huangzhong { --helm: #9a7834; --cloth: #876c35; --hair: #d4c0a0; --skin: #c88e67; }
+.avatar-zhugeliang { --helm: #d9d1bd; --cloth: #7aa09b; --hair: #2d2e2b; --skin: #d9a47f; }
+
+/* 五官眼睛高光錨點 */
+.portrait-eyes { position: absolute; z-index: 4; left: 25%; top: 43%; width: 50%; height: 13%; pointer-events: none; }
+.portrait-eyes::before, .portrait-eyes::after { content: ""; position: absolute; top: 18%; width: 25%; height: 58%; background: #211814; box-shadow: 0 1px 0 #000a; background-image: linear-gradient(#fff2cf 0 0); background-position: 55% 42%; background-repeat: no-repeat; background-size: 34% 30%; }
+.portrait-eyes::before { left: 4%; }
+.portrait-eyes::after { right: 4%; }
+.avatar-xiahoudun .portrait-eyes::before { background-image: none; }
+.portrait-rune { position: absolute; z-index: 5; right: 5%; bottom: 6%; width: 15%; height: 15%; background: var(--portrait-accent, #e5bd62); box-shadow: 0 0 0 1px #201b14aa; clip-path: polygon(50% 0, 100% 26%, 80% 100%, 20% 100%, 0 26%); opacity: .95; }
+.portrait-rune::before { content: ""; position: absolute; left: 37%; top: 18%; width: 26%; height: 66%; background: var(--portrait-tone, #4d4b3c); }
+.portrait-rune::after { content: ""; position: absolute; left: 18%; top: 43%; width: 64%; height: 14%; background: var(--portrait-tone, #4d4b3c); }
+
+/* 獨立 WebP 頭像圖檔載入 */
+.pixel-avatar.portrait-asset,
+.pixel-avatar[style*="background-image"] {
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  image-rendering: pixelated;
+}
+.pixel-avatar.portrait-asset::before,
+.pixel-avatar.portrait-asset::after,
+.pixel-avatar.portrait-asset i,
+.pixel-avatar.portrait-asset .portrait-eyes,
+.pixel-avatar.portrait-asset .portrait-rune,
+.pixel-avatar.portrait-asset .avatar-detail,
+.pixel-avatar.portrait-asset:not(.large) > .paper-layer,
+.pixel-avatar.portrait-asset:not(.large) > .mount-mark,
+.pixel-avatar[style*="background-image"]::before,
+.pixel-avatar[style*="background-image"]::after,
+.pixel-avatar[style*="background-image"] i,
+.pixel-avatar[style*="background-image"] .portrait-eyes,
+.pixel-avatar[style*="background-image"] .portrait-rune,
+.pixel-avatar[style*="background-image"] .avatar-detail,
+.pixel-avatar[style*="background-image"]:not(.large) > .paper-layer,
+.pixel-avatar[style*="background-image"]:not(.large) > .mount-mark { display: none !important; }
+
+.pixel-avatar.portrait-asset-liubei { background-image: url("../assets/characters/portrait-liubei-v1.webp"); }
+.pixel-avatar.portrait-asset-guanyu { background-image: url("../assets/characters/portrait-guanyu-v1.webp"); }
+.pixel-avatar.portrait-asset-zhaoyun { background-image: url("../assets/characters/portrait-zhaoyun-v1.webp"); }
+.pixel-avatar.portrait-asset-zhangfei { background-image: url("../assets/characters/portrait-zhangfei-v1.webp"); }
+.pixel-avatar.portrait-asset-huangzhong { background-image: url("../assets/characters/portrait-huangzhong-v1.webp"); }
+.pixel-avatar.portrait-asset-caocao { background-image: url("../assets/characters/portrait-caocao-v1.webp"); }
+.pixel-avatar.portrait-asset-sunshang { background-image: url("../assets/characters/portrait-sunshang-v1.webp"); }
+.pixel-avatar.portrait-asset-xiahoudun { background-image: url("../assets/characters/portrait-xiahoudun-v1.webp"); }
+.pixel-avatar.portrait-asset-zhugeliang { background-image: url("../assets/characters/portrait-zhugeliang-v1.webp"); }
+.pixel-avatar.portrait-asset-diaochan { background-image: url("../assets/characters/portrait-diaochan-v1.webp"); }
+.pixel-avatar.portrait-asset-lubu { background-image: url("../assets/characters/portrait-lubu-v1.webp"); }
+
+/* 紙娃娃裝備圖層 */
+.pixel-avatar > .paper-layer { position: absolute; z-index: 4; inset: 0; display: block; overflow: visible; pointer-events: none; font-size: 0; }
+.pixel-avatar > .paper-layer::before, .pixel-avatar > .paper-layer::after { content: ""; position: absolute; display: block; }
+.pixel-avatar > .mount-mark { position: absolute; z-index: 1; left: 5%; right: 5%; bottom: 0; height: 29%; display: block; background: #59634d; clip-path: polygon(0 100%, 5% 42%, 27% 29%, 45% 45%, 70% 23%, 95% 35%, 100% 100%); }
+.pixel-avatar.paper-mount-foot > .mount-mark { display: none; }
+.pixel-avatar.paper-mount-grey > .mount-mark { background: #6e6d61; }
+.pixel-avatar.paper-mount-redhare > .mount-mark { background: #823c32; }
+.pixel-avatar.paper-mount-jadelion > .mount-mark { background: #c9c8bc; }
