@@ -222,11 +222,48 @@ function claimLocalEvent(eventId) {
   toast("活動獎勵已領取");
 }
 
+function claimFactionMilestone(msKey) {
+  const [factionId, countStr] = (msKey || "").split("-");
+  const count = Number(countStr);
+  const ms = (FACTION_MILESTONES[factionId] || []).find((item) => item.count === count);
+  if (!ms) return;
+  const ownedCount = (FACTION_BY_HERO[factionId] || []).filter((hid) => isUnlocked(heroById(hid))).length;
+  if (ownedCount < ms.count) return toast("尚未結識足夠的勢力名將");
+  save.collectionMilestones = save.collectionMilestones || {};
+  if (save.collectionMilestones[msKey]) return toast("已領取過此共鳴加成");
+  save.collectionMilestones[msKey] = true;
+  awardResources({ jade: ms.jade });
+  persist();
+  updateHud();
+  renderCollection();
+  window.TaoyuanAudio?.sfx?.("reward");
+  toast("成功啟動「" + ms.name + "」共鳴，全隊屬性已提升！");
+}
+
 function renderCollection() {
   const counts = Object.entries(FACTIONS).map(([id, faction]) => {
     const owned = (FACTION_BY_HERO[id] || []).filter((heroId) => isUnlocked(heroById(heroId))).length;
     return '<div class="collection-faction"><i style="--faction-color:' + faction.color + '"></i><strong>' + faction.name + '</strong><span>' + owned + ' 名</span><small>' + faction.desc + '</small></div>';
   }).join("");
+
+  const milestonesHtml = Object.entries(FACTION_MILESTONES).map(([factionId, list]) => {
+    const faction = FACTIONS[factionId];
+    const ownedCount = (FACTION_BY_HERO[factionId] || []).filter((hid) => isUnlocked(heroById(hid))).length;
+    const totalCount = (FACTION_BY_HERO[factionId] || []).length;
+    const items = list.map((ms) => {
+      const msKey = factionId + "-" + ms.count;
+      const claimed = Boolean(save.collectionMilestones?.[msKey]);
+      const reached = ownedCount >= ms.count;
+      return '<div class="record-item" style="display:flex;align-items:center;justify-content:space-between;margin-top:6px;padding:6px 10px;' + (claimed ? 'border-color:#d7b84f;background:rgba(215,184,79,0.08);' : '') + '">' +
+        '<div><strong>' + ms.name + '</strong> (相遇 ' + ms.count + ' 人)：<span style="color:#ffd84d;">' + ms.label + '</span><br><small>獎勵：' + ms.jade + ' 玉璧</small></div>' +
+        '<button class="' + (claimed ? 'stone-button' : reached ? 'seal-button' : 'stone-button') + ' compact-button" type="button" data-action="claim-faction-milestone" data-key="' + msKey + '"' + (claimed || !reached ? ' disabled' : '') + '>' +
+          (claimed ? '已啟動' : reached ? '領取啟動' : ownedCount + '/' + ms.count) +
+        '</button>' +
+      '</div>';
+    }).join("");
+    return '<article class="collection-card" style="display:block;margin-bottom:8px;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;"><strong style="color:' + faction.color + ';">' + faction.name + ' 勢力共鳴</strong><span>已結識 ' + ownedCount + ' / ' + totalCount + ' 人</span></div>' + items + '</article>';
+  }).join("");
+
   const bonds = BONDS.map((bond) => {
     const active = activeBonds().some((item) => item.id === bond.id);
     return '<article class="collection-card ' + (active ? "active" : "") + '"><strong>' + bond.name + '</strong><small>' + bond.desc + '</small><em>' + (active ? "已觸發" : "尚未集齊") + '</em></article>';
@@ -241,7 +278,7 @@ function renderCollection() {
     const equipped = save.equippedTreasure === treasure.id;
     return '<article class="collection-card treasure-card ' + (unlocked ? "active" : "locked") + '"><strong>' + treasure.name + '</strong><small>' + treasure.desc + '</small><button class="' + (equipped || !unlocked ? "stone-button" : "seal-button") + ' panel-action" type="button" data-action="treasure-equip" data-treasure="' + treasure.id + '"' + ((!unlocked || equipped) ? " disabled" : "") + '>' + (equipped ? "已配裝" : unlocked ? "配裝" : "第 " + treasure.unlock + " 關") + '</button></article>';
   }).join("");
-  setPanel("圖鑑與義結", '<p class="section-caption">陣營勢力</p><div class="collection-factions">' + counts + '</div><p class="section-caption">緣分組合</p><div class="collection-list">' + bonds + '</div><p class="section-caption">稱號</p><div class="collection-list">' + titles + '</div><p class="section-caption">寶物神器</p><div class="collection-list">' + treasures + '</div>');
+  setPanel("圖鑑與義結", '<p class="section-caption">陣營勢力收集共鳴</p><div class="collection-list" style="margin-bottom:12px;">' + milestonesHtml + '</div><p class="section-caption">勢力簡介</p><div class="collection-factions">' + counts + '</div><p class="section-caption">緣分組合</p><div class="collection-list">' + bonds + '</div><p class="section-caption">稱號</p><div class="collection-list">' + titles + '</div><p class="section-caption">寶物神器</p><div class="collection-list">' + treasures + '</div>');
   $("panelContent").insertAdjacentHTML("beforeend", renderFrameSection());
 }
 

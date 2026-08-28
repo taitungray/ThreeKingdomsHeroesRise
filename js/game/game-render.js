@@ -2200,6 +2200,69 @@ function drawSkillCutIn() {
   ctx.restore();
 }
 
+function drawUnitShouts() {
+  const units = [...runtime.allies, ...runtime.enemies].filter((unit) => unit.shout && unit.shout.life > 0);
+  if (!units.length) return;
+
+  ctx.save();
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.font = "bold 11px sans-serif";
+
+  for (const unit of units) {
+    const shout = unit.shout;
+    const progress = 1 - (shout.life / (shout.maxLife || 2.0));
+    const alpha = Math.min(1, shout.life * 2.5);
+    const bubbleY = unit.y - 58 - progress * 10;
+    const bubbleX = clamp(unit.x, 70, canvas.width - 70);
+
+    const text = shout.text;
+    const textWidth = ctx.measureText(text).width;
+    const paddingX = 8;
+    const paddingY = 4;
+    const bw = textWidth + paddingX * 2;
+    const bh = 18;
+    const bx = bubbleX - bw / 2;
+    const by = bubbleY - bh / 2;
+
+    ctx.globalAlpha = alpha;
+
+    // 氣泡本體底色 (深色黑金像素風格)
+    ctx.fillStyle = "rgba(18, 14, 10, 0.88)";
+    ctx.beginPath();
+    ctx.roundRect(bx, by, bw, bh, 4);
+    ctx.fill();
+
+    // 金色邊框
+    ctx.strokeStyle = unit.team === "ally" ? "rgba(235, 195, 85, 0.9)" : "rgba(220, 90, 70, 0.9)";
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+
+    // 氣泡指向箭頭
+    ctx.fillStyle = "rgba(18, 14, 10, 0.88)";
+    ctx.beginPath();
+    ctx.moveTo(bubbleX - 4, by + bh);
+    ctx.lineTo(bubbleX + 4, by + bh);
+    ctx.lineTo(bubbleX, by + bh + 4);
+    ctx.closePath();
+    ctx.fill();
+
+    // 箭頭線條
+    ctx.strokeStyle = unit.team === "ally" ? "rgba(235, 195, 85, 0.9)" : "rgba(220, 90, 70, 0.9)";
+    ctx.beginPath();
+    ctx.moveTo(bubbleX - 4, by + bh);
+    ctx.lineTo(bubbleX, by + bh + 4);
+    ctx.lineTo(bubbleX + 4, by + bh);
+    ctx.stroke();
+
+    // 氣泡文字
+    ctx.fillStyle = unit.team === "ally" ? "#fff2b3" : "#ffd2cc";
+    ctx.fillText(text, bubbleX, bubbleY);
+  }
+
+  ctx.restore();
+}
+
 function render() {
   ctx.save();
   drawBackground();
@@ -2209,6 +2272,7 @@ function render() {
   drawEffects({ groundOnly: true });
   const units = [...runtime.allies, ...runtime.enemies].filter((unit) => !unit.dead || unit.deathTime > 0).sort((a, b) => a.y - b.y);
   for (const unit of units) drawUnit(unit);
+  drawUnitShouts();
   drawEffects();
   drawWaveTransitionOverlay();
   drawSkillCutIn();

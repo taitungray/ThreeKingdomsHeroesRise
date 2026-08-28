@@ -154,6 +154,56 @@ const ANNOUNCEMENTS = GAME_DATA.announcements || [];
 const LOCAL_EVENTS = GAME_DATA.localEvents || [];
 const APP_VERSION = GAME_DATA.appVersion || "0.1.0-local";
 
+const FACTION_MILESTONES = {
+  shu: [
+    { count: 3, kind: "atk", value: 0.03, label: "全隊攻擊 +3%", jade: 20, name: "桃園初結" },
+    { count: 6, kind: "atk", value: 0.06, label: "全隊攻擊 +6%", jade: 30, name: "蜀漢昭烈" },
+    { count: 10, kind: "atk", value: 0.10, label: "全隊攻擊 +10%", jade: 50, name: "五虎齊聚" }
+  ],
+  wei: [
+    { count: 3, kind: "def", value: 0.03, label: "全隊防禦 +3%", jade: 20, name: "魏武初興" },
+    { count: 6, kind: "def", value: 0.06, label: "全隊防禦 +6%", jade: 30, name: "五子良將" },
+    { count: 10, kind: "def", value: 0.10, label: "全隊防禦 +10%", jade: 50, name: "虎豹雄師" }
+  ],
+  wu: [
+    { count: 3, kind: "speed", value: 0.03, label: "全隊攻速 +3%", jade: 20, name: "江東基業" },
+    { count: 6, kind: "speed", value: 0.06, label: "全隊攻速 +6%", jade: 30, name: "水師大都督" },
+    { count: 10, kind: "speed", value: 0.10, label: "全隊攻速 +10%", jade: 50, name: "赤壁驚濤" }
+  ],
+  qun: [
+    { count: 3, kind: "crit", value: 0.03, label: "全隊暴擊 +3%", jade: 20, name: "群雄逐鹿" },
+    { count: 6, kind: "crit", value: 0.06, label: "全隊暴擊 +6%", jade: 30, name: "天命無雙" },
+    { count: 10, kind: "crit", value: 0.10, label: "全隊暴擊 +10%", jade: 50, name: "天下霸圖" }
+  ]
+};
+
+const HERO_BATTLE_QUOTES = {
+  liubei: ["仁義昭烈，匡扶漢室！", "得道多助，天下歸心！"],
+  guanyu: ["關雲長在此，爾等插標賣首！", "青龍偃月，斬將奪旗！"],
+  zhangfei: ["燕人張翼德在此！誰敢一戰！", "長坂橋頭，萬夫莫敵！"],
+  zhaoyun: ["主公莫慌，常山趙子龍來也！", "單騎救主，龍膽破陣！"],
+  zhugeliang: ["風起雲湧，借東風以定乾坤！", "運籌帷幄，決勝千里！"],
+  huangzhong: ["老夫雖老，寶弓猶未朽！", "百步穿楊，例無虛發！"],
+  machao: ["西涼錦馬超，誓報此仇！", "白袍銀甲，踏破敵營！"],
+  weiyan: ["反骨何妨，唯戰而已！", "陷陣衝鋒，萬軍難當！"],
+  jiangwei: ["繼承丞相遺志，九伐中原！", "心存漢室，死戰不休！"],
+  caocao: ["寧教我負天下人，休教天下人負我！", "唯才是舉，天下歸魏！"],
+  xiahoudun: ["父母精血，不可棄也！", "獨眼何懼，拔矢再戰！"],
+  dianwei: ["古之惡來，雙戟護主！", "死守營門，一步不退！"],
+  zhangliao: ["威震逍遙津，江東小兒不敢夜啼！", "奔襲千軍，直取中軍！"],
+  guojia: ["算無遺策，主公速決！", "兵貴神速，破敵正當此時！"],
+  simayi: ["天命在我，靜待時機！", "隱忍多年，今朝盡展宏圖！"],
+  zhouyu: ["談笑間，檣櫓灰飛煙滅！", "赤壁烈火，燃盡千艘戰船！"],
+  luxun: ["火燒連營七百里！", "大智若愚，決勝之局！"],
+  ganning: ["錦帆甘興霸，百騎劫魏營！", "鈴響之處，片甲不留！"],
+  taishici: ["大丈夫生於亂世，當帶三尺劍立不世之功！", "酣戰一場，不負平生！"],
+  sunshang: ["巾幗何曾讓鬚眉，吃我一箭！", "梟姬弓滿，烈焰焚敵！"],
+  diaochan: ["妾身願為將軍撫琴一曲。", "月下連環，紅顏亦能定乾坤。"],
+  lubu: ["天下英雄，誰能擋我！", "神擋殺神，佛擋殺佛！方天畫戟！"],
+  dongzhuo: ["順我者昌，逆我者亡！", "西涼鐵騎，踏平洛陽！"],
+  yuanshao: ["四世三公，號令天下諸侯！", "聯軍先鋒，隨我攻破逆賊！"]
+};
+
 function localDateKey(time = Date.now()) {
   const date = new Date(time);
   return [date.getFullYear(), String(date.getMonth() + 1).padStart(2, "0"), String(date.getDate()).padStart(2, "0")].join("-");
@@ -251,6 +301,7 @@ const defaultSave = () => ({
   heroProgress: Object.fromEntries(HEROES.map((hero) => [hero.id, { stars: 1, breakthrough: 0, shards: 0 }])),
   skillLevels: Object.fromEntries(HEROES.map((hero) => [hero.id, 1])),
   equippedFrame: "plain",
+  collectionMilestones: {},
   eventState: { period: localWeekKey(), progress: Object.fromEntries(LOCAL_EVENTS.map((event) => [event.id, 0])), claimed: [] }
 });
 
@@ -428,6 +479,7 @@ function ensureCycleState() {
   if (!save.equippedTitle || !titleById(save.equippedTitle)) save.equippedTitle = TITLES[0]?.id || "";
   if (!save.equippedTreasure || !treasureById(save.equippedTreasure)) save.equippedTreasure = TREASURES[0]?.id || "";
   if (!save.equippedFrame || !avatarFrameById(save.equippedFrame)) save.equippedFrame = AVATAR_FRAMES[0]?.id || "";
+  if (!save.collectionMilestones) save.collectionMilestones = {};
   if (!save.heroProgress) save.heroProgress = Object.fromEntries(HEROES.map((hero) => [hero.id, { stars: 1, breakthrough: 0, shards: 0 }]));
   if (!save.skillLevels) save.skillLevels = Object.fromEntries(HEROES.map((hero) => [hero.id, 1]));
   for (const hero of HEROES) {

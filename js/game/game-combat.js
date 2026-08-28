@@ -106,10 +106,20 @@ function teamPassiveBonus(kind) {
   const strongestFaction = Math.max(0, ...factionCounts);
   if (kind === "atk" && strongestFaction >= 3) bonus += .04;
   if (kind === "hp" && strongestFaction >= 4) bonus += .05;
-  if (kind === "def" && strongestFaction >= 3) bonus += .04;
   for (const bond of activeBonds()) if (bond.kind === kind) bonus += bond.value || 0;
   const treasure = treasureById(save.equippedTreasure);
   if (treasure && treasure.kind === kind) bonus += treasure.value || 0;
+  if (save.collectionMilestones && typeof FACTION_MILESTONES === "object") {
+    for (const [faction, milestones] of Object.entries(FACTION_MILESTONES)) {
+      for (let i = 0; i < milestones.length; i++) {
+        const ms = milestones[i];
+        const msKey = faction + "-" + ms.count;
+        if (save.collectionMilestones[msKey] && ms.kind === kind) {
+          bonus += ms.value;
+        }
+      }
+    }
+  }
   return bonus;
 }
 
@@ -679,6 +689,12 @@ function useHeroSkill(unit, target) {
   };
   window.TaoyuanAudio?.sfx?.("skill");
   const hero = unit.hero;
+  const quotes = HERO_BATTLE_QUOTES[hero.id] || ["出征討逆，誓死克敵！", "戰陣推進，斬破敵軍！"];
+  unit.shout = {
+    text: quotes[Math.floor(Math.random() * quotes.length)],
+    life: 2.2,
+    maxLife: 2.2
+  };
   const skillFactor = 1 + (heroSkillLevel(hero.id) - 1) * .12;
   const spec = SKILL_SPECS[hero.id] || { tone: hero.role === "\u8b00\u58eb" ? "thunder" : "slash", color: hero.accent };
   recordStat("skills");
@@ -905,6 +921,10 @@ function updateUnit(unit, targets, delta) {
     return;
   }
   tickUnitStatuses(unit, delta);
+  if (unit.shout) {
+    unit.shout.life -= delta;
+    if (unit.shout.life <= 0) unit.shout = null;
+  }
   if (unit.dead) return;
   unit.cooldown -= delta * attackSpeedMultiplier(unit);
   if (unit.team === "ally") unit.skillCooldown = Math.max(0, unit.skillCooldown - delta * (1 + teamPassiveBonus("cooldown")));

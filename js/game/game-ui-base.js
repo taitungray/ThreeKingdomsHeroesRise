@@ -361,6 +361,7 @@ function handlePanelAction(button) {
       toast("寶物已配備");
     }
   } else if (action === "frame-equip") equipAvatarFrame(button.dataset.frame);
+  else if (action === "claim-faction-milestone") claimFactionMilestone(button.dataset.key);
   else if (action === "event-claim") claimLocalEvent(button.dataset.event);
   else if (action === "event-tab") renderEvents(button.dataset.tab);
   else if (action === "battlepass-claim") {
