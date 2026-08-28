@@ -2,6 +2,7 @@
   "use strict";
 
   const TEST_REWARDED_ID = "ca-app-pub-3940256099942544/5224354917";
+  const PROD_REWARDED_ID = "ca-app-pub-5128536500084993/8801564103";
   const configured = window.TAOYUAN_ADMOB_CONFIG || {};
   const state = {
     initialized: false,
@@ -15,7 +16,8 @@
   }
 
   function activeRewardedId() {
-    return configured.rewardedAdUnitId || TEST_REWARDED_ID;
+    if (configured.isTesting) return TEST_REWARDED_ID;
+    return configured.rewardedAdUnitId || PROD_REWARDED_ID;
   }
 
   async function init() {

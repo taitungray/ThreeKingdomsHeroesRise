@@ -49,8 +49,8 @@ copyDirectoryIfPresent("css");
 
 const adConfig = isRelease
   ? {
-      appId: requiredEnv("TAOYUAN_ADMOB_APP_ID"),
-      rewardedAdUnitId: requiredEnv("TAOYUAN_ADMOB_REWARDED_ID"),
+      appId: process.env.TAOYUAN_ADMOB_APP_ID || "ca-app-pub-5128536500084993~XXXXXXXXXX",
+      rewardedAdUnitId: process.env.TAOYUAN_ADMOB_REWARDED_ID || "ca-app-pub-5128536500084993/8801564103",
       isTesting: false
     }
   : {
