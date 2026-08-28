@@ -74,7 +74,10 @@ const runtimeModules = [
   "game-core.js",
   "game-combat.js",
   "game-render.js",
-  "game-ui.js",
+  "game-ui-base.js",
+  "game-ui-heroes.js",
+  "game-ui-modes.js",
+  "game-ui-panels.js",
   "game-main.js"
 ];
 const gameSource = runtimeModules.map((file) => {
