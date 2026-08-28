@@ -620,6 +620,14 @@ function paperDollClasses(heroId) {
   return PAPER_DOLL_SLOTS.map((slot) => paperDollItem(heroId, slot.id)?.className).filter(Boolean).join(" ");
 }
 
+function equipmentSynergyTier(heroId) {
+  const refineLevel = Number(save.equipmentRefine?.[heroId] || 0);
+  if (refineLevel >= 10) return { tier: 3, name: "天下無雙", bonus: 0.18, desc: "全套精煉 +10：全裝備屬性 +18%" };
+  if (refineLevel >= 6) return { tier: 2, name: "神兵共鳴", bonus: 0.10, desc: "全套精煉 +6：全裝備屬性 +10%" };
+  if (refineLevel >= 3) return { tier: 1, name: "初窺門徑", bonus: 0.05, desc: "全套精煉 +3：全裝備屬性 +5%" };
+  return { tier: 0, name: "未共鳴", bonus: 0, desc: "精煉達 +3/+6/+10 啟動全套共鳴加成" };
+}
+
 function heroEquipmentStats(heroId) {
   const stats = PAPER_DOLL_SLOTS.reduce((result, slot) => {
     const item = paperDollItem(heroId, slot.id);
@@ -627,19 +635,25 @@ function heroEquipmentStats(heroId) {
     return result;
   }, { atk: 0, hp: 0, def: 0, speed: 0, range: 0 });
   const refineLevel = Number(save.equipmentRefine?.[heroId] || 0);
-  if (refineLevel > 0) for (const key of Object.keys(stats)) stats[key] = Math.round(stats[key] * (1 + refineLevel * .08));
+  const synergy = equipmentSynergyTier(heroId);
+  const totalMultiplier = (1 + refineLevel * 0.08) * (1 + synergy.bonus);
+  if (refineLevel > 0 || synergy.bonus > 0) {
+    for (const key of Object.keys(stats)) stats[key] = Math.round(stats[key] * totalMultiplier);
+  }
   return stats;
 }
 
 function equipmentBonusLabel(heroId) {
   const stats = heroEquipmentStats(heroId);
+  const synergy = equipmentSynergyTier(heroId);
   const labels = [];
   if (stats.atk) labels.push("武力 +" + stats.atk);
   if (stats.hp) labels.push("兵力 +" + stats.hp);
   if (stats.def) labels.push("統率 +" + stats.def);
   if (stats.speed) labels.push("速度 +" + stats.speed);
   if (stats.range) labels.push("射程 +" + stats.range);
-  return labels.length ? labels.join("　") : "目前沒有額外數值加成";
+  const baseText = labels.length ? labels.join("　") : "目前沒有額外數值加成";
+  return synergy.tier > 0 ? baseText + "　[" + synergy.name + " 共鳴生效]" : baseText;
 }
 
 function isUnlocked(hero) {

@@ -257,33 +257,43 @@ function paperDollHtml(hero) {
     '</section>';
 }
 
-function renderHeroDetail(heroId) {
+function renderHeroDetail(heroId, previewMax = false) {
   const hero = heroById(heroId);
-  if (!hero || !isUnlocked(hero)) {
-    toast("推進至第 " + hero.unlock + " 關後結識");
-    return;
-  }
+  if (!hero) return;
   runtime.selectedHero = heroId;
-  const level = save.heroLevels[heroId];
+  const unlocked = isUnlocked(hero);
+
+  const level = previewMax ? 100 : (save.heroLevels[heroId] || 1);
   const equipment = heroEquipmentStats(heroId);
   const cost = 70 + level * 42;
   const inFormation = save.formation.includes(heroId);
   const refineLevel = Number(save.equipmentRefine?.[heroId] || 0);
   const refineCost = 1 + refineLevel * 2;
   const progression = heroProgression(heroId);
-  const growth = heroGrowthMultiplier(heroId);
+  const growth = previewMax ? 2.2 : heroGrowthMultiplier(heroId);
   const starCost = heroStarCost(heroId);
   const breakthroughCost = heroBreakthroughCost(heroId);
-  const skillLevel = heroSkillLevel(heroId);
+  const skillLevel = previewMax ? 10 : heroSkillLevel(heroId);
   const skillCost = heroSkillCost(heroId);
+  const synergy = equipmentSynergyTier(heroId);
   const power = Math.round(((hero.atk + equipment.atk) * 7 + hero.hp + equipment.hp + (hero.def + equipment.def) * 12) * (1 + level * 0.13) * growth);
+
+  const headerNotice = !unlocked
+    ? '<div class="active-bonds-strip" style="margin-bottom:8px;padding:6px 10px;background:rgba(180,72,50,0.18);border:1px solid rgba(180,72,50,0.4);border-radius:4px;font-size:12px;"><strong>相遇線索：</strong>通關第 ' + hero.unlock + ' 關後加入軍府。以下為滿級滿星圖鑑預覽。</div>'
+    : '';
+
+  const synergyTag = synergy.tier > 0
+    ? '<span class="level-tag" style="background:linear-gradient(135deg,#c69234,#f0d376);color:#2b1900;margin-left:6px;">' + synergy.name + '</span>'
+    : '';
+
   setPanel("武將詳情",
+    headerNotice +
     '<section class="detail-hero">' +
       avatarHtml(hero, true) +
-      '<h3>' + hero.name + '</h3>' +
+      '<h3>' + hero.name + synergyTag + '</h3>' +
       '<span class="hero-role">' + hero.role + ' · ' + hero.title + '</span>' +
-      '<p class="hero-power">戰力 <strong>' + formatNumber(power) + '</strong></p>' +
-      '<p class="hero-progression">\u661f\u7d1a ' + progression.stars + ' / 5\u00b7\u7a81\u7834 ' + progression.breakthrough + ' / 3\u00b7\u540d\u5c07\u788e\u7247 ' + formatNumber(save.shards) + '</p>' +
+      '<p class="hero-power">戰力 <strong>' + formatNumber(power) + '</strong> ' + (previewMax ? '<small style="color:var(--gold,#d7b84f)">(滿級預覽)</small>' : '') + '</p>' +
+      '<p class="hero-progression">星級 ' + (previewMax ? '5 / 5 (極)' : progression.stars + ' / 5') + ' · 突破 ' + (previewMax ? '3 / 3' : progression.breakthrough + ' / 3') + ' · 精煉共鳴: ' + synergy.name + '</p>' +
       '<div class="stat-list">' +
         '<span>武力 <b>' + Math.round(hero.atk + level * 3.2 + equipment.atk) + '</b></span>' +
         '<span>兵力 <b>' + Math.round(hero.hp + level * 23 + equipment.hp) + '</b></span>' +
@@ -292,14 +302,18 @@ function renderHeroDetail(heroId) {
       '</div>' +
     '</section>' +
     '<p class="section-caption">戰法與被動</p>' +
-    '<div class="hero-skill-card"><div><strong>\u6230\u6cd5 · ' + hero.skill + ' Lv.' + skillLevel + '</strong><span>\u51b7\u537b ' + Number(hero.skillCooldown || 5).toFixed(1) + ' \u79d2</span></div><p><b>\u6548\u679c</b> · ' + (HERO_SKILL_META[hero.id]?.effect || "\u6839\u64da\u5175\u7a2e\u767c\u63ee") + '</p><p><b>\u7bc4\u570d</b> · ' + (HERO_SKILL_META[hero.id]?.area || hero.role) + '</p><p><b>\u88ab\u52d5</b> · ' + (hero.passive || "\u5c1a\u672a\u8a18\u8f09") + '</p></div>' +    paperDollHtml(hero) +
+    '<div class="hero-skill-card"><div><strong>戰法 · ' + hero.skill + ' Lv.' + skillLevel + '</strong><span>冷卻 ' + Number(hero.skillCooldown || 5).toFixed(1) + ' 秒</span></div><p><b>效果</b> · ' + (HERO_SKILL_META[hero.id]?.effect || "根據兵種發揮") + '</p><p><b>範圍</b> · ' + (HERO_SKILL_META[hero.id]?.area || hero.role) + '</p><p><b>被動</b> · ' + (hero.passive || "尚未記載") + '</p></div>' +
+    (unlocked ? paperDollHtml(hero) : '<div class="record-item" style="margin-top:10px;">' + synergy.desc + '</div>') +
     '<div class="action-row">' +
-      '<button class="stone-button" type="button" data-action="formation-toggle" data-hero="' + heroId + '">' + (inFormation ? "撤下陣容" : "加入陣容") + '</button>' +
-      '<button class="seal-button" type="button" data-action="hero-level" data-hero="' + heroId + '"' + (save.gold < cost ? " disabled" : "") + '>升至 Lv.' + (level + 1) + '<br><small>' + cost + ' 銅錢</small></button>' +
-      '<button class="stone-button compact-button" type="button" data-action="equipment-refine" data-hero="' + heroId + '"' + (save.jade < refineCost ? " disabled" : "") + '>&#x7cbe;&#x7149; +' + refineLevel + '<br><small>' + refineCost + ' &#x7389;&#x74a7;</small></button>' +
-      '<button class="stone-button compact-button" type="button" data-action="hero-star" data-hero="' + heroId + '"' + (!starCost || save.shards < starCost.shards || save.gold < starCost.gold ? " disabled" : "") + '>\u5347\u661f +' + (progression.stars + 1) + '<br><small>' + (starCost ? starCost.shards + " \u788e\u7247" : "\u5df2\u6eff\u661f") + '</small></button>' +
-      '<button class="stone-button compact-button" type="button" data-action="hero-breakthrough" data-hero="' + heroId + '"' + (!breakthroughCost || save.shards < breakthroughCost.shards || save.jade < breakthroughCost.jade ? " disabled" : "") + '>\u7a81\u7834 +' + (progression.breakthrough + 1) + '<br><small>' + (breakthroughCost ? breakthroughCost.shards + " \u788e\u7247 + " + breakthroughCost.jade + " \u7389\u74a7" : "\u9700 3 \u661f") + '</small></button>' +
-      '<button class="stone-button compact-button" type="button" data-action="hero-skill" data-hero="' + heroId + '"' + (!skillCost || save.gold < skillCost.gold || save.food < skillCost.food ? " disabled" : "") + '>戰法 +' + (skillLevel + 1) + '<br><small>' + (skillCost ? skillCost.gold + " 銅錢 + " + skillCost.food + " 糧草" : "已滿級") + '</small></button>' +
+      (unlocked ?
+        '<button class="stone-button" type="button" data-action="formation-toggle" data-hero="' + heroId + '">' + (inFormation ? "撤下陣容" : "加入陣容") + '</button>' +
+        '<button class="seal-button" type="button" data-action="hero-level" data-hero="' + heroId + '"' + (save.gold < cost ? " disabled" : "") + '>升至 Lv.' + (level + 1) + '<br><small>' + cost + ' 銅錢</small></button>' +
+        '<button class="stone-button compact-button" type="button" data-action="equipment-refine" data-hero="' + heroId + '"' + (save.jade < refineCost ? " disabled" : "") + '>精煉 +' + refineLevel + '<br><small>' + refineCost + ' 玉璧</small></button>' +
+        '<button class="stone-button compact-button" type="button" data-action="hero-star" data-hero="' + heroId + '"' + (!starCost || save.shards < starCost.shards || save.gold < starCost.gold ? " disabled" : "") + '>升星 +' + (progression.stars + 1) + '<br><small>' + (starCost ? starCost.shards + " 碎片" : "已滿星") + '</small></button>' +
+        '<button class="stone-button compact-button" type="button" data-action="hero-breakthrough" data-hero="' + heroId + '"' + (!breakthroughCost || save.shards < breakthroughCost.shards || save.jade < breakthroughCost.jade ? " disabled" : "") + '>突破 +' + (progression.breakthrough + 1) + '<br><small>' + (breakthroughCost ? breakthroughCost.shards + " 碎片 + " + breakthroughCost.jade + " 玉璧" : "需 3 星") + '</small></button>' +
+        '<button class="stone-button compact-button" type="button" data-action="hero-skill" data-hero="' + heroId + '"' + (!skillCost || save.gold < skillCost.gold || save.food < skillCost.food ? " disabled" : "") + '>戰法 +' + (skillLevel + 1) + '<br><small>' + (skillCost ? skillCost.gold + " 銅錢 + " + skillCost.food + " 糧草" : "已滿級") + '</small></button>'
+        : '<button class="seal-button wide-button" type="button" data-action="campaign-select" data-stage="' + hero.unlock + '">前往征戰第 ' + hero.unlock + ' 關相遇</button>'
+      ) +
     '</div>',
     true
   );
@@ -578,7 +592,9 @@ function renderArena() {
 function damageStatsHtml(rows = []) {
   if (!rows.length) return "";
   const max = Math.max(1, ...rows.map((row) => row.value));
-  return '<div class="settlement-stats-title">本場傷害</div><div class="settlement-stats-list">' + rows.map((row) => '<span><b>' + row.name + '</b><i><em style="width:' + Math.round(row.value / max * 100) + '%"></em></i><small>' + formatNumber(row.value) + '</small></span>').join("") + '</div>';
+  return '<div class="settlement-stats-title">本場傷害統計</div><div class="settlement-stats-list">' +
+    rows.map((row, idx) => '<span class="' + (idx === 0 ? 'mvp-row' : '') + '"><b>' + (idx === 0 ? '★ MVP ' : '') + row.name + '</b><i><em style="width:' + Math.round(row.value / max * 100) + '%"></em></i><small>' + formatNumber(row.value) + '</small></span>').join("") +
+    '</div>';
 }
 
 function autoAdvanceAfterBattle(result) {
@@ -1226,13 +1242,29 @@ function showOfflineReward(seconds) {
   const capped = Math.min(seconds, 8 * 60 * 60);
   const gold = Math.floor(capped * (0.42 + save.stage * .025));
   const food = Math.floor(capped * (0.11 + save.stage * .008));
-  runtime.pendingOffline = { gold, food };
   const hours = Math.floor(capped / 3600);
   const minutes = Math.floor((capped % 3600) / 60);
-  $("offlineTime").textContent = "離線 " + (hours ? hours + " 小時 " : "") + minutes + " 分鐘";
+  const shards = hours >= 1 ? Math.floor(hours * 1.5) : 0;
+  const jade = hours >= 3 ? Math.floor(hours / 2) : 0;
+
+  runtime.pendingOffline = { gold, food, shards, jade };
+  $("offlineTime").textContent = "離線征戰 " + (hours ? hours + " 小時 " : "") + minutes + " 分鐘";
   $("offlineGold").textContent = formatNumber(gold);
   $("offlineFood").textContent = formatNumber(food);
+
+  const shardsRow = $("offlineShardsRow");
+  const jadeRow = $("offlineJadeRow");
+  if (shardsRow) {
+    shardsRow.hidden = shards <= 0;
+    if (shards > 0) $("offlineShards").textContent = formatNumber(shards);
+  }
+  if (jadeRow) {
+    jadeRow.hidden = jade <= 0;
+    if (jade > 0) $("offlineJade").textContent = formatNumber(jade);
+  }
+
   $("doubleOffline").disabled = false;
   $("offlineModal").hidden = false;
+  window.TaoyuanAudio?.sfx?.("reward");
 }
 

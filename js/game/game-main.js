@@ -66,15 +66,17 @@ $("bossButton").addEventListener("click", () => {
 
 $("claimOffline").addEventListener("click", () => {
   if (!runtime.pendingOffline) return;
-  save.gold += runtime.pendingOffline.gold;
-  save.food += runtime.pendingOffline.food;
+  save.gold += runtime.pendingOffline.gold || 0;
+  save.food += runtime.pendingOffline.food || 0;
+  save.shards += runtime.pendingOffline.shards || 0;
+  save.jade += runtime.pendingOffline.jade || 0;
   recordTaskProgress("daily-claim");
   runtime.pendingOffline = null;
   $("offlineModal").hidden = true;
   persist();
   updateHud();
   toast("離線軍資已收入府庫");
-  beep(720, .14, "triangle", .04);
+  window.TaoyuanAudio?.sfx?.("confirm");
 });
 
 canvas.addEventListener("pointerdown", (event) => {
@@ -277,13 +279,16 @@ $("doubleOffline").addEventListener("click", async () => {
   const reward = { ...runtime.pendingOffline };
   const accepted = save.adFree || await window.TaoyuanAds.showRewardedAd({ onReward: () => {} });
   button.disabled = false;
-  if (!accepted) return toast("\u5ee3\u544a\u5c1a\u672a\u5b8c\u6210");
-  save.gold += reward.gold * 2;
-  save.food += reward.food * 2;
+  if (!accepted) return toast("廣告尚未完成");
+  save.gold += (reward.gold || 0) * 2;
+  save.food += (reward.food || 0) * 2;
+  save.shards += (reward.shards || 0) * 2;
+  save.jade += (reward.jade || 0) * 2;
   recordTaskProgress("daily-claim");
   runtime.pendingOffline = null;
   $("offlineModal").hidden = true;
   persist();
   updateHud();
-  toast("\u96e2\u7dda\u8ecd\u8cc7\u5df2\u7ffb\u500d");
+  toast("離線軍資已雙倍入庫！");
+  window.TaoyuanAudio?.sfx?.("reward");
 });

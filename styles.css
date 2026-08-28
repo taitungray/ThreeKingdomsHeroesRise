@@ -3207,3 +3207,31 @@ html, body {
   .right-rail-drawer { width: 168px; }
   .dialogue-box { right: 56px; }
 }
+
+.settlement-stats-list span.mvp-row {
+  background: rgba(215, 184, 79, 0.15);
+  border: 1px solid rgba(215, 184, 79, 0.35);
+  border-radius: 4px;
+  padding: 3px 6px;
+  color: var(--gold, #d7b84f);
+}
+.settlement-stats-list span.mvp-row b {
+  color: #ffdf79;
+  font-weight: bold;
+}
+.offline-loot {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin: 12px 0;
+}
+.offline-loot span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(0, 0, 0, 0.35);
+  padding: 6px 10px;
+  border-radius: 4px;
+  border: 1px solid rgba(215, 184, 79, 0.2);
+  font-size: 13px;
+}
