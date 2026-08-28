@@ -195,6 +195,35 @@ function renderFormation() {
     ? '<div class="active-bonds-strip" style="margin-top:10px;padding:6px 10px;background:rgba(215,184,79,0.12);border:1px solid rgba(215,184,79,0.3);border-radius:4px;font-size:12px;"><strong>啟動羈絆：</strong>' + bonds.map((b) => '<span style="margin-right:8px;color:var(--gold,#d7b84f);">[' + b.name + '] ' + b.desc + '</span>').join("") + '</div>'
     : '<div class="active-bonds-strip" style="margin-top:10px;padding:4px 8px;font-size:11px;opacity:0.75;">湊齊桃園三結義、五虎將、臥龍鳳雛等可啟動額外羈絆。</div>';
 
+  const masteryCards = Object.entries(TROOP_CLASSES).map(([role, info]) => {
+    const lvl = troopMasteryLevel(role);
+    const cost = troopMasteryCost(role);
+    const bonus = troopMasteryBonus(role);
+    let bonusText = "";
+    if (role === "步兵") bonusText = "生命+" + Math.round(bonus.hp * 100) + "% 防禦+" + Math.round(bonus.def * 100) + "%";
+    else if (role === "騎兵") bonusText = "攻擊+" + Math.round(bonus.atk * 100) + "% 速度+" + Math.round(bonus.speed * 100) + "%";
+    else if (role === "弓兵") bonusText = "攻擊+" + Math.round(bonus.atk * 100) + "% 射程+" + Math.round(bonus.range);
+    else if (role === "謀士") bonusText = "攻擊+" + Math.round(bonus.atk * 100) + "%";
+
+    const canUpgrade = cost && save.gold >= cost.gold && save.food >= cost.food;
+    return '<article class="collection-card" style="padding:8px 10px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;">' +
+      '<div>' +
+        '<strong style="color:' + info.color + ';">' + info.icon + ' ' + role + '精研 Lv.' + lvl + (lvl >= 10 ? ' (極)' : '') + '</strong>' +
+        '<small style="display:block;margin-top:2px;">' + info.desc + '</small>' +
+        (lvl > 0 ? '<div style="font-size:11px;color:var(--gold,#d7b84f);margin-top:2px;">加成：' + bonusText + '</div>' : '') +
+      '</div>' +
+      '<div>' +
+        (cost ?
+          '<button class="seal-button compact-button" type="button" data-action="troop-mastery-upgrade" data-role="' + role + '"' + (canUpgrade ? '' : ' disabled') + '>精研 Lv.' + (lvl + 1) + '<br><small>' + cost.gold + ' 錢 ' + cost.food + ' 糧</small></button>' :
+          '<span class="level-tag" style="background:#555;color:#aaa;">已精研大成</span>'
+        ) +
+      '</div>' +
+    '</article>';
+  }).join("");
+
+  const troopSectionHtml = '<p class="section-caption" style="margin-top:14px;">兵種相剋與兵法精研</p>' +
+    '<div class="collection-list" style="margin-bottom:10px;">' + masteryCards + '</div>';
+
   setPanel("出戰編隊",
     '<div class="formation-layout">' +
       '<div class="formation-board"><div class="slot-grid">' + slots + '</div></div>' +
@@ -207,8 +236,24 @@ function renderFormation() {
       '</aside>' +
     '</div>' +
     bondsHtml +
+    troopSectionHtml +
     '<p class="section-caption">點選武將加入或撤下</p>' +
     '<div class="hero-grid">' + HEROES.filter(isUnlocked).map((hero) => heroCardHtml(hero, "formation-toggle")).join("") + '</div>');
+}
+
+function upgradeTroopMastery(role) {
+  ensureCycleState();
+  const cost = troopMasteryCost(role);
+  if (!cost || save.gold < cost.gold || save.food < cost.food) return;
+  save.gold -= cost.gold;
+  save.food -= cost.food;
+  save.troopMastery[role] = troopMasteryLevel(role) + 1;
+  resetAllies();
+  persist();
+  updateHud();
+  renderFormation();
+  toast(role + "兵法已精研至 Lv." + save.troopMastery[role] + "！");
+  beep(520, 0.08, "triangle", 0.04);
 }
 
 function renderTactics() {

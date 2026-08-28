@@ -2263,6 +2263,85 @@ function drawUnitShouts() {
   ctx.restore();
 }
 
+const WEATHER_PARTICLES = Array.from({ length: 36 }, () => ({
+  x: Math.random() * 400,
+  y: Math.random() * 600,
+  speed: 1 + Math.random() * 2,
+  size: 1 + Math.random() * 2,
+  rot: Math.random() * Math.PI * 2,
+  rotSpeed: (Math.random() - 0.5) * 0.05,
+  alpha: 0.3 + Math.random() * 0.5
+}));
+
+function drawWeatherEffects() {
+  if (!save.effects) return;
+  const weather = typeof currentStageWeather === "function" ? currentStageWeather() : "clear";
+  if (weather === "clear") return;
+
+  ctx.save();
+  for (const p of WEATHER_PARTICLES) {
+    if (weather === "rain") {
+      p.y += p.speed * 4.5 + 4;
+      p.x -= p.speed * 0.8;
+      if (p.y > canvas.height) { p.y = -10; p.x = Math.random() * (canvas.width + 100); }
+      if (p.x < -20) p.x = canvas.width + 10;
+      ctx.strokeStyle = "rgba(180, 215, 255, 0.4)";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(p.x, p.y);
+      ctx.lineTo(p.x - 3, p.y + 12);
+      ctx.stroke();
+    } else if (weather === "snow") {
+      p.y += p.speed * 0.9 + 0.5;
+      p.x += Math.sin(p.y * 0.02 + p.rot) * 0.8;
+      p.rot += p.rotSpeed;
+      if (p.y > canvas.height) { p.y = -10; p.x = Math.random() * canvas.width; }
+      ctx.fillStyle = "rgba(245, 250, 255, 0.75)";
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size * 0.8, 0, Math.PI * 2);
+      ctx.fill();
+    } else if (weather === "fire") {
+      p.y -= p.speed * 1.5 + 0.8;
+      p.x += Math.sin(p.y * 0.03) * 1.2;
+      if (p.y < -10) { p.y = canvas.height + 10; p.x = Math.random() * canvas.width; }
+      ctx.fillStyle = p.speed > 2 ? "rgba(255, 110, 40, 0.8)" : "rgba(255, 210, 80, 0.85)";
+      ctx.fillRect(p.x, p.y, p.size, p.size);
+    } else if (weather === "sand") {
+      p.x -= p.speed * 3.5 + 2;
+      p.y += (p.speed - 1.5) * 0.8;
+      if (p.x < -20) { p.x = canvas.width + 20; p.y = Math.random() * canvas.height; }
+      ctx.fillStyle = "rgba(215, 180, 115, 0.45)";
+      ctx.fillRect(p.x, p.y, p.size * 1.5, p.size);
+    } else if (weather === "leaves") {
+      p.y += p.speed * 1.1 + 0.5;
+      p.x -= Math.sin(p.y * 0.025) * 1.8;
+      p.rot += p.rotSpeed * 1.5;
+      if (p.y > canvas.height) { p.y = -10; p.x = Math.random() * (canvas.width + 50); }
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rot);
+      ctx.fillStyle = p.speed > 2 ? "#c46231" : "#d99738";
+      ctx.fillRect(-2, -1, 4, 3);
+      ctx.restore();
+    } else if (weather === "mist") {
+      p.x -= p.speed * 0.4;
+      p.y += Math.sin(p.x * 0.02) * 0.3;
+      if (p.x < -50) { p.x = canvas.width + 50; p.y = Math.random() * canvas.height; }
+      ctx.fillStyle = "rgba(210, 225, 230, 0.06)";
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 24 + p.size * 8, 0, Math.PI * 2);
+      ctx.fill();
+    } else if (weather === "gold") {
+      p.y -= p.speed * 0.8 + 0.3;
+      p.x += Math.sin(p.y * 0.02) * 0.6;
+      if (p.y < -10) { p.y = canvas.height + 10; p.x = Math.random() * canvas.width; }
+      ctx.fillStyle = "rgba(255, 225, 120, 0.65)";
+      ctx.fillRect(p.x, p.y, p.size, p.size);
+    }
+  }
+  ctx.restore();
+}
+
 function render() {
   ctx.save();
   drawBackground();
@@ -2274,6 +2353,7 @@ function render() {
   for (const unit of units) drawUnit(unit);
   drawUnitShouts();
   drawEffects();
+  drawWeatherEffects();
   drawWaveTransitionOverlay();
   drawSkillCutIn();
   ctx.restore();

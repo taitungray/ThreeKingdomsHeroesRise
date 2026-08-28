@@ -362,6 +362,7 @@ function handlePanelAction(button) {
     }
   } else if (action === "frame-equip") equipAvatarFrame(button.dataset.frame);
   else if (action === "claim-faction-milestone") claimFactionMilestone(button.dataset.key);
+  else if (action === "troop-mastery-upgrade") upgradeTroopMastery(button.dataset.role);
   else if (action === "event-claim") claimLocalEvent(button.dataset.event);
   else if (action === "event-tab") renderEvents(button.dataset.tab);
   else if (action === "battlepass-claim") {

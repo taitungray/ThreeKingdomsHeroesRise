@@ -148,9 +148,27 @@ function effectiveDefense(unit) {
   return defense;
 }
 
+function classCounterMultiplier(attackerRole, targetRole) {
+  if (!attackerRole || !targetRole) return 1.0;
+  if (attackerRole === "步兵" && targetRole === "弓兵") return 1.15;
+  if (attackerRole === "弓兵" && targetRole === "騎兵") return 1.15;
+  if (attackerRole === "騎兵" && targetRole === "步兵") return 1.15;
+
+  if (attackerRole === "弓兵" && targetRole === "步兵") return 0.88;
+  if (attackerRole === "騎兵" && targetRole === "弓兵") return 0.88;
+  if (attackerRole === "步兵" && targetRole === "騎兵") return 0.88;
+
+  if (attackerRole === "謀士") return 1.10;
+  if (targetRole === "謀士" && ["步兵", "騎兵"].includes(attackerRole)) return 1.10;
+
+  return 1.0;
+}
+
 function attackMultiplier(attacker, target, baseMultiplier, context = {}) {
   let multiplier = baseMultiplier;
   const hero = attacker?.hero;
+  const counter = classCounterMultiplier(attacker?.role || hero?.role, target?.role || target?.hero?.role);
+  multiplier *= counter;
   if (!hero) return multiplier;
   if (context.skill) multiplier *= 1 + (heroSkillLevel(hero.id) - 1) * .12;
   const distance = context.distance ?? Math.hypot((target?.x || 0) - (attacker.x || 0), (target?.y || 0) - (attacker.y || 0));
@@ -169,6 +187,13 @@ function attackMultiplier(attacker, target, baseMultiplier, context = {}) {
   if (hero.id === "madai") multiplier *= 1 + Math.min(.14, (attacker.speed || 0) / 280);
   if ((hero.id === "guanping" && save.formation.includes("guanyu")) || (hero.id === "xiaoqiao" && save.formation.includes("daqiao") && context.skill)) multiplier *= hero.id === "guanping" ? 1.12 : 1.16;
   if (hasStatus(target, "mark") && hero.id !== "diaochan") multiplier *= 1.05;
+  if (hero.id === "weiyan" && attacker.hp / attacker.maxHp < .5) multiplier *= 1.18;
+  if (hero.id === "zhuran" && target?.type === "boss") multiplier *= 1.12;
+  if (hero.id === "panzhang" && hasStatus(target, "slow")) multiplier *= 1.15;
+  if (hero.id === "huangzhong") multiplier *= 1 + Math.min(.12, Math.max(0, (distance - 80) / 120) * .12);
+  if (save.formation.includes("zhouyu") && hasStatus(target, "burn")) multiplier *= 1.06;
+  if (save.formation.includes("sunshang") && target?.role === "\u9a0e\u5175") multiplier *= 1.08;
+  if (save.formation.includes("machao") && attacker.moving) multiplier *= 1.06;
   if (hero.id === "machao" && context.charge && !attacker.passiveState.chargeUsed) multiplier *= 1.3;
   if (hero.id === "guojia" && context.skill && target?.hp / target?.maxHp < .35) multiplier *= 1.18;
   if (hero.id === "zhouyu" && context.skill && attacker.passiveState?.skillCount % 3 === 0) multiplier *= 1.08;
@@ -217,10 +242,12 @@ function makeAlly(heroId, slot, index) {
   const hpBonus = tacticBonus("wall");
   const atkBonus = tacticBonus("snake") + teamPassiveBonus("atk");
   const speedBonus = tacticBonus("wind");
-  const maxHp = Math.round((hero.hp + level * 23 + equipment.hp) * growth * (1 + hpBonus + laneBonus.hp + teamPassiveBonus("hp")));
+  const mastery = typeof troopMasteryBonus === "function" ? troopMasteryBonus(hero.role) : { atk: 0, hp: 0, def: 0, speed: 0, range: 0 };
+  const maxHp = Math.round((hero.hp + level * 23 + equipment.hp) * growth * (1 + hpBonus + laneBonus.hp + teamPassiveBonus("hp") + mastery.hp));
   return {
     id: hero.id + "-" + index,
     hero,
+    role: hero.role,
     team: "ally",
     x: position.x,
     y: position.y,
@@ -231,10 +258,10 @@ function makeAlly(heroId, slot, index) {
     hp: maxHp,
     maxHp,
     hpLag: maxHp,
-    atk: (hero.atk + level * 3.2 + equipment.atk) * growth * (1 + atkBonus + laneBonus.atk),
-    def: (hero.def + level * 0.8 + equipment.def) * growth * (1 + laneBonus.def + teamPassiveBonus("def")),
-    speed: (hero.speed + equipment.speed) * (1 + speedBonus + laneBonus.speed),
-    range: hero.range + equipment.range + laneBonus.range,
+    atk: (hero.atk + level * 3.2 + equipment.atk) * growth * (1 + atkBonus + laneBonus.atk + mastery.atk),
+    def: (hero.def + level * 0.8 + equipment.def) * growth * (1 + laneBonus.def + teamPassiveBonus("def") + mastery.def),
+    speed: (hero.speed + equipment.speed) * (1 + speedBonus + laneBonus.speed + mastery.speed),
+    range: hero.range + equipment.range + laneBonus.range + mastery.range,
     cooldown: Math.random() * 0.5,
     skillCooldown: Math.random() * (hero.skillCooldown || 5) / (1 + teamPassiveBonus("cooldown")),
     attackCount: 0,

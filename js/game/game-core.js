@@ -7,6 +7,44 @@ const ctx = canvas.getContext("2d");
 ctx.imageSmoothingEnabled = false;
 const GAME_DATA = window.THREE_KINGDOMS_DATA || {};
 
+const TROOP_CLASSES = {
+  "步兵": { name: "步兵", icon: "🛡️", counter: "弓兵", counteredBy: "騎兵", color: "#6a9c78", desc: "前排堅盾，防高血厚，剋制弓兵 (+15%)，受騎兵衝擊剋制。" },
+  "騎兵": { name: "騎兵", icon: "🐎", counter: "步兵", counteredBy: "弓兵", color: "#b94a34", desc: "突擊先鋒，高速高攻，剋制步兵 (+15%)，受弓兵齊射剋制。" },
+  "弓兵": { name: "弓兵", icon: "🏹", counter: "騎兵", counteredBy: "步兵", color: "#d8a63e", desc: "遠程狙擊，超遠射程，剋制騎兵 (+15%)，受步兵近身剋制。" },
+  "謀士": { name: "謀士", icon: "📜", counter: "全兵種", counteredBy: "近戰", color: "#7a6ba8", desc: "法術核心，奧義範圍控場，法術傷害 (+10%)，受近戰傷害 (+10%)。" }
+};
+
+const STAGE_WEATHER_MAP = {
+  1: "clear", 2: "clear", 3: "sand", 4: "rain", 5: "sand", 6: "mist", 7: "fire", 8: "rain", 9: "clear", 10: "mist",
+  11: "snow", 12: "rain", 13: "rain", 14: "fire", 15: "mist", 16: "sand", 17: "leaves", 18: "leaves", 19: "rain", 20: "gold"
+};
+
+function currentStageWeather(stageId = activeStageNumber()) {
+  const chapterId = Math.min(20, Math.floor((stageId - 1) / 5) + 1);
+  return STAGE_WEATHER_MAP[chapterId] || "clear";
+}
+
+function troopMasteryLevel(role) {
+  ensureCycleState();
+  return Math.max(0, Math.min(10, Number(save.troopMastery?.[role]) || 0));
+}
+
+function troopMasteryCost(role) {
+  const lvl = troopMasteryLevel(role);
+  if (lvl >= 10) return null;
+  return { gold: 300 + lvl * 200, food: 150 + lvl * 120 };
+}
+
+function troopMasteryBonus(role) {
+  const lvl = troopMasteryLevel(role);
+  if (!lvl) return { atk: 0, hp: 0, def: 0, speed: 0, range: 0 };
+  if (role === "步兵") return { hp: lvl * 0.03, def: lvl * 0.03, atk: 0, speed: 0, range: 0 };
+  if (role === "騎兵") return { atk: lvl * 0.03, speed: lvl * 0.02, hp: 0, def: 0, range: 0 };
+  if (role === "弓兵") return { atk: lvl * 0.03, range: lvl * 2.5, hp: 0, def: 0, speed: 0 };
+  if (role === "謀士") return { atk: lvl * 0.035, hp: 0, def: 0, speed: 0, range: 0 };
+  return { atk: 0, hp: 0, def: 0, speed: 0, range: 0 };
+}
+
 const HEROES_FALLBACK = [
   { id: "liubei", name: "劉備", title: "昭烈仁君", avatar: "avatar-liubei", role: "步兵", color: "#e7e1c7", accent: "#4c9558", atk: 23, hp: 230, def: 12, speed: 24, range: 31, skill: "仁德劍陣", unlock: 0, rarity: 4 },
   { id: "guanyu", name: "關羽", title: "威震華夏", avatar: "avatar-guanyu", role: "騎兵", color: "#2b855b", accent: "#b6372c", atk: 34, hp: 265, def: 14, speed: 29, range: 35, skill: "青龍偃月", unlock: 0, rarity: 5 },
@@ -719,6 +757,7 @@ const defaultSave = () => ({
   skillLevels: Object.fromEntries(HEROES.map((hero) => [hero.id, 1])),
   equippedFrame: "plain",
   collectionMilestones: {},
+  troopMastery: { "步兵": 0, "騎兵": 0, "弓兵": 0, "謀士": 0 },
   eventState: { period: localWeekKey(), progress: Object.fromEntries(LOCAL_EVENTS.map((event) => [event.id, 0])), claimed: [] }
 });
 
@@ -899,6 +938,7 @@ function ensureCycleState() {
   if (!save.collectionMilestones) save.collectionMilestones = {};
   if (!save.heroProgress) save.heroProgress = Object.fromEntries(HEROES.map((hero) => [hero.id, { stars: 1, breakthrough: 0, shards: 0 }]));
   if (!save.skillLevels) save.skillLevels = Object.fromEntries(HEROES.map((hero) => [hero.id, 1]));
+  if (!save.troopMastery) save.troopMastery = { "步兵": 0, "騎兵": 0, "弓兵": 0, "謀士": 0 };
   for (const hero of HEROES) {
     save.heroProgress[hero.id] = { stars: 1, breakthrough: 0, shards: 0, ...(save.heroProgress[hero.id] || {}) };
     save.skillLevels[hero.id] = Math.max(1, Math.min(5, Number(save.skillLevels?.[hero.id]) || 1));
