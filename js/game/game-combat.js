@@ -547,48 +547,11 @@ function addEffect(type, x, y, color = "#fff", options = {}) {
   runtime.effects.push(effect);
 }
 function spawnResourceDrops(x, y, reward = {}) {
-  const entries = [
-    { kind: "gold", amount: reward.gold },
-    { kind: "food", amount: reward.food },
-    { kind: "jade", amount: reward.jade },
-    { kind: "shards", amount: reward.shards }
-  ];
-  for (const entry of entries) {
-    if (!(entry.amount > 0)) continue;
-    const life = 2.05 + Math.random() * 0.35;
-    const index = runtime.drops.length;
-    runtime.drops.push({
-      kind: entry.kind,
-      amount: Math.max(1, Math.round(entry.amount)),
-      x: x + (index % 5 - 2) * 9 + (Math.random() - 0.5) * 5,
-      y: y + (Math.floor(index / 5) % 2) * 4,
-      age: Math.random() * 0.18,
-      phase: Math.random() * Math.PI * 2,
-      life,
-      maxLife: life
-    });
-  }
-  if (runtime.drops.length > 36) runtime.drops.splice(0, runtime.drops.length - 36);
+  // Battle rewards are granted directly to save and presented in the victory popup without canvas clutter.
 }
 
 function updateResourceDrops(delta) {
-  const flyTargets = { gold: 48, food: 138, jade: 228, shards: 318 };
-  for (const drop of runtime.drops) {
-    drop.age += delta;
-    if (drop.life <= 0.45 && !drop.flying) {
-      drop.flying = true;
-      drop.flyTargetX = flyTargets[drop.kind] || 48;
-      drop.flyTargetY = 688;
-    }
-    if (drop.flying) {
-      drop.x += (drop.flyTargetX - drop.x) * Math.min(1, delta * 7);
-      drop.y += (drop.flyTargetY - drop.y) * Math.min(1, delta * 7);
-      drop.life -= delta * 1.6;
-    } else {
-      drop.life -= delta;
-    }
-  }
-  runtime.drops = runtime.drops.filter((drop) => drop.life > 0);
+  // No active drop entities to update.
 }
 
 function clearResourceDrops() {

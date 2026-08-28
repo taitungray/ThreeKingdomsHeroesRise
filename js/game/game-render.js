@@ -2103,48 +2103,7 @@ function drawEffects({ groundOnly = false } = {}) {
 }
 
 function drawResourceDrops() {
-  if (!runtime.drops.length) return;
-  const styles = {
-    gold: { main: "#e6b94f", light: "#fff1a1", dark: "#714225", label: "金" },
-    food: { main: "#8ab45d", light: "#e4f0a3", dark: "#3c5d38", label: "糧" },
-    jade: { main: "#62b5b0", light: "#d4fff0", dark: "#245e62", label: "玉" },
-    shards: { main: "#b27ad3", light: "#f2d0ff", dark: "#552d6f", label: "碎" }
-  };
-  ctx.save();
-  ctx.textAlign = "center";
-  ctx.font = "800 12px ui-monospace, Consolas, monospace";
-  for (const drop of runtime.drops) {
-    const style = styles[drop.kind] || styles.gold;
-    const progress = 1 - drop.life / drop.maxLife;
-    const alpha = drop.life < 0.42 ? clamp(drop.life / 0.42, 0, 1) : 1;
-    const bob = drop.flying ? 0 : Math.sin(drop.age * 7 + drop.phase) * 2;
-    const x = Math.round(drop.x);
-    const y = Math.round(drop.y - bob - Math.min(5, progress * 5));
-    ctx.globalAlpha = alpha;
-    ctx.fillStyle = "#17141188";
-    ctx.beginPath();
-    ctx.ellipse(x, y + 11, 11, 4, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = style.dark;
-    ctx.fillRect(x - 9, y - 7, 18, 14);
-    ctx.fillStyle = style.main;
-    ctx.fillRect(x - 7, y - 10, 14, 12);
-    ctx.fillStyle = style.light;
-    ctx.fillRect(x - 5, y - 9, 5, 3);
-    ctx.fillStyle = style.dark;
-    ctx.fillRect(x - 1, y - 4, 4, 4);
-    ctx.strokeStyle = "#22170f";
-    ctx.lineWidth = 3;
-    ctx.strokeText("+" + formatNumber(drop.amount), x, y - 15);
-    ctx.fillStyle = style.light;
-    ctx.fillText("+" + formatNumber(drop.amount), x, y - 15);
-    ctx.font = "800 10px ui-monospace, Consolas, monospace";
-    ctx.fillStyle = "#fff4c5";
-    ctx.fillText(style.label, x, y + 5);
-    ctx.font = "800 12px ui-monospace, Consolas, monospace";
-  }
-  ctx.globalAlpha = 1;
-  ctx.restore();
+  // Clean battlefield: resources are awarded directly to HUD and settlement popup without on-screen drop clutter.
 }
 
 function drawBattleTitle() {
