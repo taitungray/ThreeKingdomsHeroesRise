@@ -10,6 +10,7 @@
     "dev:www": "node scripts/dev-server.js --port 8788 --www",
     "build": "node build.js",
     "test": "node scripts/smoke-test.js",
+    "test:economy": "node scripts/simulate-economy.js",
     "test:docs": "node scripts/check-docs.js",
     "test:combat-assets": "node scripts/check-combat-assets.js",
     "test:combat-browser": "node scripts/browser-combat-freeze.js",

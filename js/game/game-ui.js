@@ -952,15 +952,70 @@ function renderAnnouncementSection() {
   return '<p class="section-caption">\u7cfb\u7d71\u516c\u544a</p><div class="announcement-list">' + notices + '</div>';
 }
 
-function renderEvents() {
+function battlePassLevelReward(lvl) {
+  const isMajor = lvl % 5 === 0;
+  if (isMajor) return { jade: Math.round(lvl * 1.5), shards: 5 + Math.floor(lvl / 5) * 2, gold: 500 + lvl * 100 };
+  if (lvl % 2 === 0) return { jade: 2, shards: 2, gold: 200 + lvl * 20 };
+  return { gold: 300 + lvl * 30, food: 150 + lvl * 15 };
+}
+
+function renderEvents(tab = runtime.eventTab || "pass") {
+  runtime.eventTab = tab;
   ensureCycleState();
-  const cards = LOCAL_EVENTS.map((event) => {
-    const progress = Math.min(event.target, eventProgress(event.id));
-    const claimed = save.eventState.claimed.includes(event.id);
-    const percent = Math.round(progress / event.target * 100);
-    return '<article class="mode-card event-card ' + (claimed ? "cleared" : "") + '"><div class="mode-icon">\u671f</div><div><h3>' + event.name + '</h3><p>' + event.desc + '</p><div class="progress-track"><i style="width:' + percent + '%"></i></div><small>' + progress + ' / ' + event.target + '　' + rewardHtml(event.reward, true) + '</small></div><button class="' + (claimed || progress < event.target ? "stone-button" : "seal-button") + ' panel-action" type="button" data-action="event-claim" data-event="' + event.id + '"' + (claimed || progress < event.target ? " disabled" : "") + '>' + (claimed ? "\u5df2\u9818" : "\u9818\u53d6") + '</button></article>';
+
+  const tabs = '<div class="panel-tabs">' +
+    '<button type="button" data-action="event-tab" data-tab="pass" class="' + (tab === "pass" ? "active" : "") + '">征戰敕令 (戰令)</button>' +
+    '<button type="button" data-action="event-tab" data-tab="events" class="' + (tab === "events" ? "active" : "") + '">限時活動</button>' +
+    '</div>';
+
+  if (tab === "events") {
+    const cards = LOCAL_EVENTS.map((event) => {
+      const progress = Math.min(event.target, eventProgress(event.id));
+      const claimed = save.eventState.claimed.includes(event.id);
+      const percent = Math.round(progress / event.target * 100);
+      return '<article class="mode-card event-card ' + (claimed ? "cleared" : "") + '"><div class="mode-icon">期</div><div><h3>' + event.name + '</h3><p>' + event.desc + '</p><div class="progress-track"><i style="width:' + percent + '%"></i></div><small>' + progress + ' / ' + event.target + '　' + rewardHtml(event.reward, true) + '</small></div><button class="' + (claimed || progress < event.target ? "stone-button" : "seal-button") + ' panel-action" type="button" data-action="event-claim" data-event="' + event.id + '"' + (claimed || progress < event.target ? " disabled" : "") + '>' + (claimed ? "已領" : "領取") + '</button></article>';
+    }).join("");
+    setPanel("限時活動", tabs + '<section class="mode-banner"><span class="eyebrow">限時每週活動</span><h3>桃園義勇週</h3><p>每週重置征戰任務，完成領取豐厚軍資。</p></section><div class="mode-list">' + cards + '</div>');
+    return;
+  }
+
+  // 征戰敕令 (戰令)
+  const currentXp = save.battlePass?.xp || 0;
+  const currentLevel = Math.min(30, Math.floor(currentXp / 10) + 1);
+  const claimedList = save.battlePass?.claimed || [];
+  const nextXp = currentLevel >= 30 ? 300 : currentLevel * 10;
+  const progressPercent = Math.min(100, Math.round(((currentXp % 10) / 10) * 100));
+
+  const passCards = Array.from({ length: 30 }, (_, i) => {
+    const lvl = i + 1;
+    const unlocked = currentLevel >= lvl;
+    const claimed = claimedList.includes(lvl);
+    const reward = battlePassLevelReward(lvl);
+    const isMajor = lvl % 5 === 0;
+
+    return '<article class="mode-card' + (isMajor ? ' legend-card' : '') + (claimed ? ' cleared' : '') + '" style="padding:10px 12px;margin-bottom:8px;">' +
+      '<div class="mode-icon" style="' + (isMajor ? 'background:linear-gradient(135deg,#c69234,#f0d376);color:#2b1900;' : '') + '">' + lvl + '</div>' +
+      '<div style="flex:1;">' +
+        '<h4 style="margin:0 0 2px 0;font-size:13px;">' + (isMajor ? '★ 敕令大獎 · ' : '') + '第 ' + lvl + ' 階</h4>' +
+        '<small>' + rewardHtml(reward, true) + '</small>' +
+      '</div>' +
+      '<button class="' + (claimed ? 'stone-button' : unlocked ? 'seal-button' : 'stone-button') + ' panel-action" type="button" data-action="battlepass-claim" data-level="' + lvl + '"' + (claimed || !unlocked ? ' disabled' : '') + '>' +
+        (claimed ? '已領取' : unlocked ? '可領取' : '未達成') +
+      '</button>' +
+    '</article>';
   }).join("");
-  setPanel("\u9650\u6642\u6d3b\u52d5", '<section class="mode-banner"><span class="eyebrow">限時本機活動</span><h3>\u6843\u5712\u7fa9\u52c7\u9031</h3><p>\u6bcf\u9031\u66f4\u65b0\uff0c\u9032\u5ea6\u53ea\u4fdd\u7559\u65bc\u672c\u6a5f\u3002</p></section><div class="mode-list">' + cards + '</div>');
+
+  setPanel("征戰敕令", tabs +
+    '<section class="mode-banner" style="background:linear-gradient(135deg,#231c26,#3b2533);border:1px solid #735165;">' +
+      '<span class="eyebrow">長期征戰回饋</span>' +
+      '<h3>敕令軍階 · Lv.' + currentLevel + '</h3>' +
+      '<p>進行戰役推關、擊敗首領或完成日常任務可累積敕令經驗，最高 30 階大獎！</p>' +
+      '<div class="mode-stats">' +
+        '<span>總經驗 <b>' + currentXp + ' 點</b></span>' +
+        '<span>當前進度 <b>' + (currentXp % 10) + ' / 10</b></span>' +
+      '</div>' +
+    '</section>' +
+    '<div class="mode-list" style="max-height:420px;overflow-y:auto;padding-right:4px;">' + passCards + '</div>');
 }
 
 function upgradeHeroStar(heroId) {
@@ -1121,8 +1176,23 @@ function handlePanelAction(button) {
   else if (action === "dungeon-challenge") challengeDungeon(button.dataset.dungeon);
   else if (action === "title-equip") { const title = titleById(button.dataset.title); if (title && titleUnlocked(title)) { save.equippedTitle = title.id; persist(); updateHud(); renderCollection(); toast("\u7a31\u865f\u5df2\u88dd\u5099"); } }
   else if (action === "treasure-equip") { const treasure = treasureById(button.dataset.treasure); if (treasure && campaignClears() >= treasure.unlock) { save.equippedTreasure = treasure.id; resetAllies(); persist(); updateHud(); renderCollection(); toast("\u5bf6\u7269\u5df2\u914d\u5099"); } }
-  else if (action === "frame-equip") equipAvatarFrame(button.dataset.frame);
   else if (action === "event-claim") claimLocalEvent(button.dataset.event);
+  else if (action === "event-tab") renderEvents(button.dataset.tab);
+  else if (action === "battlepass-claim") {
+    const lvl = Number(button.dataset.level);
+    const currentXp = save.battlePass?.xp || 0;
+    const currentLevel = Math.min(30, Math.floor(currentXp / 10) + 1);
+    save.battlePass ||= { xp: 0, claimed: [] };
+    save.battlePass.claimed ||= [];
+    if (lvl > currentLevel || save.battlePass.claimed.includes(lvl)) return;
+    save.battlePass.claimed.push(lvl);
+    const reward = battlePassLevelReward(lvl);
+    awardResources(reward);
+    persist();
+    updateHud();
+    toast("領取第 " + lvl + " 階敕令大獎！");
+    renderEvents("pass");
+  }
   else if (action === "toast") toast(button.dataset.message || "\u529f\u80fd\u6e96\u5099\u4e2d");
 }
 

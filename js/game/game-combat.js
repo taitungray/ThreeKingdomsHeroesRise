@@ -1043,11 +1043,11 @@ function waveCleared() {
     const progressed = battleStage >= save.stage;
     const newlyUnlocked = progressed && HEROES.find((hero) => hero.unlock === battleStage);
     const reward = {
-      jade: progressed ? 2 : 1,
+      jade: progressed ? (battleStage >= 25 ? 3 : 2) : 1,
       gold: Math.round((140 + battleStage * 30) * (progressed ? 1 : .55)),
       food: Math.round((55 + battleStage * 9) * (progressed ? 1 : .55)),
       exp: 30 + battleStage * 4,
-      shards: progressed ? 2 : 1
+      shards: progressed ? (battleStage >= 25 ? 3 : 2) : 1
     };
     awardResources(reward);
     const dropSource = runtime.enemies.find((unit) => unit.type === "boss") || runtime.enemies[runtime.enemies.length - 1];
