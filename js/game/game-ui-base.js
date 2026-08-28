@@ -126,20 +126,28 @@ function showDialogue(speaker, text, avatar = "avatar-liubei") {
   if (preview && preview.classList.contains("show")) {
     hideEnemyPreview();
   }
-  const avatarEl = $("dialogueAvatar");
-  avatarEl.className = "pixel-avatar " + avatar;
-  const speakerHero = (typeof HEROES === "object" ? HEROES.find((h) => h.name === speaker || h.id === speaker || ("avatar-" + h.id) === avatar) : null) ||
-                      (typeof ENEMY_GENERALS === "object" ? ENEMY_GENERALS.find((g) => g.name === speaker || g.id === speaker || ("avatar-" + g.id) === avatar) : null);
-  if (speakerHero?.portrait) {
-    avatarEl.style.backgroundImage = "url('" + speakerHero.portrait + "')";
-    avatarEl.classList.add("portrait-asset");
-  } else {
-    avatarEl.style.backgroundImage = "";
+  const avatarEl = $("dialoguePortrait") || $("dialogueAvatar");
+  if (avatarEl) {
+    avatarEl.className = "pixel-avatar " + avatar;
+    const speakerHero = (typeof HEROES === "object" ? HEROES.find((h) => h.name === speaker || h.id === speaker || ("avatar-" + h.id) === avatar) : null) ||
+                        (typeof ENEMY_GENERALS === "object" ? ENEMY_GENERALS.find((g) => g.name === speaker || g.id === speaker || ("avatar-" + g.id) === avatar) : null);
+    if (speakerHero?.portrait) {
+      avatarEl.style.backgroundImage = "url('" + speakerHero.portrait + "')";
+      avatarEl.classList.add("portrait-asset");
+    } else {
+      avatarEl.style.backgroundImage = "";
+      avatarEl.classList.remove("portrait-asset");
+    }
   }
-  $("dialogueSpeaker").textContent = speaker;
-  $("dialogueText").textContent = text;
-  $("dialogueBox").classList.add("show");
-  $("dialogueBox").setAttribute("aria-hidden", "false");
+  const speakerEl = $("dialogueName") || $("dialogueSpeaker");
+  if (speakerEl) speakerEl.textContent = speaker;
+  const textEl = $("dialogueText");
+  if (textEl) textEl.textContent = text;
+  const box = $("dialogueBox");
+  if (box) {
+    box.classList.add("show");
+    box.setAttribute("aria-hidden", "false");
+  }
   runtime.dialogueTimer = 4.2;
 }
 
