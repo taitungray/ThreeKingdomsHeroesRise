@@ -9,9 +9,11 @@ android/build/
 android/.idea/
 *.jks
 *.keystore
+!android/app/taoyuan-release.jks
 *.apk
 *.aab
 google-services.json
+!android/app/google-services.json
 .env
 .env.*
 screenshots/

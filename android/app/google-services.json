@@ -1,0 +1,153 @@
+{
+  "project_info": {
+    "project_number": "1051857657382",
+    "project_id": "rayon-819bc",
+    "storage_bucket": "rayon-819bc.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1051857657382:android:744536fa1253e50eb750e7",
+        "android_client_info": {
+          "package_name": "com.taitungray.chengyu"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1051857657382-5mjm2e8dmfcrr67v5jrg662i3au1o1bd.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.taitungray.chengyu",
+            "certificate_hash": "9005169d3df98a043ecdae5da4fb5f79e076c0fb"
+          }
+        },
+        {
+          "client_id": "1051857657382-mu9n1gpbj43tqjp0guklgq2ko1aj17oa.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.taitungray.chengyu",
+            "certificate_hash": "96629a612a84a1e03212d882e19b9887295be4f2"
+          }
+        },
+        {
+          "client_id": "1051857657382-o2m1er5c3pcanrnfmi3nvda2ndcj6tim.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.taitungray.chengyu",
+            "certificate_hash": "2fd3e610857d1df025c0e538b399be73fd8661c8"
+          }
+        },
+        {
+          "client_id": "1051857657382-7n4h62r165485cdo7d2melo28fri8pb2.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCdkor0iP_QRn2ZydHujoR_tASWmW26upE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1051857657382-7n4h62r165485cdo7d2melo28fri8pb2.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1051857657382:android:95c2e42720851d9eb750e7",
+        "android_client_info": {
+          "package_name": "com.taitungray.incenseashes"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1051857657382-37i6j6cfnnk08qvmsf30os2rdhi6ul5r.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.taitungray.incenseashes",
+            "certificate_hash": "26c14c9ef6df959ff5a96498f099f641041cd10a"
+          }
+        },
+        {
+          "client_id": "1051857657382-d7kuvd98t7trjtjopj148pspebji6ear.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.taitungray.incenseashes",
+            "certificate_hash": "ca588f5f74d51909f9f0249d04459201298a9ad8"
+          }
+        },
+        {
+          "client_id": "1051857657382-gmubl7junrmbq35t8e66nvv673bebmf9.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.taitungray.incenseashes",
+            "certificate_hash": "b0daca039d382d7fff48add965f14c4e733e2aa7"
+          }
+        },
+        {
+          "client_id": "1051857657382-s0u56oqmr8fv7e6u8aa7lj2aocqpitj4.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.taitungray.incenseashes",
+            "certificate_hash": "2fd3e610857d1df025c0e538b399be73fd8661c8"
+          }
+        },
+        {
+          "client_id": "1051857657382-7n4h62r165485cdo7d2melo28fri8pb2.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCdkor0iP_QRn2ZydHujoR_tASWmW26upE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1051857657382-7n4h62r165485cdo7d2melo28fri8pb2.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1051857657382:android:e5d5182659d75c65b750e7",
+        "android_client_info": {
+          "package_name": "com.taitungray.taoyuanqunying"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1051857657382-7n4h62r165485cdo7d2melo28fri8pb2.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCdkor0iP_QRn2ZydHujoR_tASWmW26upE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1051857657382-7n4h62r165485cdo7d2melo28fri8pb2.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
