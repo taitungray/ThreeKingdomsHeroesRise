@@ -426,17 +426,23 @@ function drawWeapon(unit) {
   const [anchorX, anchorY] = WEAPON_ANCHORS[weaponAssetId] || [32, 54];
   ctx.drawImage(weaponImage, -anchorX * weaponScale, -anchorY * weaponScale, weaponSize, weaponSize);
 
-  if (unit.action && pose > 0.36 && unit.action.phase !== "anticipation") {
-    ctx.globalCompositeOperation = "screen";
-    ctx.globalAlpha = Math.min(0.55, pose * 0.65);
-    ctx.strokeStyle = unit.accent || "#ffd868";
-    ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    ctx.moveTo(0, -8 * weaponScale);
-    ctx.lineTo(0, -48 * weaponScale);
-    ctx.stroke();
-    ctx.globalCompositeOperation = "source-over";
-    ctx.globalAlpha = 1;
+  if (unit.action && pose > 0.22 && unit.action.phase !== "anticipation") {
+    const arcAlpha = Math.min(0.75, (1 - Math.abs(pose - 0.55) * 1.8) * 0.9);
+    if (arcAlpha > 0.05) {
+      ctx.save();
+      ctx.globalCompositeOperation = "screen";
+      ctx.globalAlpha = arcAlpha;
+      const trailGrad = ctx.createLinearGradient(0, -10 * weaponScale, 0, -56 * weaponScale);
+      trailGrad.addColorStop(0, "rgba(255, 255, 255, 0)");
+      trailGrad.addColorStop(0.5, unit.accent || "#ffd868");
+      trailGrad.addColorStop(1, "#ffffff");
+      ctx.strokeStyle = trailGrad;
+      ctx.lineWidth = 3.5 * weaponScale;
+      ctx.beginPath();
+      ctx.arc(0, 0, 48 * weaponScale, -Math.PI / 2 - 0.75, -Math.PI / 2 + 0.35);
+      ctx.stroke();
+      ctx.restore();
+    }
   }
   ctx.restore();
 }
@@ -2008,6 +2014,16 @@ function drawEffects({ groundOnly = false } = {}) {
       ctx.beginPath();
       ctx.ellipse(effect.x, effect.y, effect.radius * progress, effect.radius * progress * .35, 0, 0, Math.PI * 2);
       ctx.stroke();
+    } else if (effect.type === "clash") {
+      ctx.save();
+      ctx.translate(effect.x, effect.y);
+      for (let i = 0; i < 6; i += 1) {
+        const sparkAngle = (i * Math.PI / 3) + (effect.angle || 0);
+        const sparkDist = effect.radius * progress;
+        ctx.fillStyle = i % 2 === 0 ? "#ffffff" : (effect.color || "#ffe57f");
+        ctx.fillRect(Math.cos(sparkAngle) * sparkDist - 1.5, Math.sin(sparkAngle) * sparkDist - 1.5, 3, 3);
+      }
+      ctx.restore();
     } else {
       const particles = effect.type === "burst" ? 12 : 6;
       for (let i = 0; i < particles; i += 1) {
@@ -2025,17 +2041,40 @@ function drawEffects({ groundOnly = false } = {}) {
     ctx.save();
     ctx.translate(projectile.x, projectile.y);
     ctx.rotate(angle);
-    ctx.globalAlpha = 0.9;
-    ctx.strokeStyle = projectile.color;
-    ctx.lineWidth = 3;
+    ctx.globalAlpha = 0.95;
+
+    // Wind trail behind projectile
+    ctx.strokeStyle = "rgba(255,255,255,0.45)";
+    ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.moveTo(-17, 0);
-    ctx.lineTo(2, 0);
+    ctx.moveTo(-24, -1);
+    ctx.lineTo(-8, -1);
+    ctx.moveTo(-20, 1);
+    ctx.lineTo(-6, 1);
     ctx.stroke();
-    ctx.fillStyle = projectile.color;
-    ctx.fillRect(-4, -2, 11, 4);
-    ctx.fillStyle = "#fff8d2";
-    ctx.fillRect(0, -1, 7, 2);
+
+    // Arrow / Projectile shaft
+    ctx.strokeStyle = projectile.color || "#ffd868";
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.moveTo(-16, 0);
+    ctx.lineTo(4, 0);
+    ctx.stroke();
+
+    // Arrow head (pointy tip)
+    ctx.fillStyle = "#ffffff";
+    ctx.beginPath();
+    ctx.moveTo(7, 0);
+    ctx.lineTo(1, -3);
+    ctx.lineTo(2, 0);
+    ctx.lineTo(1, 3);
+    ctx.closePath();
+    ctx.fill();
+
+    // Arrow fletching
+    ctx.fillStyle = projectile.color || "#ffd868";
+    ctx.fillRect(-16, -2.5, 4, 1.5);
+    ctx.fillRect(-16, 1, 4, 1.5);
     ctx.restore();
   }
   ctx.restore();

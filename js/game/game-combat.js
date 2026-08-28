@@ -655,16 +655,20 @@ function applyDamage(attacker, target, multiplier = 1, criticalChanceBase = 0.12
     } else {
       window.TaoyuanAudio?.sfx?.("hit");
     }
-    addEffect("spark", target.x, target.y - 13, critical ? "#ffe270" : "#f1d8bd", { radius: critical ? 25 : 14, life: 0.22 });
-    addEffect("impact", target.x, target.y - 14, critical ? "#fff08b" : "#f7d8ad", { radius: critical ? 34 : 19, life: critical ? 0.3 : 0.18, angle: knockAngle });
+    const isHeavyDefense = defense * 0.58 >= attacker.atk * finalMultiplier * 0.4 || hasStatus(target, "guard") || hasStatus(target, "ward");
+    if (isHeavyDefense) {
+      addEffect("clash", target.x, target.y - 14, "#ffe270", { radius: 22, life: 0.24, angle: knockAngle });
+    }
+    addEffect("spark", target.x, target.y - 13, critical ? "#ffe270" : "#f1d8bd", { radius: critical ? 26 : 14, life: 0.22 });
+    addEffect("impact", target.x, target.y - 14, critical ? "#fff08b" : "#f7d8ad", { radius: critical ? 36 : 19, life: critical ? 0.32 : 0.18, angle: knockAngle });
     registerCombatHit(target, critical);
   }
   if (!context.status) {
-    runtime.hitStop = Math.max(runtime.hitStop, critical ? 0.045 : finalMultiplier > 1.25 ? 0.028 : 0.012);
+    runtime.hitStop = Math.max(runtime.hitStop, critical ? 0.055 : finalMultiplier > 1.25 ? 0.032 : 0.015);
   }
   if (critical) {
-    applyLocalImpact(target, 5);
-    addEffect("shockwave", target.x, target.y - 10, "#ffd769", { radius: 42, life: 0.34 });
+    applyLocalImpact(target, 6);
+    addEffect("shockwave", target.x, target.y - 10, "#ffd769", { radius: 44, life: 0.36 });
   }
   if (attacker.hero?.id === "zhurong" && critical) applyStatus(target, "burn", 4, 8, attacker);
   if (attacker.hero?.id === "zhuran" && context.skill) applyStatus(target, "burn", 6, 8, attacker);

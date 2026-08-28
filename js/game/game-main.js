@@ -46,6 +46,43 @@ $("panelBack").addEventListener("click", () => {
   if (runtime.panel === "formation") renderFormation();
   else renderHeroes();
 });
+let holdActionTimer = null;
+let holdActionInterval = null;
+
+function clearHoldAction() {
+  if (holdActionTimer) {
+    clearTimeout(holdActionTimer);
+    holdActionTimer = null;
+  }
+  if (holdActionInterval) {
+    clearInterval(holdActionInterval);
+    holdActionInterval = null;
+  }
+}
+
+$("panelContent").addEventListener("pointerdown", (event) => {
+  const button = event.target.closest("[data-action='hero-level'], [data-action='hero-skill'], [data-action='equipment-refine']");
+  if (!button || button.disabled) return;
+  clearHoldAction();
+  
+  holdActionTimer = setTimeout(() => {
+    holdActionInterval = setInterval(() => {
+      const heroId = button.dataset.hero;
+      const action = button.dataset.action;
+      const currentBtn = $("panelContent")?.querySelector('[data-action="' + action + '"][data-hero="' + heroId + '"]');
+      if (!currentBtn || currentBtn.disabled) {
+        clearHoldAction();
+        return;
+      }
+      handlePanelAction(currentBtn);
+    }, 85);
+  }, 300);
+});
+
+document.addEventListener("pointerup", clearHoldAction);
+document.addEventListener("pointercancel", clearHoldAction);
+$("panelContent").addEventListener("pointerleave", clearHoldAction);
+
 $("panelContent").addEventListener("click", (event) => {
   const button = event.target.closest("[data-action]");
   if (button) handlePanelAction(button);

@@ -78,7 +78,7 @@ function paperDollHtml(hero) {
       '<i class="slot-mark slot-mark-' + slot.id + '" aria-hidden="true"></i><span>' + slot.label + '</span><b>' + item.name + '</b><small>' + item.bonus + (owned ? "" : " · 未擁有") + '</small><em>點擊輪換已擁有裝備</em></button>';
   }).join("");
   return '<section class="paper-doll-panel">' +
-    '<div class="paper-doll-heading"><div><span class="eyebrow">外觀配置</span><h3>紙娃娃</h3></div><span class="paper-doll-hint">點裝備槽切換外觀</span></div>' +
+    '<div class="paper-doll-heading"><div><span class="eyebrow">外觀配置</span><h3>紙娃娃</h3></div><button class="stone-button compact-button" type="button" data-action="hero-auto-equip" data-hero="' + hero.id + '" style="font-size:12px;padding:4px 10px;background:linear-gradient(135deg,#362816,#543e20);border-color:#d7b84f;color:#ffe699;">⚡ 一鍵最強神裝</button></div>' +
     '<div class="paper-doll-board"><div class="paper-doll-stage">' + avatarHtml(hero, true) + '<span class="paper-doll-rune">' + hero.role + '</span></div><div class="paper-slot-grid">' + slots + '</div></div>' +
     '<p class="paper-doll-note">裝備會立刻套用到戰場、編隊與武將卡。<strong>當前加成：' + equipmentBonusLabel(hero.id) + '</strong></p>' +
     '</section>';
@@ -435,4 +435,60 @@ function cycleHeroPaperDoll(heroId, slotId) {
   persist();
   renderHeroDetail(heroId);
   toast(hero.name + " 換裝：" + (slot.choices.find((item) => item.id === nextId)?.name || slot.label));
+}
+
+function heroCalculatedPower(heroId) {
+  const hero = heroById(heroId);
+  if (!hero) return 0;
+  const level = save.heroLevels[heroId] || 1;
+  const equipment = heroEquipmentStats(heroId);
+  const growth = heroGrowthMultiplier(heroId);
+  return Math.round(((hero.atk + equipment.atk) * 7 + hero.hp + equipment.hp + (hero.def + equipment.def) * 12) * (1 + level * 0.13) * growth);
+}
+
+function autoEquipHero(heroId) {
+  const hero = heroById(heroId);
+  if (!hero || !isUnlocked(hero)) return;
+  const oldPower = heroCalculatedPower(heroId);
+  const sig = typeof heroSignatureResonance === "function" ? heroSignatureResonance(heroId) : null;
+  const loadout = heroLoadout(heroId);
+  let changed = false;
+
+  for (const slot of PAPER_DOLL_SLOTS) {
+    const owned = slot.choices.filter((choice) => isEquipmentOwned(slot.id, choice.id));
+    if (!owned.length) continue;
+
+    let bestChoice = owned[0];
+    let bestScore = -Infinity;
+
+    for (const choice of owned) {
+      const stats = choice.stats || {};
+      let score = (stats.atk || 0) * 7 + (stats.hp || 0) + (stats.def || 0) * 12 + (stats.speed || 0) * 8 + (stats.range || 0) * 3;
+      if (slot.id === "weapon" && sig && sig.activeSignatureWeapon === choice.id) {
+        score += 1000;
+      }
+      if (score > bestScore) {
+        bestScore = score;
+        bestChoice = choice;
+      }
+    }
+
+    if (bestChoice && loadout[slot.id] !== bestChoice.id) {
+      loadout[slot.id] = bestChoice.id;
+      changed = true;
+    }
+  }
+
+  if (changed) {
+    resetAllies();
+    persist();
+    updateHud();
+    window.TaoyuanAudio?.sfx?.("reward");
+    const newPower = heroCalculatedPower(heroId);
+    const delta = newPower - oldPower;
+    toast(hero.name + " 已配齊最佳神裝！" + (delta > 0 ? " (戰力 +" + formatNumber(delta) + " ↑)" : ""));
+    renderHeroDetail(heroId);
+  } else {
+    toast(hero.name + " 已穿戴當前最強裝備");
+  }
 }

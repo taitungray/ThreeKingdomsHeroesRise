@@ -216,6 +216,7 @@ function handlePanelAction(button) {
     renderHeroes();
   }
   else if (action === "hero-detail") renderHeroDetail(button.dataset.hero);
+  else if (action === "hero-auto-equip") autoEquipHero(button.dataset.hero);
   else if (action === "paper-cycle") cycleHeroPaperDoll(button.dataset.hero, button.dataset.slot);
   else if (action === "equipment-refine") refineHeroEquipment(button.dataset.hero);
   else if (action === "hero-star") upgradeHeroStar(button.dataset.hero);
