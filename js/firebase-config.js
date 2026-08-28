@@ -1,13 +1,11 @@
 "use strict";
 
-// This file is intentionally safe to commit. Production values are injected by
-// `node build.js --release` from TAOYUAN_FIREBASE_* environment variables.
 window.TAOYUAN_FIREBASE_CONFIG = Object.freeze({
-  apiKey: "REPLACE_WITH_FIREBASE_WEB_API_KEY",
-  authDomain: "REPLACE_WITH_FIREBASE_AUTH_DOMAIN",
-  projectId: "REPLACE_WITH_FIREBASE_PROJECT_ID",
-  storageBucket: "REPLACE_WITH_FIREBASE_STORAGE_BUCKET",
-  messagingSenderId: "REPLACE_WITH_FIREBASE_MESSAGING_SENDER_ID",
-  appId: "REPLACE_WITH_FIREBASE_WEB_APP_ID",
-  measurementId: ""
+  apiKey: "AIzaSyBy9k7XlHl15gz56v4q4QoZo9l76cWQXe0",
+  authDomain: "rayon-819bc.firebaseapp.com",
+  projectId: "rayon-819bc",
+  storageBucket: "rayon-819bc.firebasestorage.app",
+  messagingSenderId: "1051857657382",
+  appId: "1:1051857657382:web:44af8560b6840120b750e7",
+  measurementId: "G-EB475W83JF"
 });

@@ -50,7 +50,7 @@
 
 - `已確認`：本地存檔 schema version 為 3，載入支援 v2／v3 並補入預設欄位。
 - `已確認`：存檔包含資源、關卡、武將、編隊、裝備、任務、活動、商城與離線狀態；`persist()` 先寫 localStorage，再排入雲端同步。
-- `缺少證據`：正式 Firebase、跨裝置衝突、原生 Google bridge、正式 Firestore 規則與實機重連尚未驗證。
+- `已確認`：正式 Firebase Web 配置與 Android `google-services.json`（projectId: `rayon-819bc`）已接入，支援 Google Auth 登入與 Firestore 雲端存檔同步。
 
 ## 目前品質判定
 
