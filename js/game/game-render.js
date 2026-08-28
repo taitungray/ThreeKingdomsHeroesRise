@@ -2103,7 +2103,46 @@ function drawEffects({ groundOnly = false } = {}) {
 }
 
 function drawResourceDrops() {
-  // Clean battlefield: resources are awarded directly to HUD and settlement popup without on-screen drop clutter.
+  if (!runtime.drops.length) return;
+  const styles = {
+    gold: { main: "#dfaa38", light: "#ffe899", dark: "#6e421c" },
+    food: { main: "#7ea352", light: "#d6ebb0", dark: "#3a5632" },
+    jade: { main: "#4ea39e", light: "#c2fff5", dark: "#204e52" },
+    shards: { main: "#9f6ebd", light: "#e8c4ff", dark: "#4a2463" }
+  };
+  ctx.save();
+  ctx.textAlign = "center";
+  ctx.font = "700 11px ui-monospace, Consolas, monospace";
+  for (const drop of runtime.drops) {
+    const style = styles[drop.kind] || styles.gold;
+    const alpha = clamp(drop.life / 0.4, 0, 1);
+    const x = Math.round(drop.x);
+    const y = Math.round(drop.y);
+    ctx.globalAlpha = alpha;
+
+    // Small ground shadow
+    ctx.fillStyle = "#100e0b88";
+    ctx.beginPath();
+    ctx.ellipse(x, y + 4, 5, 2, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Compact neat pixel icon (8x8)
+    ctx.fillStyle = style.dark;
+    ctx.fillRect(x - 4, y - 4, 8, 8);
+    ctx.fillStyle = style.main;
+    ctx.fillRect(x - 3, y - 3, 6, 6);
+    ctx.fillStyle = style.light;
+    ctx.fillRect(x - 2, y - 2, 2, 2);
+
+    // Clean gain text
+    ctx.strokeStyle = "#1b140d";
+    ctx.lineWidth = 2;
+    ctx.strokeText("+" + formatNumber(drop.amount), x, y - 7);
+    ctx.fillStyle = style.light;
+    ctx.fillText("+" + formatNumber(drop.amount), x, y - 7);
+  }
+  ctx.globalAlpha = 1;
+  ctx.restore();
 }
 
 function drawBattleTitle() {

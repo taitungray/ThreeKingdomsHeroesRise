@@ -547,11 +547,32 @@ function addEffect(type, x, y, color = "#fff", options = {}) {
   runtime.effects.push(effect);
 }
 function spawnResourceDrops(x, y, reward = {}) {
-  // Battle rewards are granted directly to save and presented in the victory popup without canvas clutter.
+  const entries = [
+    { kind: "gold", amount: reward.gold },
+    { kind: "food", amount: reward.food },
+    { kind: "jade", amount: reward.jade },
+    { kind: "shards", amount: reward.shards }
+  ];
+  for (const entry of entries) {
+    if (!(entry.amount > 0)) continue;
+    const index = runtime.drops.length;
+    runtime.drops.push({
+      kind: entry.kind,
+      amount: Math.max(1, Math.round(entry.amount)),
+      x: x + (index % 4 - 1.5) * 11,
+      y: y + 2 + (index % 2) * 3,
+      life: 1.2,
+      maxLife: 1.2
+    });
+  }
+  if (runtime.drops.length > 20) runtime.drops.splice(0, runtime.drops.length - 20);
 }
 
 function updateResourceDrops(delta) {
-  // No active drop entities to update.
+  for (const drop of runtime.drops) {
+    drop.life -= delta;
+  }
+  runtime.drops = runtime.drops.filter((drop) => drop.life > 0);
 }
 
 function clearResourceDrops() {
