@@ -45,68 +45,89 @@ function createWavBuffer(samples, sampleRate = SAMPLE_RATE, channels = 1) {
   return buffer;
 }
 
-function synthPluck(freq, duration, gain = 0.5, damping = 0.988) {
+function synthPluck(freq, duration, gain = 0.45) {
+  // 純淨古箏/琵琶物理多泛音諧波模型（無白噪聲雜音）
   const numSamples = Math.floor(SAMPLE_RATE * duration);
   const buffer = new Float32Array(numSamples);
-  const period = Math.max(2, Math.round(SAMPLE_RATE / freq));
-  const delayLine = new Float32Array(period);
+  const harmonics = [
+    { mult: 1, amp: 1.0, decay: 1.8 },
+    { mult: 2, amp: 0.45, decay: 2.6 },
+    { mult: 3, amp: 0.22, decay: 3.8 },
+    { mult: 4, amp: 0.10, decay: 5.2 },
+    { mult: 5, amp: 0.04, decay: 7.0 }
+  ];
 
-  for (let i = 0; i < period; i++) {
-    delayLine[i] = (Math.random() * 2 - 1) * gain;
-  }
-
-  let p = 0;
   for (let i = 0; i < numSamples; i++) {
-    const nextP = (p + 1) % period;
-    const newSample = ((delayLine[p] + delayLine[nextP]) * 0.5) * damping;
-    delayLine[p] = newSample;
-    buffer[i] = newSample;
-    p = nextP;
+    const t = i / SAMPLE_RATE;
+    let s = 0;
+    for (let h = 0; h < harmonics.length; h++) {
+      const harm = harmonics[h];
+      const env = Math.exp(-t * harm.decay);
+      s += Math.sin(2 * Math.PI * freq * harm.mult * t) * harm.amp * env;
+    }
+    // 溫和的起振瞬態
+    const attack = Math.min(1, i / (SAMPLE_RATE * 0.003));
+    buffer[i] = s * gain * attack;
   }
 
   return buffer;
 }
 
-function synthFlute(freq, duration, gain = 0.3) {
+function synthFlute(freq, duration, gain = 0.28) {
+  // 溫潤空靈的竹笛/洞簫音色
   const numSamples = Math.floor(SAMPLE_RATE * duration);
   const buffer = new Float32Array(numSamples);
-  const attack = Math.floor(SAMPLE_RATE * 0.08);
-  const release = Math.floor(SAMPLE_RATE * 0.12);
+  const attackSamples = Math.floor(SAMPLE_RATE * 0.12);
+  const releaseSamples = Math.floor(SAMPLE_RATE * 0.22);
 
   for (let i = 0; i < numSamples; i++) {
     const t = i / SAMPLE_RATE;
-    const vib = 1 + 0.012 * Math.sin(2 * Math.PI * 5 * t);
-    const f = freq * vib;
+    // 溫和悠揚的自然揉弦顫音 (4.2 Hz, 0.4% 幅度)
+    const vibrato = 1 + 0.004 * Math.sin(2 * Math.PI * 4.2 * t);
+    const f = freq * vibrato;
+
     const s1 = Math.sin(2 * Math.PI * f * t);
-    const s2 = 0.35 * Math.sin(2 * Math.PI * f * 2 * t);
-    const s3 = 0.15 * Math.sin(2 * Math.PI * f * 3 * t);
-    const s4 = 0.08 * Math.sin(2 * Math.PI * f * 4 * t);
-    const breath = (Math.random() * 2 - 1) * 0.025;
+    const s2 = 0.25 * Math.sin(2 * Math.PI * f * 2 * t);
+    const s3 = 0.08 * Math.sin(2 * Math.PI * f * 3 * t);
 
-    let env = 1;
-    if (i < attack) env = i / attack;
-    else if (i > numSamples - release) env = (numSamples - i) / release;
+    let env = 1.0;
+    if (i < attackSamples) env = Math.sin((i / attackSamples) * (Math.PI * 0.5));
+    else if (i > numSamples - releaseSamples) env = Math.sin(((numSamples - i) / releaseSamples) * (Math.PI * 0.5));
 
-    buffer[i] = (s1 + s2 + s3 + s4 + breath) * gain * env;
+    buffer[i] = (s1 + s2 + s3) * gain * env;
   }
 
   return buffer;
 }
 
-function synthDrum(duration = 0.6, gain = 0.7, startFreq = 140, endFreq = 45) {
+function synthDrum(duration = 0.55, gain = 0.55, startFreq = 95, endFreq = 38) {
+  // 沉穩雄渾的三國古戰鼓
   const numSamples = Math.floor(SAMPLE_RATE * duration);
   const buffer = new Float32Array(numSamples);
 
   for (let i = 0; i < numSamples; i++) {
-    const t = i / SAMPLE_RATE;
     const progress = i / numSamples;
-    const f = startFreq * Math.pow(endFreq / startFreq, progress);
-    const wave = Math.sin(2 * Math.PI * f * t);
-    const punch = (Math.random() * 2 - 1) * Math.exp(-progress * 30) * 0.4;
-    const env = Math.exp(-progress * 6.5);
-    buffer[i] = (wave * 0.8 + punch) * gain * env;
+    const t = i / SAMPLE_RATE;
+    const currentFreq = startFreq + (endFreq - startFreq) * Math.pow(progress, 0.45);
+    const env = Math.exp(-progress * 5.2);
+    const wave = Math.sin(2 * Math.PI * currentFreq * t);
+    buffer[i] = wave * gain * env;
   }
 
+  return buffer;
+}
+
+function synthGong(freq = 240, duration = 2.2, gain = 0.18) {
+  // 悠遠編鐘/古磬
+  const numSamples = Math.floor(SAMPLE_RATE * duration);
+  const buffer = new Float32Array(numSamples);
+  for (let i = 0; i < numSamples; i++) {
+    const t = i / SAMPLE_RATE;
+    const env = Math.exp(-t * 2.2);
+    const s1 = Math.sin(2 * Math.PI * freq * t) * 0.7;
+    const s2 = Math.sin(2 * Math.PI * (freq * 1.414) * t) * 0.3;
+    buffer[i] = (s1 + s2) * gain * env;
+  }
   return buffer;
 }
 
@@ -150,50 +171,58 @@ function generateBgm() {
   const totalSamples = Math.floor(SAMPLE_RATE * duration);
   const bgmTrack = new Float32Array(totalSamples);
 
+  // 中國羽調式五聲音階 (A - C - D - E - G)
   const notes = {
-    D3: 146.83, E3: 164.81, Fs3: 185.00, A3: 220.00, B3: 246.94,
-    D4: 293.66, E4: 329.63, Fs4: 369.99, A4: 440.00, B4: 493.88,
-    D5: 587.33, E5: 659.25, Fs5: 739.99, A5: 880.00
+    A2: 110.00, C3: 130.81, D3: 146.83, E3: 164.81, G3: 196.00,
+    A3: 220.00, C4: 261.63, D4: 293.66, E4: 329.63, G4: 392.00,
+    A4: 440.00, C5: 523.25, D5: 587.33, E5: 659.25, G5: 783.99, A5: 880.00
   };
 
-  for (let t = 0; t < duration; t += 1.0) {
-    const isStrong = (Math.floor(t) % 4 === 0);
-    const drum = synthDrum(0.7, isStrong ? 0.45 : 0.28, isStrong ? 120 : 100, 40);
+  // 1. 沉穩戰鼓節奏 (每拍 0.8 秒，共 20 拍)
+  const beatTime = 0.8;
+  for (let t = 0; t < duration; t += beatTime) {
+    const beatIndex = Math.round(t / beatTime);
+    const isHeavy = (beatIndex % 4 === 0);
+    const drum = synthDrum(0.65, isHeavy ? 0.42 : 0.22, isHeavy ? 100 : 85, 36);
     mixInto(bgmTrack, drum, Math.floor(t * SAMPLE_RATE));
 
-    if (!isStrong) {
-      const lightDrum = synthDrum(0.35, 0.15, 180, 70);
-      mixInto(bgmTrack, lightDrum, Math.floor((t + 0.5) * SAMPLE_RATE));
+    if (isHeavy) {
+      const gong = synthGong(220, 2.0, 0.14);
+      mixInto(bgmTrack, gong, Math.floor(t * SAMPLE_RATE));
     }
   }
 
-  const pluckMelody = [
-    { note: "D4", time: 0.0, dur: 1.4 }, { note: "Fs4", time: 0.5, dur: 1.2 }, { note: "A4", time: 1.0, dur: 1.8 }, { note: "B4", time: 2.0, dur: 1.2 },
-    { note: "A4", time: 2.5, dur: 1.4 }, { note: "Fs4", time: 3.2, dur: 1.6 }, { note: "D4", time: 4.0, dur: 1.8 }, { note: "E4", time: 5.0, dur: 1.4 },
-    { note: "Fs4", time: 5.8, dur: 1.8 }, { note: "A4", time: 6.5, dur: 1.5 }, { note: "B4", time: 7.2, dur: 1.2 }, { note: "D5", time: 8.0, dur: 2.0 },
-    { note: "B4", time: 9.0, dur: 1.4 }, { note: "A4", time: 9.8, dur: 1.6 }, { note: "Fs4", time: 10.6, dur: 1.4 }, { note: "E4", time: 11.4, dur: 1.8 },
-    { note: "D4", time: 12.2, dur: 1.5 }, { note: "Fs4", time: 13.0, dur: 1.4 }, { note: "E4", time: 14.0, dur: 1.8 }, { note: "D4", time: 15.0, dur: 2.2 }
+  // 2. 桃園豪情古箏彈奏旋律 (純五聲音階)
+  const guzhengMelody = [
+    { note: "A3", time: 0.0, dur: 1.5 }, { note: "C4", time: 0.8, dur: 1.2 }, { note: "D4", time: 1.6, dur: 1.8 }, { note: "E4", time: 2.4, dur: 1.4 },
+    { note: "G4", time: 3.2, dur: 1.6 }, { note: "E4", time: 4.0, dur: 1.4 }, { note: "D4", time: 4.8, dur: 1.8 }, { note: "C4", time: 5.6, dur: 1.4 },
+    { note: "D4", time: 6.4, dur: 2.2 }, { note: "E4", time: 8.0, dur: 1.5 }, { note: "G4", time: 8.8, dur: 1.4 }, { note: "A4", time: 9.6, dur: 2.0 },
+    { note: "G4", time: 10.4, dur: 1.4 }, { note: "E4", time: 11.2, dur: 1.6 }, { note: "D4", time: 12.0, dur: 1.4 }, { note: "C4", time: 12.8, dur: 1.4 },
+    { note: "D4", time: 13.6, dur: 1.8 }, { note: "A3", time: 14.4, dur: 2.4 }
   ];
 
-  pluckMelody.forEach(({ note, time, dur }) => {
+  guzhengMelody.forEach(({ note, time, dur }) => {
     if (notes[note]) {
-      const p = synthPluck(notes[note], dur, 0.38, 0.991);
-      mixInto(bgmTrack, p, Math.floor(time * SAMPLE_RATE));
-      const lowNote = note.replace("4", "3").replace("5", "4");
-      if (notes[lowNote] && time % 2.0 === 0) {
-        const bass = synthPluck(notes[lowNote], dur * 1.2, 0.25, 0.994);
+      const gz = synthPluck(notes[note], dur, 0.36);
+      mixInto(bgmTrack, gz, Math.floor(time * SAMPLE_RATE));
+
+      // 伴奏低音
+      const lowNote = note.replace("4", "3").replace("3", "2");
+      if (notes[lowNote] && time % 1.6 === 0) {
+        const bass = synthPluck(notes[lowNote], dur * 1.3, 0.26);
         mixInto(bgmTrack, bass, Math.floor(time * SAMPLE_RATE));
       }
     }
   });
 
+  // 3. 悠揚竹笛悠遠合奏
   const flutePhrases = [
-    { note: "A4", time: 4.0, dur: 1.6 },
-    { note: "B4", time: 5.6, dur: 1.4 },
-    { note: "D5", time: 7.0, dur: 2.4 },
-    { note: "Fs5", time: 9.4, dur: 1.8 },
-    { note: "E5", time: 11.2, dur: 2.0 },
-    { note: "D5", time: 13.2, dur: 2.6 }
+    { note: "A4", time: 3.2, dur: 2.2 },
+    { note: "C5", time: 5.6, dur: 2.0 },
+    { note: "D5", time: 8.0, dur: 2.6 },
+    { note: "E5", time: 10.4, dur: 2.2 },
+    { note: "D5", time: 12.0, dur: 2.0 },
+    { note: "A4", time: 13.6, dur: 2.8 }
   ];
 
   flutePhrases.forEach(({ note, time, dur }) => {
@@ -203,19 +232,21 @@ function generateBgm() {
     }
   });
 
-  const fadeLen = Math.floor(SAMPLE_RATE * 0.1);
+  // 4. 無縫循環交叉淡入淡出 (Cross-fade 0.2s)
+  const fadeLen = Math.floor(SAMPLE_RATE * 0.15);
   for (let i = 0; i < fadeLen; i++) {
     const fade = i / fadeLen;
     bgmTrack[i] *= fade;
     bgmTrack[totalSamples - 1 - i] *= fade;
   }
 
+  // 5. 峰值正規化 (平穩響度)
   let maxPeak = 0;
   for (let i = 0; i < totalSamples; i++) {
     if (Math.abs(bgmTrack[i]) > maxPeak) maxPeak = Math.abs(bgmTrack[i]);
   }
-  if (maxPeak > 0.95) {
-    const ratio = 0.95 / maxPeak;
+  if (maxPeak > 0.88) {
+    const ratio = 0.88 / maxPeak;
     for (let i = 0; i < totalSamples; i++) bgmTrack[i] *= ratio;
   }
 
