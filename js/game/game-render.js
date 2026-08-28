@@ -1298,9 +1298,10 @@ function drawHealthBar(unit, x, visualY) {
   const isBoss = unit.type === "boss";
   const isAlly = unit.team === "ally";
   if (!isAlly && !isBoss && !(unit.hitFlash > 0 || (unit.hp < unit.maxHp * 0.98))) return;
-  const barW = isBoss ? 50 : isAlly ? 40 : 28;
-  const barH = isBoss ? 5 : 4;
-  const y = Math.round(visualY + (isBoss ? -60 : -48));
+  const barW = isBoss ? 46 : isAlly ? 34 : 22;
+  const barH = isBoss ? 4 : 3;
+  // Positioned cleanly at the unit's base / feet so the head and face are completely unobstructed
+  const y = Math.round(visualY + (isBoss ? 8 : 4));
   const ratio = clamp(unit.hp / Math.max(1, unit.maxHp), 0, 1);
   const lagRatio = clamp((Number.isFinite(unit.hpLag) ? unit.hpLag : unit.hp) / Math.max(1, unit.maxHp), 0, 1);
   ctx.save();
@@ -1321,7 +1322,8 @@ function drawUnitNameTag(unit, x, visualY) {
   if (!unit || unit.dead) return;
   ctx.save();
   if (unit.type === "boss") {
-    const y = Math.round(visualY - 68);
+    // Boss name displayed neatly under the feet / base
+    const y = Math.round(visualY + 20);
     const general = ENEMY_GENERALS.find(g => g.id === unit.enemyGeneralId);
     const name = general?.name || "敵首領";
     ctx.font = "bold 9px 'DFKai-SB', 'KaiTi', sans-serif";
@@ -1332,7 +1334,7 @@ function drawUnitNameTag(unit, x, visualY) {
     ctx.fillStyle = "#ff5544";
     ctx.fillText("★ " + name + " ★", x, y);
   } else if (unit.team === "ally" && unit.hero) {
-    const y = Math.round(visualY - 54);
+    const y = Math.round(visualY + 16);
     ctx.font = "bold 8px 'DFKai-SB', 'KaiTi', sans-serif";
     ctx.textAlign = "center";
     ctx.strokeStyle = "#1a1612";
@@ -1346,9 +1348,10 @@ function drawUnitNameTag(unit, x, visualY) {
 
 function drawSkillEnergyBar(unit, x, visualY) {
   if (unit.team !== "ally" || !unit.hero) return;
-  const barW = 40;
-  const barH = 4;
-  const y = Math.round(visualY + -42);
+  const barW = 34;
+  const barH = 2.5;
+  // Placed right below the health bar at feet
+  const y = Math.round(visualY + 8);
   const ready = unit.attackCount >= 5 && unit.skillCooldown <= 0 && !hasStatus(unit, "silence");
   const charge = ready ? 1 : clamp(unit.attackCount / 5, 0, 1);
   const pulse = ready ? 0.55 + Math.sin(runtime.elapsed * 14) * 0.45 : 1;
@@ -1373,13 +1376,13 @@ function drawStatusBadges(unit, x, y) {
   const colors = { burn: "#ef7a40", slow: "#81c6d6", stun: "#f5d05a", mark: "#e875ac", fragile: "#d29f3a", guard: "#9fc6e8", haste: "#7be0a5", silence: "#9d8eaa", ward: "#d7b84f" };
   ctx.save();
   ctx.textAlign = "center";
-  ctx.font = "700 8px ui-monospace, Consolas, monospace";
+  ctx.font = "700 7px ui-monospace, Consolas, monospace";
   statuses.slice(0, 3).forEach((status, index) => {
-    const px = x - 12 + index * 12;
+    const px = x - 10 + index * 10;
     ctx.fillStyle = colors[status.type] || "#ddd";
-    ctx.fillRect(px - 4, y - 69, 8, 8);
-    ctx.fillStyle = "#1b1712";
-    ctx.fillText(status.type.slice(0, 1).toUpperCase(), px, y - 62);
+    ctx.fillRect(px - 3, y - 44, 6, 6);
+    ctx.fillStyle = "#fff";
+    ctx.fillText(status.type[0].toUpperCase(), px, y - 39);
   });
   ctx.restore();
 }
