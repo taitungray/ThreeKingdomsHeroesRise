@@ -278,35 +278,39 @@ window.TaoyuanBattle = {
 
 
 
-$("tutorialNext").addEventListener("click", advanceTutorial);
-$("tutorialSkip").addEventListener("click", () => {
+$("tutorialNext")?.addEventListener("click", () => {
+  if (typeof advanceTutorial === "function") advanceTutorial();
+});
+$("tutorialSkip")?.addEventListener("click", () => {
   save.tutorialDone = true;
   persist();
-  $("tutorialLayer").hidden = true;
+  const layer = $("tutorialLayer");
+  if (layer) layer.hidden = true;
 });
 document.addEventListener("click", (event) => {
   const button = event.target?.closest?.("#settlementPrimary, #settlementSecondary");
   if (!button || $("settlementModal").hidden) return;
   closeSettlement(button.dataset.settlementAction || "close");
 });
-$("settlementPrimary").addEventListener("click", () => {
-  if ($("settlementModal").hidden) return;
-  closeSettlement($("settlementPrimary").dataset.settlementAction || "close");
+$("settlementPrimary")?.addEventListener("click", () => {
+  if ($("settlementModal")?.hidden) return;
+  closeSettlement($("settlementPrimary")?.dataset?.settlementAction || "close");
 });
-$("settlementSecondary").addEventListener("click", () => {
-  if ($("settlementModal").hidden) return;
-  closeSettlement($("settlementSecondary").dataset.settlementAction || "close");
+$("settlementSecondary")?.addEventListener("click", () => {
+  if ($("settlementModal")?.hidden) return;
+  closeSettlement($("settlementSecondary")?.dataset?.settlementAction || "close");
 });
 document.addEventListener("keydown", (event) => {
   if (event.key !== "Escape") return;
-  if (!$("tutorialLayer").hidden) return;
-  if (!$("settlementModal").hidden) closeSettlement("close");
-  else if (!$("panelBackdrop").hidden) closePanel();
+  if ($("tutorialLayer") && !$("tutorialLayer").hidden) return;
+  if ($("settlementModal") && !$("settlementModal").hidden) closeSettlement("close");
+  else if ($("panelBackdrop") && !$("panelBackdrop").hidden) closePanel();
 });
 window.addEventListener("error", (event) => window.TaoyuanPlatform?.reportError?.(event.error || event.message));
 scheduleGameTimer(() => {
-  $("loadingScreen").hidden = true;
-  showTutorial();
+  const loading = $("loadingScreen");
+  if (loading) loading.hidden = true;
+  if (typeof showTutorial === "function") showTutorial();
 }, 420);
 
 $("doubleOffline").addEventListener("click", async () => {
