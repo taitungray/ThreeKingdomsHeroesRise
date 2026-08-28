@@ -52,6 +52,23 @@ assert.ok(data.enemyGenerals && data.enemyGenerals.length >= 8, "enemy-general p
 assert.equal(new Set(data.enemyGenerals.map((general) => general.id)).size, data.enemyGenerals.length, "enemy-general ids must be unique");
 assert.ok(data.stages.every((stage) => stage.waveCount === 3 && stage.enemyPool.length > 0), "each stage needs waves and an enemy pool");
 assert.ok(data.stages.every((stage) => stage.name && stage.enemyGenerals?.length >= 3 && stage.bossGeneral), "each stage needs a name and one named general per wave");
+const enemyGeneralIds = new Set(data.enemyGenerals.map((general) => general.id));
+const unresolvedGenerals = [];
+for (const stage of data.stages) {
+  for (const id of stage.enemyGenerals || []) if (!enemyGeneralIds.has(id)) unresolvedGenerals.push(stage.id + ":" + id);
+  if (stage.bossGeneral && !enemyGeneralIds.has(stage.bossGeneral)) unresolvedGenerals.push(stage.id + ":boss:" + stage.bossGeneral);
+}
+assert.equal(unresolvedGenerals.length, 0, "every stage enemy-general id must exist: " + unresolvedGenerals.slice(0, 8).join(", "));
+assert.ok(enemyGeneralIds.has("huangzhong"), "huangzhong must exist as an enemy-general identity");
+const chapter1 = data.stages.slice(0, 10);
+assert.ok(chapter1.every((stage) => !/官渡|烏巢|赤壁|漢中|夷陵/.test(stage.name)), "chapter-1 stage names must stay in the Yellow Turban / Peach Garden arc");
+assert.ok(chapter1[0].name.includes("鉅鹿") || chapter1[0].name.includes("黃巾"), "stage 1 must match 黃巾之亂");
+assert.ok(data.shopItems.some((item) => item.repeatable), "shop must expose a repeatable consume loop");
+assert.ok(data.shopItems.some((item) => item.reward?.equipment?.slot && item.reward?.equipment?.id), "shop must sell at least one ownable equipment drop");
+assert.ok(data.enemyIdentityMap?.generals?.huangzhong && data.enemyIdentityMap?.types?.archer, "combat identity map must cover named generals and enemy types");
+const identityBodyIds = [...Object.values(data.enemyIdentityMap.types), ...Object.values(data.enemyIdentityMap.generals)];
+const missingIdentityBodies = [...new Set(identityBodyIds)].filter((id) => !fs.existsSync(path.join(root, "assets", "characters", "combat-body-" + id + "-v1.webp")));
+assert.equal(missingIdentityBodies.length, 0, "identity map combat bodies must exist: " + missingIdentityBodies.join(", "));
 
 const runtimeModules = [
   "game-core.js",
@@ -84,8 +101,9 @@ assert.ok(fs.existsSync(path.join(root, "assets", "characters", "equipment-manif
 const combatWeaponManifestPath = path.join(root, "assets", "characters", "combat-weapon-manifest.json");
 assert.ok(fs.existsSync(combatWeaponManifestPath), "combat weapon asset manifest missing");
 const combatWeaponManifest = JSON.parse(fs.readFileSync(combatWeaponManifestPath, "utf8"));
-assert.deepEqual(combatWeaponManifest.anchor, [32, 54], "combat weapons must share the hand anchor");
+assert.deepEqual(combatWeaponManifest.anchor, [32, 54], "combat weapons keep a shared default hand anchor");
 assert.equal(combatWeaponManifest.assets.length, 9, "combat weapon set must cover every combat weapon type");
+assert.ok(combatWeaponManifest.assets.every((asset) => Array.isArray(asset.anchor) && asset.anchor.length === 2), "each combat weapon needs its own hand anchor");
 assert.ok(combatWeaponManifest.assets.every((asset) => fs.existsSync(path.join(root, asset.path))), "declared combat weapon assets must exist");
 assert.ok(fs.existsSync(path.join(root, "assets", "backgrounds", "terrain-manifest.json")), "terrain asset manifest missing");
 assert.ok(fs.existsSync(path.join(root, "assets", "vfx", "vfx-manifest.json")), "VFX asset manifest missing");
@@ -110,8 +128,19 @@ assert.ok(styleSource.includes("margin-inline: auto") && styleSource.includes("b
 assert.ok(!styleSource.includes("top: -4px; right: -4px"), "rail alert dots must stay inside the game frame");
 assert.ok(gameSource.includes("showTransition && !boss"), "boss spawn must not stack a second wave title over the banner");
 assert.ok(gameSource.includes("Boss arrival owns the single central narrative slot") && gameSource.includes('runtime.dialogueTimer = 0'), "boss spawn must clear dialogue before showing its banner");
+assert.ok(gameSource.includes("if (boss) {") && gameSource.includes("hideEnemyPreview") && gameSource.includes("showEnemyPreview") === true, "boss spawn must hide the enemy-preview layer so only the banner occupies the center");
+assert.ok(gameSource.includes("keepPanel") && gameSource.includes("if (!options.keepPanel) closePanel()"), "auto stage transition must not close an open command panel");
+assert.ok(gameSource.includes("function accountDisplayName") && gameSource.includes("displayName"), "settings account label must fall back from username to displayName");
+assert.ok(gameSource.includes("formation-slot-swap") && gameSource.includes("function swapFormationSlots"), "formation UI must expose an explicit slot-swap action");
+assert.ok(gameSource.includes("ownedEquipment") && gameSource.includes("function cycleOwnedEquipment"), "equipment cycling must stay inside the owned inventory");
+assert.ok(gameSource.includes("兌換") && !gameSource.includes("ACTIVE ARMY PASSIVE"), "shop copy uses 兌換 and tactics must not leak internal English");
+assert.ok(!gameSource.includes("桃園初陳") && !gameSource.includes("玉璇") && !gameSource.includes("連環妁殺"), "known Traditional-Chinese typos must stay removed");
+assert.ok(gameSource.includes("runtime.mode === \"tower\"") && gameSource.includes("hideUnavailableMode"), "tower reuses real combat; arena/dungeon stay hidden");
+assert.ok(gameSource.includes("function reducedMotionActive") && gameSource.includes("function applyLocalImpact"), "hit feedback must be local and honor reduced motion");
+assert.ok(!gameSource.includes("ctx.translate((Math.random() - 0.5) * runtime.shake"), "canvas must not apply a full-frame shake translate");
+assert.ok(gameSource.includes("outerDeath") && gameSource.includes("outerAction"), "body motion must not restack death/action transforms already applied by drawUnit");
 assert.ok(!gameSource.includes("navigator.vibrate"), "browser vibration must stay removed from the game runtime");
-assert.ok(gameSource.includes("const ATTACK_SPRITES_APPROVED = false") && gameSource.includes("ATTACK_SPRITES_APPROVED && Boolean(unit.action && attackSprite)"), "failed attack sheets must stay quarantined from runtime rendering");
+assert.ok(gameSource.includes("const ATTACK_SPRITES_APPROVED = true") && gameSource.includes("ATTACK_SPRITES_APPROVED && Boolean(unit.action && attackSprite)"), "remade attack sheets stay gated by ATTACK_SPRITES_APPROVED after the combat-asset gate");
 assert.ok(gameSource.includes("Restore the unit-local translate/scale before drawing world-space bars"), "drawUnit must restore its local Canvas transform before drawing HUD bars");
 assert.ok(gameSource.includes("playSpeed") && !gameSource.includes('toFixed(1) + "K"'), "speed HUD and resource counts must stay whole numbers");
 assert.ok(gameSource.includes("entryY + delta * 420") && gameSource.includes("spawnWait"), "enemy entry must descend toward targetY and spawning must have a watchdog");
@@ -151,6 +180,10 @@ assert.ok(indexSource.includes('data-panel="events"') && indexSource.includes('i
 assert.ok(!gameSource.includes("DAILY RATIONS") && !gameSource.includes("LOCAL GHOST LADDER") && !gameSource.includes("CUSTOM LOADOUT"), "panel copy must stay Traditional Chinese, not English eyebrows");
 assert.ok(gameSource.includes("今日軍務") && gameSource.includes("panel-action") && gameSource.includes('weekly ? "週" : "日"'), "daily sheet must use readable Chinese task cards and 44px claim actions");
 assert.ok(!styleSource.includes("linear-gradient(135deg, #d9c28f0b") && !styleSource.includes("transparent 25% 50%, #5b47291a"), "command sheets must not draw a diagonal X texture");
+assert.ok(styleSource.includes(".header-ornament { display: none; }"), "command-panel headers must hide the diamond ornament");
+assert.ok(!styleSource.includes(".detail-hero, .hero-progression, .stat-list, .hero-skill-card, .paper-doll-panel, .formation-summary, .tactic-card, .campaign-card, .task-card, .checkin-day, .shop-card, .arena-banner, .arena-card, .mail-card, .story-card, .rank-table, .setting-list, .achievement-item {"), "settlement-style diagonal wash must not paint every command card");
+assert.ok(styleSource.includes(".detail-hero {") && styleSource.includes("grid-template-columns: 96px minmax(0, 1fr)"), "hero detail must keep avatar and stats on a non-overlapping grid");
+assert.ok(styleSource.includes("@media (max-width: 360px)") && styleSource.includes("compact-hud"), "narrow viewports must use a compact HUD that keeps resource digits visible");
 assert.ok(styleSource.includes("--type-body") && styleSource.includes(".panel-action"), "panel type scale and claim actions must be defined");
 assert.ok(!indexSource.includes("FIRST MARCH"), "tutorial eyebrow must use Traditional Chinese");
 assert.ok(indexSource.includes("rail-drawer-head") && indexSource.includes("軍務") && indexSource.includes("id=\"railDrawerClose\""), "more-menu must be a command list, not a second icon column");

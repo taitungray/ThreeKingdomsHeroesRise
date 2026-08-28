@@ -29,13 +29,24 @@ window.TaoyuanAssets = ASSETS;
 
 const TERRAIN_TILE_BY_CHAPTER = [0, 1, 2, 3, 4, 6, 7, 2, 8, 14, 9, 10, 6, 13, 11, 12, 15, 14, 13, 10];
 const VFX_ASSET_BY_TYPE = { afterimage: 2, dust: 12, impact: 15, shockwave: 14, charge: 1, slash: 0, ring: 10, bolt: 4, status: 5, combo: 14, rally: 10, guard: 9, stun: 8, volley: 3, rune: 11, petal: 6, soul: 13, meteor: 7 };
-// Current generated attack sheets fail the combat-asset body-coverage gate.
-// Keep them quarantined until every ally/enemy/boss sheet passes automated
-// alpha checks and the visual state matrix; never render a known-bad overlay.
-const ATTACK_SPRITES_APPROVED = false;
+// Attack sheets passed the combat-asset alpha gate (generate-attack-sprites.js
+// composites body via sharp). Visual five-phase / eight-direction review is
+// still VERIFY; keep the runtime flag so a failed remake can be quarantined.
+const ATTACK_SPRITES_APPROVED = true;
 const BOSS_SPRITE_BY_GENERAL = { zhangjiao: "zhangjiao", simayi: "zhangjiao", dongzhuo: "dongzhuo", yuanshao: "dongzhuo", lvbu: "lvbu", menghuo: "menghuo", zhurong: "menghuo" };
-const ENEMY_BODY_BY_TYPE = { bandit: "caoren", brute: "dianwei", cavalry: "xiahoudun", archer: "huangzhong", strategist: "simayi" };
-const ENEMY_GENERAL_BODY_ALIASES = { zhangjiao: "zhangliang", dongzhuo: "yuanshao", lvbu: "lubu", yuanshao: "yuanshao", yanliang: "zhangfei", wenchou: "xiahoudun", taishici: "taishici", menghuo: "menghuo", zhurong: "zhurong", simayi: "simayi" };
+const ENEMY_BODY_BY_TYPE = { ...(GAME_DATA.enemyIdentityMap?.types || { bandit: "caoren", brute: "dianwei", cavalry: "xiahoudun", archer: "huangzhong", strategist: "simayi" }) };
+const ENEMY_GENERAL_BODY_ALIASES = { ...(GAME_DATA.enemyIdentityMap?.generals || { zhangjiao: "zhangliang", dongzhuo: "yuanshao", lvbu: "lubu", yuanshao: "yuanshao", yanliang: "zhangfei", wenchou: "xiahoudun", taishici: "taishici", huangzhong: "huangzhong", menghuo: "menghuo", zhurong: "zhurong", simayi: "simayi" }) };
+const WEAPON_ANCHORS = {
+  sword: [32, 54],
+  twin: [30, 52],
+  guandao: [28, 56],
+  serpent: [28, 56],
+  lance: [32, 58],
+  bow: [22, 40],
+  fan: [36, 48],
+  rings: [36, 46],
+  halberd: [26, 56]
+};
 const LOCKED_COMBAT_BODY_PATH = "assets/characters/combat-body-locked-v1.webp";
 function enemyCombatBodyPath(unit) {
   const identity = ENEMY_GENERAL_BODY_ALIASES[unit.enemyGeneralId] || ENEMY_BODY_BY_TYPE[unit.type] || "locked";
@@ -393,7 +404,8 @@ function drawWeapon(unit) {
   ctx.translate(hand.x, hand.y);
   ctx.rotate(angle);
   ctx.imageSmoothingEnabled = false;
-  ctx.drawImage(weaponImage, -32 * weaponScale, -54 * weaponScale, weaponSize, weaponSize);
+  const [anchorX, anchorY] = WEAPON_ANCHORS[weaponAssetId] || [32, 54];
+  ctx.drawImage(weaponImage, -anchorX * weaponScale, -anchorY * weaponScale, weaponSize, weaponSize);
 
   if (unit.action && pose > 0.36 && unit.action.phase !== "anticipation") {
     ctx.globalCompositeOperation = "screen";
@@ -1359,7 +1371,16 @@ function characterAnimationState(unit) {
 // character a readable loop even when a state-specific sprite sheet is not
 // needed: breathing, gait, recoil, skill focus and collapse all share the same
 // timing contract as the directional attack sheets.
-function applyCombatBodyMotion(unit, state, walkCycle, idleCycle, deathProgress) {
+function applyCombatBodyMotion(unit, state, walkCycle, idleCycle, deathProgress, options = {}) {
+  const outerDeath = Boolean(options.outerDeath);
+  const outerAction = Boolean(options.outerAction);
+  if ((outerDeath && state === "death") || (outerAction && (state === "attack" || state === "skill"))) {
+    if (state === "idle" || state === "walk") {
+      /* keep gait even when an outer transform owns attack/death */
+    } else {
+      return;
+    }
+  }
   if (state === "idle") {
     const breathe = idleCycle * 0.5;
     ctx.translate(0, breathe * 0.6);
@@ -1516,10 +1537,10 @@ function drawEnemyDetailOverlay(unit, walkCycle, idleCycle) {
   ctx.restore();
 }
 
-function drawCombatBodySprite(unit, image, state, walkCycle, idleCycle, deathProgress) {
+function drawCombatBodySprite(unit, image, state, walkCycle, idleCycle, deathProgress, motionOptions) {
   if (!image) return;
   ctx.save();
-  applyCombatBodyMotion(unit, state, walkCycle, idleCycle, deathProgress);
+  applyCombatBodyMotion(unit, state, walkCycle, idleCycle, deathProgress, motionOptions);
   ctx.imageSmoothingEnabled = false;
   ctx.drawImage(image, -16, -38, 32, 38);
   if (unit.team === "ally") {
@@ -1530,9 +1551,9 @@ function drawCombatBodySprite(unit, image, state, walkCycle, idleCycle, deathPro
   ctx.restore();
 }
 
-function drawProceduralCombatBody(unit, visualId, accent, state, walkCycle, idleCycle, deathProgress) {
+function drawProceduralCombatBody(unit, visualId, accent, state, walkCycle, idleCycle, deathProgress, motionOptions) {
   ctx.save();
-  applyCombatBodyMotion(unit, state, walkCycle, idleCycle, deathProgress);
+  applyCombatBodyMotion(unit, state, walkCycle, idleCycle, deathProgress, motionOptions);
   if (unit.team === "ally") {
     const body = unit.hero?.color || "#6d765d";
     drawHeroBody(visualId || unit.hero?.id || "liubei", body, accent || "#b54832");
@@ -1606,6 +1627,7 @@ function drawUnit(unit) {
   const spriteImage = spritePromise || enemyBodySprite || bossSprite;
   const useAttackSprite = ATTACK_SPRITES_APPROVED && Boolean(unit.action && attackSprite);
   const actionTransform = Boolean(unit.action && !useAttackSprite);
+  const motionOptions = { outerDeath: unit.dead, outerAction: actionTransform };
   if (actionTransform) {
     ctx.save();
     const pose = attackPoseProgress(unit);
@@ -1629,22 +1651,22 @@ function drawUnit(unit) {
   if (useAttackSprite) {
     const column = clamp(Number(unit.action?.direction ?? unit.direction) || 0, 0, 7);
     const row = clamp(Number(unit.attackFrame) || 0, 0, 4);
-    if (spritePromise) drawCombatBodySprite(unit, spritePromise, animationState, walkCycle, idleCycle, deathProgress);
-    else drawProceduralCombatBody(unit, visualId, accent, animationState, walkCycle, idleCycle, deathProgress);
+    if (spritePromise) drawCombatBodySprite(unit, spritePromise, animationState, walkCycle, idleCycle, deathProgress, motionOptions);
+    else drawProceduralCombatBody(unit, visualId, accent, animationState, walkCycle, idleCycle, deathProgress, motionOptions);
     ctx.drawImage(attackSprite, column * 64, row * 64, 64, 64, -32, -64, 64, 64);
   } else if (unit.team === "ally") {
-    if (spritePromise) drawCombatBodySprite(unit, spritePromise, animationState, walkCycle, idleCycle, deathProgress);
-    else drawProceduralCombatBody(unit, visualId, accent, animationState, walkCycle, idleCycle, deathProgress);
+    if (spritePromise) drawCombatBodySprite(unit, spritePromise, animationState, walkCycle, idleCycle, deathProgress, motionOptions);
+    else drawProceduralCombatBody(unit, visualId, accent, animationState, walkCycle, idleCycle, deathProgress, motionOptions);
   } else if (bossSprite) {
     ctx.save();
-    applyCombatBodyMotion(unit, animationState, walkCycle, idleCycle, deathProgress);
+    applyCombatBodyMotion(unit, animationState, walkCycle, idleCycle, deathProgress, motionOptions);
     ctx.drawImage(bossSprite, -32, -70, 64, 72);
     drawEnemyDetailOverlay(unit, walkCycle, idleCycle);
     ctx.restore();
   } else if (enemyBodySprite) {
-    drawCombatBodySprite(unit, enemyBodySprite, animationState, walkCycle, idleCycle, deathProgress);
+    drawCombatBodySprite(unit, enemyBodySprite, animationState, walkCycle, idleCycle, deathProgress, motionOptions);
   } else {
-    drawProceduralCombatBody(unit, visualId, accent, animationState, walkCycle, idleCycle, deathProgress);
+    drawProceduralCombatBody(unit, visualId, accent, animationState, walkCycle, idleCycle, deathProgress, motionOptions);
   }
   drawAttackPose(unit, accent, useAttackSprite || Boolean(spriteImage));
   if (unit.hitFlash > 0) {
@@ -1994,9 +2016,6 @@ function drawWaveTransitionOverlay() {
 
 function render() {
   ctx.save();
-  if (runtime.shake > 0 && save.effects) {
-    ctx.translate((Math.random() - 0.5) * runtime.shake, (Math.random() - 0.5) * runtime.shake);
-  }
   drawBackground();
   drawBattleTitle();
   drawResourceDrops();

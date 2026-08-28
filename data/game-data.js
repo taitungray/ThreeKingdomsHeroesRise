@@ -10,6 +10,7 @@ const ENEMY_GENERALS = [
   { id: "yanliang", name: "\u984f\u826f", title: "\u6cb3\u5317\u731b\u5c07", avatar: "avatar-zhangfei", portrait: "assets/characters/portrait-zhangfei-v1.webp", role: "\u731b\u5c07", color: "#684d48", accent: "#d99355" },
   { id: "wenchou", name: "\u6587\u919c", title: "\u9435\u9a0e\u5148\u92d2", avatar: "avatar-xiahoudun", portrait: "assets/characters/portrait-xiahoudun-v1.webp", role: "\u9435\u9a0e", color: "#3e536e", accent: "#d9bd72" },
   { id: "taishici", name: "\u592a\u53f2\u6148", title: "\u6c5f\u6771\u795e\u5c04", avatar: "avatar-huangzhong", portrait: "assets/characters/portrait-taishici-v1.webp", role: "\u795e\u5c04", color: "#466b69", accent: "#e4c975" },
+  { id: "huangzhong", name: "\u9ec3\u5fe0", title: "\u767e\u6b65\u7a7f\u694a", avatar: "avatar-huangzhong", portrait: "assets/characters/portrait-huangzhong-v1.webp", role: "\u5f13\u5175", color: "#8e7138", accent: "#d8bd62" },
   { id: "menghuo", name: "\u5b5f\u7372", title: "\u5357\u4e2d\u883b\u738b", avatar: "avatar-zhangfei", portrait: "assets/characters/portrait-menghuo-v1.webp", role: "\u883b\u738b", color: "#496956", accent: "#d89a54" },
   { id: "zhurong", name: "\u795d\u878d", title: "\u5357\u4e2d\u706b\u795e", avatar: "avatar-diaochan", portrait: "assets/characters/portrait-zhurong-v1.webp", role: "\u706b\u5203", color: "#a25347", accent: "#f1c263" },
   { id: "simayi", name: "\u53f8\u99ac\u61ff", title: "\u51a5\u754c\u8b00\u4e3b", avatar: "avatar-caocao", portrait: "assets/characters/portrait-simayi-v1.webp", role: "\u9b3c\u8b00", color: "#42465b", accent: "#b497d8" }
@@ -21,9 +22,17 @@ const ENEMY_GENERAL_SETS = [
   ["zhurong", "menghuo", "taishici"]
 ];
 const BOSS_GENERAL_IDS = ["zhangjiao", "dongzhuo", "lvbu", "yuanshao", "menghuo", "zhurong", "simayi"];
-const STAGE_NAME_PREFIXES = [
-  "\u6843\u5712\u521d\u9663", "\u9ec3\u5dfe\u4f0f\u5175", "\u6c5c\u6c34\u95dc\u524d", "\u864e\u7262\u93d6\u6230", "\u5f90\u5dde\u5b88\u57ce", "\u5b98\u6e21\u70fd\u7159", "\u9577\u5742\u7a81\u570d", "\u8d64\u58c1\u706b\u8a08", "\u834a\u5dde\u591c\u8972", "\u6f22\u4e2d\u722d\u92d2",
-  "\u5937\u9675\u9918\u71fc", "\u897f\u5ddd\u5165\u8700", "\u528d\u95a3\u5929\u96aa", "\u5408\u80a5\u6025\u8972", "\u6fc1\u9808\u6c34\u5be8", "\u5b9a\u8ecd\u5c71\u53e3", "\u4e94\u4e08\u539f\u98a8", "\u5317\u4f10\u5148\u92d2", "\u8857\u4ead\u98a8\u96f2", "\u6d1b\u967d\u6c7a\u6230"
+const CHAPTER1_STAGE_SPECS = [
+  { name: "鉅鹿起事", enemyGenerals: ["zhangjiao", "yanliang", "wenchou"], bossGeneral: "zhangjiao" },
+  { name: "黃巾伏兵", enemyGenerals: ["zhangjiao", "yanliang", "taishici"], bossGeneral: "zhangjiao" },
+  { name: "鉅鹿野外", enemyGenerals: ["zhangjiao", "wenchou", "yanliang"], bossGeneral: "zhangjiao" },
+  { name: "破黃巾營", enemyGenerals: ["yanliang", "wenchou", "zhangjiao"], bossGeneral: "zhangjiao" },
+  { name: "渠帥來襲", enemyGenerals: ["zhangjiao", "yanliang", "wenchou"], bossGeneral: "zhangjiao" },
+  { name: "涿郡桃林", enemyGenerals: ["zhangjiao", "yanliang", "taishici"], bossGeneral: "zhangjiao" },
+  { name: "結義誓師", enemyGenerals: ["dongzhuo", "wenchou", "zhangjiao"], bossGeneral: "dongzhuo" },
+  { name: "義軍初陣", enemyGenerals: ["zhangjiao", "yanliang", "wenchou"], bossGeneral: "zhangjiao" },
+  { name: "涿郡夜巡", enemyGenerals: ["yanliang", "taishici", "zhangjiao"], bossGeneral: "zhangjiao" },
+  { name: "黃巾力士", enemyGenerals: ["zhangjiao", "wenchou", "yanliang"], bossGeneral: "zhangjiao" }
 ];
 window.THREE_KINGDOMS_DATA = {
   enemyGenerals: ENEMY_GENERALS,
@@ -115,22 +124,46 @@ window.THREE_KINGDOMS_DATA = {
     { name: "洛陽風雲", stage: "皇城夜雨", boss: "司馬昭軍", base: "#6e626f", path: "#a890a9" },
     { name: "天下歸晉", stage: "建業終章", boss: "三國終局", base: "#59636b", path: "#92a7ad" }
   ],
-  stages: Array.from({ length: 100 }, (_, index) => ({
-    id: index + 1,
-    chapter: Math.floor(index / 5),
-    name: STAGE_NAME_PREFIXES[index % STAGE_NAME_PREFIXES.length] + " " + ((index % 5) + 1),
-    enemyGenerals: ENEMY_GENERAL_SETS[index % ENEMY_GENERAL_SETS.length],
-    bossGeneral: BOSS_GENERAL_IDS[index % BOSS_GENERAL_IDS.length],
-    waveCount: 3,
-    enemyCount: 4 + Math.min(7, Math.floor(index / 2) + 1),
-    enemyPower: 1 + index * 0.08,
-    bossHp: 680 + index * 92,
-    bossAtk: 27 + index * 2.8,
-    goldBonus: 14 + index * 3,
-    foodBonus: index % 2 ? 2 : 1,
-    enemyPool: index % 3 === 0 ? ["bandit", "archer", "brute"] : index % 3 === 1 ? ["archer", "brute", "cavalry"] : ["bandit", "cavalry", "strategist"]
-  }))
+  stages: Array.from({ length: 100 }, (_, index) => {
+    const special = CHAPTER1_STAGE_SPECS[index] || null;
+    return {
+      id: index + 1,
+      chapter: Math.floor(index / 5),
+      name: special?.name || "",
+      enemyGenerals: special?.enemyGenerals || ENEMY_GENERAL_SETS[index % ENEMY_GENERAL_SETS.length],
+      bossGeneral: special?.bossGeneral || BOSS_GENERAL_IDS[index % BOSS_GENERAL_IDS.length],
+      waveCount: 3,
+      enemyCount: 4 + Math.min(7, Math.floor(index / 2) + 1),
+      enemyPower: 1 + index * 0.08,
+      bossHp: 680 + index * 92,
+      bossAtk: 27 + index * 2.8,
+      goldBonus: 14 + index * 3,
+      foodBonus: index % 2 ? 2 : 1,
+      enemyPool: index % 3 === 0 ? ["bandit", "archer", "brute"] : index % 3 === 1 ? ["archer", "brute", "cavalry"] : ["bandit", "cavalry", "strategist"]
+    };
+  }),
+  enemyIdentityMap: {
+    types: { bandit: "caoren", brute: "dianwei", cavalry: "xiahoudun", archer: "huangzhong", strategist: "simayi" },
+    generals: {
+      zhangjiao: "zhangliang",
+      dongzhuo: "yuanshao",
+      lvbu: "lubu",
+      yuanshao: "yuanshao",
+      yanliang: "zhangfei",
+      wenchou: "xiahoudun",
+      taishici: "taishici",
+      huangzhong: "huangzhong",
+      menghuo: "menghuo",
+      zhurong: "zhurong",
+      simayi: "simayi"
+    }
+  }
 };
+window.THREE_KINGDOMS_DATA.stages.forEach((stage, index) => {
+  if (stage.name) return;
+  const chapter = window.THREE_KINGDOMS_DATA.chapters[Math.min(window.THREE_KINGDOMS_DATA.chapters.length - 1, stage.chapter)];
+  stage.name = (chapter?.stage || "征戰") + " · " + ((index % 5) + 1);
+});
 
 const EXTRA_HERO_SPECS = [
   { id: "machao", name: "馬超", title: "西涼鐵騎", role: "騎兵", visual: "zhaoyun", unlock: 8, rarity: 5, atk: 45, hp: 250, def: 12, speed: 34, range: 42, skill: "鐵騎突陣", skillCooldown: 5.1, color: "#b6c6d6", accent: "#e5c15b", passive: "首次接近敵人時造成額外衝鋒傷害" },
@@ -303,8 +336,9 @@ window.THREE_KINGDOMS_DATA.checkinRewards = [
   { gold: 120 }, { food: 180 }, { jade: 2 }, { gold: 260 }, { food: 360 }, { jade: 5 }, { gold: 700, jade: 8 }
 ];
 window.THREE_KINGDOMS_DATA.shopItems = [
-  { id: "jade-small", name: "玉璧小袋", desc: "獲得 玉璧 ×12", cost: { gold: 900 }, reward: { jade: 12 }, tone: "common" },
-  { id: "war-rations", name: "行軍糧草", desc: "獲得 糧草 ×700", cost: { jade: 2 }, reward: { food: 700 }, tone: "rare" },
+  { id: "jade-small", name: "玉璧小袋", desc: "消耗銅錢兌換 玉璧 ×12", cost: { gold: 900 }, reward: { jade: 12 }, tone: "common", repeatable: true },
+  { id: "war-rations", name: "行軍糧草", desc: "消耗玉璧兌換 糧草 ×700", cost: { jade: 2 }, reward: { food: 700 }, tone: "rare", repeatable: true },
+  { id: "iron-armor-crate", name: "玄鐵鎧補給", desc: "兌換一件玄鐵鎧，可裝備並比較數值", cost: { gold: 480 }, reward: { equipment: { slot: "armor", id: "iron" } }, tone: "rare" },
   { id: "hero-scroll", name: "名將訓練書", desc: "獲得 180 經驗", cost: { jade: 3 }, reward: { exp: 180 }, tone: "epic" },
   { id: "hero-shards", name: "\u540d\u5c07\u788e\u7247\u5323", desc: "\u7372\u5f97 \u540d\u5c07\u788e\u7247 \u00d718", cost: { jade: 2 }, reward: { shards: 18 }, tone: "epic" },
   { id: "starter-pack", name: "元戰備禮包", desc: "玉璧 ×60 + 金幣 ×1200", cost: { jade: 0 }, reward: { jade: 60, gold: 1200 }, tone: "legend", productId: "sku_starter_pack", requiresNativePurchase: true },

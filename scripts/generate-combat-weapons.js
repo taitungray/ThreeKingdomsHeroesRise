@@ -3,13 +3,26 @@ const path = require("path");
 const sharp = require("sharp");
 
 const outputDir = path.join(__dirname, "..", "assets", "characters");
-const ink = "#241c18";
-const steel = "#dce4dd";
-const steelLight = "#f5f0d8";
-const wood = "#76502e";
-const gold = "#e5b443";
-const jade = "#78ac98";
-const red = "#b74439";
+
+const ink = "#1c1815";
+const inkSoft = "#2e241c";
+const steel = "#d9e2dc";
+const steelLight = "#fcfaf0";
+const steelDark = "#8b9c96";
+const steelShine = "#ffffff";
+const wood = "#6d4726";
+const woodDark = "#4a2e16";
+const gold = "#f1c242";
+const goldLight = "#fff0a3";
+const goldDark = "#a6781d";
+const jade = "#4ba682";
+const jadeLight = "#85e0bc";
+const jadeDark = "#276850";
+const red = "#c8392b";
+const redLight = "#f06554";
+const redDark = "#7e1b12";
+const cyan = "#4da4d6";
+const purple = "#985cb8";
 
 function svg(body) {
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" shape-rendering="crispEdges">
@@ -18,74 +31,238 @@ function svg(body) {
 }
 
 const weapons = {
+  // 雌雄雙股劍
   twin: svg(`
-    <path d="M31 55 L19 19 L24 17 L35 51" fill="none" stroke="${ink}" stroke-width="4"/>
-    <path d="M31 55 L19 19 L24 17 L35 51" fill="none" stroke="${steel}" stroke-width="2"/>
-    <path d="M34 55 L45 16 L40 15 L30 51" fill="none" stroke="${ink}" stroke-width="4"/>
-    <path d="M34 55 L45 16 L40 15 L30 51" fill="none" stroke="${steelLight}" stroke-width="2"/>
-    <path d="M24 47 L36 47 M24 51 L36 51" stroke="${gold}" stroke-width="2"/>
+    <!-- Left Blade (Sword 1) -->
+    <path d="M24 55 L16 20 L21 16 L31 51 Z" fill="${inkSoft}" stroke="${ink}" stroke-width="2"/>
+    <path d="M25 53 L18 21 L21 18 L29 50 Z" fill="${steel}" />
+    <path d="M22 20 L28 48" stroke="${steelLight}" stroke-width="1.5"/>
+    <path d="M19 18 L23 18" stroke="${steelShine}" stroke-width="2"/>
+    
+    <!-- Right Blade (Sword 2) -->
+    <path d="M33 55 L44 18 L39 15 L27 51 Z" fill="${inkSoft}" stroke="${ink}" stroke-width="2"/>
+    <path d="M32 53 L42 19 L39 17 L28 50 Z" fill="${steelLight}" />
+    <path d="M37 20 L30 48" stroke="${steelShine}" stroke-width="1.5"/>
+    
+    <!-- Golden Guards & Pommels -->
+    <path d="M20 46 L36 46" stroke="${ink}" stroke-width="5"/>
+    <path d="M20 46 L36 46" stroke="${gold}" stroke-width="3"/>
+    <circle cx="28" cy="46" r="2" fill="${red}"/>
+    <path d="M24 53 L32 53" stroke="${goldDark}" stroke-width="3"/>
+    <circle cx="28" cy="56" r="2.5" fill="${gold}"/>
+    <!-- Red Tassel -->
+    <path d="M28 58 Q24 62 23 64" stroke="${red}" stroke-width="2" fill="none"/>
+    <path d="M28 58 Q32 62 33 64" stroke="${redLight}" stroke-width="1.5" fill="none"/>
   `),
+
+  // 青龍偃月刀
   guandao: svg(`
-    <path d="M32 55 L29 22" stroke="${ink}" stroke-width="5"/>
-    <path d="M32 55 L29 22" stroke="${wood}" stroke-width="2.5"/>
-    <path d="M28 25 C17 22 13 15 17 8 C23 12 32 15 35 23 C35 28 31 31 26 31 Z" fill="${ink}"/>
-    <path d="M28 24 C19 21 16 16 18 11 C24 14 30 17 33 23 C32 26 30 28 26 29 Z" fill="${jade}"/>
-    <path d="M20 13 C24 16 28 18 31 22" fill="none" stroke="${steelLight}" stroke-width="1.5"/>
-    <path d="M25 31 L33 31" stroke="${gold}" stroke-width="2"/>
+    <!-- Pole -->
+    <path d="M32 58 L28 20" stroke="${ink}" stroke-width="6"/>
+    <path d="M32 58 L28 20" stroke="${wood}" stroke-width="3"/>
+    <path d="M31 56 L29 22" stroke="${woodDark}" stroke-width="1.5"/>
+    
+    <!-- Gold Dragon Head Base -->
+    <path d="M25 24 C23 20 28 17 33 21 C36 24 33 28 27 28 Z" fill="${goldDark}" stroke="${ink}" stroke-width="2"/>
+    <circle cx="29" cy="23" r="3" fill="${gold}"/>
+    <circle cx="30" cy="22" r="1" fill="${red}"/>
+    
+    <!-- Heavy Blade -->
+    <path d="M26 23 C14 20 8 11 14 4 C22 9 32 13 36 21 C34 26 30 28 25 27 Z" fill="${inkSoft}" stroke="${ink}" stroke-width="2.5"/>
+    <path d="M25 22 C16 19 11 12 15 7 C22 11 30 15 33 21 C31 25 28 26 24 25 Z" fill="${jade}"/>
+    <path d="M23 21 C17 18 13 13 16 9 C22 12 28 16 31 20" stroke="${jadeLight}" stroke-width="2" fill="none"/>
+    <path d="M15 7 C21 11 28 15 32 20" stroke="${steelShine}" stroke-width="1.5" fill="none"/>
+    <!-- Blade Spike Back -->
+    <path d="M33 16 L38 18 L34 21 Z" fill="${gold}"/>
+    
+    <!-- Red Tassel Silk -->
+    <path d="M32 26 C36 28 40 33 38 40 C37 36 34 32 30 30" fill="${red}" stroke="${ink}" stroke-width="1"/>
+    <path d="M33 27 C37 29 39 34 37 38" stroke="${redLight}" stroke-width="1.5" fill="none"/>
+    <!-- Brass End Cap -->
+    <path d="M31 54 L33 58 L30 58 Z" fill="${gold}"/>
   `),
+
+  // 丈八蛇矛
   serpent: svg(`
-    <path d="M32 55 L29 24" stroke="${ink}" stroke-width="5"/>
-    <path d="M32 55 L29 24" stroke="${wood}" stroke-width="2.5"/>
-    <path d="M29 27 C20 24 17 19 21 15 C25 19 31 19 34 15 C38 19 35 25 29 27 Z" fill="${ink}"/>
-    <path d="M29 25 C23 23 21 20 23 18 C27 21 31 20 34 18 C35 21 33 24 29 25 Z" fill="${red}"/>
-    <path d="M27 17 C29 13 33 12 36 14 C34 16 32 18 30 20" fill="none" stroke="${steel}" stroke-width="2"/>
+    <!-- Pole -->
+    <path d="M32 58 L32 20" stroke="${ink}" stroke-width="6"/>
+    <path d="M32 58 L32 20" stroke="${wood}" stroke-width="3"/>
+    
+    <!-- Snake Wavy Spearhead Base -->
+    <path d="M25 22 L39 22" stroke="${gold}" stroke-width="3"/>
+    
+    <!-- Continuous Wavy Serpent Blade -->
+    <path d="M32 3 C26 8 38 12 26 16 C25 19 28 22 32 22 C36 22 39 19 38 16 C26 12 38 8 32 3 Z" fill="${inkSoft}" stroke="${ink}" stroke-width="2"/>
+    <path d="M32 4 C28 8 36 12 28 16 C27 18 29 20 32 20 C35 20 37 18 36 16 C28 12 36 8 32 4 Z" fill="${steel}"/>
+    <path d="M32 4 L32 20" stroke="${steelShine}" stroke-width="1.5"/>
+    
+    <!-- Crimson Tassel Plume -->
+    <path d="M25 22 C19 26 18 33 21 39 C23 34 25 28 29 26 Z" fill="${red}" stroke="${ink}" stroke-width="1"/>
+    <path d="M24 24 C21 27 20 32 22 36" stroke="${redLight}" stroke-width="1.5" fill="none"/>
+    <circle cx="32" cy="22" r="2.5" fill="${gold}"/>
   `),
+
+  // 龍膽亮銀槍
   lance: svg(`
-    <path d="M32 55 L32 14" stroke="${ink}" stroke-width="4"/>
-    <path d="M32 55 L32 14" stroke="${wood}" stroke-width="2"/>
-    <path d="M32 7 L39 18 L32 24 L25 18 Z" fill="${ink}"/>
-    <path d="M32 9 L37 18 L32 21 L27 18 Z" fill="${steelLight}"/>
-    <path d="M27 18 L20 20 M37 18 L44 20" stroke="${jade}" stroke-width="2"/>
-    <path d="M27 24 L37 24" stroke="${gold}" stroke-width="2"/>
+    <!-- Shaft -->
+    <path d="M32 58 L32 16" stroke="${ink}" stroke-width="5"/>
+    <path d="M32 58 L32 16" stroke="${woodDark}" stroke-width="2.5"/>
+    
+    <!-- Piercing Spear Tip -->
+    <path d="M32 2 L40 16 L32 24 L24 16 Z" fill="${inkSoft}" stroke="${ink}" stroke-width="2"/>
+    <path d="M32 4 L38 16 L32 22 L26 16 Z" fill="${steelLight}"/>
+    <path d="M32 4 L32 22" stroke="${steelShine}" stroke-width="2"/>
+    <path d="M26 16 L38 16" stroke="${steelShine}" stroke-width="1"/>
+    
+    <!-- Cyan / Jade Dragon Tassel -->
+    <path d="M24 19 C18 22 17 29 20 34 C21 28 23 23 28 21" fill="${cyan}" stroke="${ink}" stroke-width="1"/>
+    <path d="M23 21 C19 24 18 28 20 32" stroke="${steelShine}" stroke-width="1.5" fill="none"/>
+    <path d="M36 19 C42 22 43 29 40 34 C39 28 37 23 32 21" fill="${cyan}" stroke="${ink}" stroke-width="1"/>
+    
+    <!-- Gold Socket -->
+    <path d="M26 23 L38 23" stroke="${gold}" stroke-width="3"/>
+    <circle cx="32" cy="23" r="2" fill="${red}"/>
   `),
+
+  // 穿雲神臂弓
   bow: svg(`
-    <path d="M18 10 Q47 32 18 54" fill="none" stroke="${ink}" stroke-width="5"/>
-    <path d="M18 10 Q43 32 18 54" fill="none" stroke="${wood}" stroke-width="2.5"/>
-    <path d="M18 10 L18 54" stroke="${steelLight}" stroke-width="1.5"/>
-    <path d="M18 32 L45 32" stroke="${ink}" stroke-width="3"/>
-    <path d="M18 32 L45 32" stroke="${steelLight}" stroke-width="1"/>
-    <path d="M18 28 L18 36" stroke="${gold}" stroke-width="2"/>
+    <!-- Bow Limb Arch -->
+    <path d="M16 6 Q50 32 16 58" fill="none" stroke="${ink}" stroke-width="6"/>
+    <path d="M16 6 Q46 32 16 58" fill="none" stroke="${wood}" stroke-width="3.5"/>
+    <path d="M17 9 Q44 32 17 55" fill="none" stroke="${gold}" stroke-width="1.5"/>
+    
+    <!-- Dragon Head Tips -->
+    <circle cx="16" cy="7" r="3" fill="${gold}" stroke="${ink}" stroke-width="1.5"/>
+    <circle cx="16" cy="57" r="3" fill="${gold}" stroke="${ink}" stroke-width="1.5"/>
+    
+    <!-- Bowstring -->
+    <path d="M16 7 L16 57" stroke="${steelShine}" stroke-width="1.5"/>
+    
+    <!-- Nocked Arrow -->
+    <path d="M15 32 L49 32" stroke="${ink}" stroke-width="4"/>
+    <path d="M15 32 L47 32" stroke="${steelLight}" stroke-width="2"/>
+    <!-- Arrowhead -->
+    <path d="M44 28 L52 32 L44 36 Z" fill="${steelShine}" stroke="${ink}" stroke-width="1.5"/>
+    <!-- Arrow Fletching -->
+    <path d="M16 28 L22 32 L16 36 Z" fill="${red}" stroke="${ink}" stroke-width="1"/>
+    
+    <!-- Center Grip -->
+    <path d="M32 29 L35 35" stroke="${red}" stroke-width="4"/>
+    <path d="M31 28 L34 36" stroke="${gold}" stroke-width="2"/>
   `),
+
+  // 八卦白羽扇
   fan: svg(`
-    <path d="M32 55 L29 39" stroke="${ink}" stroke-width="4"/>
-    <path d="M32 55 L29 39" stroke="${wood}" stroke-width="2"/>
-    <path d="M29 40 C19 35 16 23 19 13 C30 14 41 17 48 25 C44 34 37 39 29 40 Z" fill="${ink}"/>
-    <path d="M29 37 C22 33 20 25 21 16 C30 17 39 19 45 25 C41 31 35 35 29 37 Z" fill="${steelLight}"/>
-    <path d="M22 17 L29 37 M28 17 L31 36 M35 19 L34 34 M41 22 L37 31" fill="none" stroke="${jade}" stroke-width="1.5"/>
-    <path d="M27 40 L34 40" stroke="${gold}" stroke-width="2"/>
+    <!-- Handle -->
+    <path d="M32 58 L29 38" stroke="${ink}" stroke-width="5"/>
+    <path d="M32 58 L29 38" stroke="${wood}" stroke-width="2.5"/>
+    
+    <!-- Fan Ribs & Feathers Outer -->
+    <path d="M29 39 C16 33 12 20 16 10 C30 11 44 14 52 24 C47 35 39 39 29 39 Z" fill="${inkSoft}" stroke="${ink}" stroke-width="2"/>
+    <path d="M29 37 C18 31 15 21 18 12 C30 13 41 16 48 24 C44 33 37 37 29 37 Z" fill="${steelLight}"/>
+    
+    <!-- Feather Strands Layer -->
+    <path d="M19 14 C28 20 34 26 31 35" stroke="${steel}" stroke-width="2" fill="none"/>
+    <path d="M26 13 C32 19 36 25 33 35" stroke="${steelDark}" stroke-width="1.5" fill="none"/>
+    <path d="M34 15 C37 21 38 27 35 34" stroke="${jadeLight}" stroke-width="2" fill="none"/>
+    <path d="M42 19 C41 24 39 29 36 33" stroke="${steelShine}" stroke-width="1.5" fill="none"/>
+    
+    <!-- Jade Taiji Center -->
+    <circle cx="31" cy="36" r="4.5" fill="${jade}" stroke="${gold}" stroke-width="1.5"/>
+    <circle cx="31" cy="36" r="2" fill="${steelShine}"/>
+    <path d="M26 39 L36 39" stroke="${gold}" stroke-width="2.5"/>
+    
+    <!-- Tassel Pendant -->
+    <circle cx="32" cy="58" r="2.5" fill="${jade}"/>
+    <path d="M32 60 Q34 63 35 64" stroke="${red}" stroke-width="2" fill="none"/>
   `),
+
+  // 日月乾坤圈
   rings: svg(`
-    <path d="M32 55 L30 38" stroke="${ink}" stroke-width="4"/>
-    <path d="M32 55 L30 38" stroke="${wood}" stroke-width="2"/>
-    <circle cx="26" cy="25" r="9" fill="none" stroke="${ink}" stroke-width="4"/>
-    <circle cx="26" cy="25" r="9" fill="none" stroke="#e97bad" stroke-width="2"/>
-    <circle cx="40" cy="21" r="8" fill="none" stroke="${ink}" stroke-width="4"/>
-    <circle cx="40" cy="21" r="8" fill="none" stroke="#f1b3d0" stroke-width="2"/>
-    <path d="M27 39 L34 39" stroke="${gold}" stroke-width="2"/>
+    <!-- Shaft Handle Grip -->
+    <path d="M32 58 L30 38" stroke="${ink}" stroke-width="5"/>
+    <path d="M32 58 L30 38" stroke="${wood}" stroke-width="2.5"/>
+    
+    <!-- Primary Sun Ring (Left) -->
+    <circle cx="25" cy="23" r="11" fill="none" stroke="${ink}" stroke-width="5"/>
+    <circle cx="25" cy="23" r="11" fill="none" stroke="${gold}" stroke-width="3"/>
+    <circle cx="25" cy="23" r="9" fill="none" stroke="${goldLight}" stroke-width="1"/>
+    <!-- Spikes on Ring -->
+    <path d="M25 10 L27 13 L23 13 Z" fill="${steelShine}"/>
+    <path d="M12 23 L15 25 L15 21 Z" fill="${steelShine}"/>
+    <path d="M25 36 L27 33 L23 33 Z" fill="${steelShine}"/>
+    
+    <!-- Secondary Moon Ring (Right) -->
+    <circle cx="41" cy="19" r="10" fill="none" stroke="${ink}" stroke-width="5"/>
+    <circle cx="41" cy="19" r="10" fill="none" stroke="${cyan}" stroke-width="3"/>
+    <circle cx="41" cy="19" r="8" fill="none" stroke="${steelShine}" stroke-width="1"/>
+    <!-- Spikes on Moon Ring -->
+    <path d="M41 7 L43 10 L39 10 Z" fill="${goldLight}"/>
+    <path d="M53 19 L50 21 L50 17 Z" fill="${goldLight}"/>
+    
+    <!-- Center Joint Brooch -->
+    <path d="M26 38 L36 38" stroke="${goldDark}" stroke-width="3"/>
+    <circle cx="31" cy="38" r="2.5" fill="${red}"/>
   `),
+
+  // 方天畫戟
   halberd: svg(`
-    <path d="M32 55 L32 19" stroke="${ink}" stroke-width="5"/>
-    <path d="M32 55 L32 19" stroke="${wood}" stroke-width="2.5"/>
-    <path d="M32 20 C42 14 50 16 49 25 C45 25 40 28 35 31 L28 27 Z" fill="${ink}"/>
-    <path d="M33 21 C41 17 46 18 46 23 C42 24 38 26 34 29 L30 26 Z" fill="${gold}"/>
-    <path d="M33 31 L43 33" stroke="${red}" stroke-width="2"/>
+    <!-- Long Shaft -->
+    <path d="M32 58 L32 15" stroke="${ink}" stroke-width="6"/>
+    <path d="M32 58 L32 15" stroke="${woodDark}" stroke-width="3"/>
+    
+    <!-- Central Spearhead -->
+    <path d="M32 2 L38 16 L32 23 L26 16 Z" fill="${inkSoft}" stroke="${ink}" stroke-width="2"/>
+    <path d="M32 4 L36 16 L32 21 L28 16 Z" fill="${steelShine}"/>
+    <path d="M32 4 L32 21" stroke="${steelLight}" stroke-width="2"/>
+    
+    <!-- Right Crescent Moon Blade -->
+    <path d="M32 16 C44 11 52 14 50 25 C45 25 39 28 33 32 L28 27 Z" fill="${inkSoft}" stroke="${ink}" stroke-width="2"/>
+    <path d="M33 17 C42 13 48 15 47 23 C42 24 38 27 34 30 L30 26 Z" fill="${gold}"/>
+    <path d="M35 18 C43 14 47 16 46 22" stroke="${goldLight}" stroke-width="1.5" fill="none"/>
+    <path d="M47 23 L51 24 L48 26 Z" fill="${steelShine}"/>
+    
+    <!-- Left Small Crescent Blade -->
+    <path d="M32 18 C24 15 16 19 18 27 C22 26 27 28 31 31 Z" fill="${inkSoft}" stroke="${ink}" stroke-width="1.5"/>
+    <path d="M32 19 C25 17 19 20 20 25 C23 25 27 27 31 29 Z" fill="${goldDark}"/>
+    
+    <!-- Dual Scarlet Silk Tassels -->
+    <path d="M30 26 C25 29 23 37 27 42 C28 37 30 32 33 30" fill="${red}" stroke="${ink}" stroke-width="1"/>
+    <path d="M29 28 C26 31 25 36 28 40" stroke="${redLight}" stroke-width="1.5" fill="none"/>
+    <path d="M34 26 C38 29 40 37 37 42 C36 37 34 32 31 30" fill="${red}" stroke="${ink}" stroke-width="1"/>
+    
+    <!-- Gold Dragon Collar -->
+    <path d="M27 24 L37 24" stroke="${gold}" stroke-width="3"/>
+    <circle cx="32" cy="24" r="2" fill="${red}"/>
   `),
+
+  // 八面玄鐵青釭劍
   sword: svg(`
-    <path d="M32 55 L32 19" stroke="${ink}" stroke-width="5"/>
-    <path d="M32 55 L32 19" stroke="${wood}" stroke-width="2.5"/>
-    <path d="M32 7 L39 21 L32 31 L25 21 Z" fill="${ink}"/>
-    <path d="M32 10 L36 21 L32 27 L28 21 Z" fill="${steelLight}"/>
-    <path d="M24 31 L40 31" stroke="${gold}" stroke-width="2"/>
+    <!-- Handle -->
+    <path d="M32 58 L32 20" stroke="${ink}" stroke-width="6"/>
+    <path d="M32 58 L32 20" stroke="${woodDark}" stroke-width="3"/>
+    <path d="M32 46 L32 55" stroke="${gold}" stroke-width="2"/>
+    
+    <!-- Han Dynasty Double-Edged Blade -->
+    <path d="M32 2 L41 18 L32 32 L23 18 Z" fill="${inkSoft}" stroke="${ink}" stroke-width="2.5"/>
+    <path d="M32 4 L39 18 L32 30 L25 18 Z" fill="${steel}"/>
+    <!-- Blade Ridge & Highlights -->
+    <path d="M32 4 L32 30" stroke="${steelShine}" stroke-width="2.5"/>
+    <path d="M26 18 L38 18" stroke="${steelDark}" stroke-width="1"/>
+    <path d="M32 4 L37 17 L32 28" fill="${steelLight}"/>
+    
+    <!-- Imperial Golden Crossguard -->
+    <path d="M20 32 L44 32" stroke="${ink}" stroke-width="6"/>
+    <path d="M20 32 L44 32" stroke="${gold}" stroke-width="3.5"/>
+    <path d="M20 32 L23 28 M44 32 L41 28" stroke="${goldLight}" stroke-width="2"/>
+    <!-- Inset Ruby -->
+    <circle cx="32" cy="32" r="2.5" fill="${red}" stroke="${ink}" stroke-width="1"/>
+    
+    <!-- Imperial Dragon Pommel & Tassel -->
+    <circle cx="32" cy="57" r="3.5" fill="${gold}" stroke="${ink}" stroke-width="1.5"/>
+    <circle cx="32" cy="57" r="1.5" fill="${jade}"/>
+    <path d="M32 60 Q29 63 28 64" stroke="${red}" stroke-width="2" fill="none"/>
+    <path d="M32 60 Q35 63 36 64" stroke="${redLight}" stroke-width="1.5" fill="none"/>
   `)
 };
 
@@ -93,3 +270,4 @@ fs.mkdirSync(outputDir, { recursive: true });
 Promise.all(Object.entries(weapons).map(([id, markup]) => sharp(Buffer.from(markup)).webp({ lossless: true }).toFile(path.join(outputDir, `combat-weapon-${id}-v2.webp`))))
   .then(() => console.log(`Generated ${Object.keys(weapons).length} transparent combat weapons.`))
   .catch((error) => { console.error(error); process.exitCode = 1; });
+

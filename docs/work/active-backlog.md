@@ -22,36 +22,36 @@
 | ID | 工作 | 對應問題 | 狀態 | 完成條件 |
 |---|---|---|---|---|
 | WORK-000 | 鎖定垂直切片角色、敵人、武器、關卡與可見入口 | — | READY | 切片資產表、owner、依賴與驗收案例完整；範圍外入口隱藏或明確未開放 |
-| WORK-001 | 重製攻擊圖集，確保每格都有完整 body | COMBAT-004 | READY | `npm run test:combat-assets` 通過；五階段、八方向人工驗收通過 |
-| WORK-002 | 重製切片戰鬥兵器與逐角色／方向 socket | COMBAT-005 | READY | 比例、握點、尖端、方向、攻擊與死亡均無漂浮、斷裂或穿模 |
-| WORK-003 | 建立普通敵人、敵將與 Boss 的單一身分／資產映射 | COMBAT-003、DATA-001 | READY | 切片內每個身份有唯一或核准 alias；資料、預覽與實戰一致 |
-| WORK-004 | 修正攻擊、受擊、死亡與移除的單一渲染生命週期 | COMBAT-002、COMBAT-006 | READY | 我方／敵人／Boss 全狀態矩陣無黑框、雙身體、殘影或殘留兵器 |
-| WORK-005 | 重整戰鬥 HUD、技能喊話與 Boss／結算覆蓋層 | COMBAT-001、UI-004 | READY | 三秒內辨識敵我與波次；中央最多一層；資源、對話與 VFX 不遮戰鬥 |
-| WORK-006 | 移除全畫面 shake，建立 reduced-effects 行為 | MOTION-001 | READY | reduced motion 下無全畫面位移；結果與戰鬥時間不變 |
-| WORK-007 | 跑完完整戰鬥生命週期回歸 | QA-001 | READY | boot、三波、Boss、勝、敗、重試、存檔、背景恢復、death／removed 與 console 全通過 |
+| WORK-001 | 重製攻擊圖集，確保每格都有完整 body | COMBAT-004 | IN PROGRESS | `npm run test:combat-assets` 通過；五階段、八方向人工驗收通過 |
+| WORK-002 | 重製切片戰鬥兵器與逐角色／方向 socket | COMBAT-005 | IN PROGRESS | 比例、握點、尖端、方向、攻擊與死亡均無漂浮、斷裂或穿模 |
+| WORK-003 | 建立普通敵人、敵將與 Boss 的單一身分／資產映射 | COMBAT-003、DATA-001 | IN PROGRESS | 切片內每個身份有唯一或核准 alias；資料、預覽與實戰一致 |
+| WORK-004 | 修正攻擊、受擊、死亡與移除的單一渲染生命週期 | COMBAT-002、COMBAT-006 | IN PROGRESS | 我方／敵人／Boss 全狀態矩陣無黑框、雙身體、殘影或殘留兵器 |
+| WORK-005 | 重整戰鬥 HUD、技能喊話與 Boss／結算覆蓋層 | COMBAT-001、UI-004 | IN PROGRESS | 三秒內辨識敵我與波次；中央最多一層；資源、對話與 VFX 不遮戰鬥 |
+| WORK-006 | 移除全畫面 shake，建立 reduced-effects 行為 | MOTION-001 | IN PROGRESS | reduced motion 下無全畫面位移；結果與戰鬥時間不變 |
+| WORK-007 | 跑完完整戰鬥生命週期回歸 | QA-001 | IN PROGRESS | boot、三波、Boss、勝、敗、重試、存檔、背景恢復、death／removed 與 console 全通過 |
 
 ## P0-B — 建立真實選擇與可用介面
 
 | ID | 工作 | 對應問題 | 狀態 | 完成條件 |
 |---|---|---|---|---|
-| WORK-008 | 解耦面板與自動推關並重整命令面板表面 | UI-001、UI-002、UI-003、UI-005 | READY | 開啟面板不被 stage transition 關閉；無對角線、`undefined`、截斷或內部英文標籤 |
-| WORK-009 | 實作可編輯 3×3 編隊位置與站位說明 | GAMEPLAY-001 | READY | 可點選／拖曳換位；保存／重載正確；至少兩種站位有可重現戰果差異 |
+| WORK-008 | 解耦面板與自動推關並重整命令面板表面 | UI-001、UI-002、UI-003、UI-005 | IN PROGRESS | 開啟面板不被 stage transition 關閉；無對角線、`undefined`、截斷或內部英文標籤 |
+| WORK-009 | 實作可編輯 3×3 編隊位置與站位說明 | GAMEPLAY-001 | IN PROGRESS | 可點選／拖曳換位；保存／重載正確；至少兩種站位有可重現戰果差異 |
 | WORK-010 | 將戰法改為每場攜帶一個並加入關卡情報 | — | READY | 三個戰法不可同時常駐；選擇會改變戰鬥且有清楚預覽／回饋 |
-| WORK-011 | 建立裝備擁有、掉落、比較與戰場武器關係 | ECON-001、COMBAT-005 | READY | 不再免費輪換全部裝備；取得、換裝、保存、重載與戰場外觀一致 |
-| WORK-012 | 重製第一章 10 關的命名、敵陣、節奏與獎勵 | CONTENT-001 | READY | 章名、關名、敵人與 Boss 一致；每關目的、首勝／重複獎勵與失敗提示可核對 |
-| WORK-013 | 建立垂直切片自動、視覺與實機驗收包 | QA-001 | READY | Boss draw、勝敗、death／removed、settlement、panel persistence 與固定尺寸證據齊全 |
+| WORK-011 | 建立裝備擁有、掉落、比較與戰場武器關係 | ECON-001、COMBAT-005 | IN PROGRESS | 不再免費輪換全部裝備；取得、換裝、保存、重載與戰場外觀一致 |
+| WORK-012 | 重製第一章 10 關的命名、敵陣、節奏與獎勵 | CONTENT-001 | IN PROGRESS | 章名、關名、敵人與 Boss 一致；每關目的、首勝／重複獎勵與失敗提示可核對 |
+| WORK-013 | 建立垂直切片自動、視覺與實機驗收包 | QA-001 | IN PROGRESS | Boss draw、勝敗、death／removed、settlement、panel persistence 與固定尺寸證據齊全 |
 
 ## P1 — 垂直切片穩定後
 
 | ID | 工作 | 對應問題 | 狀態 | 完成條件 |
 |---|---|---|---|---|
-| WORK-101 | 主要系統逐項功能稽核與去留判定 | GAMEPLAY-002 | READY | 每個可見入口有真實玩法、成功／失敗／重載證據；否則隱藏 |
-| WORK-102 | 響應式與無障礙驗收 | UI-004 | READY | 基準尺寸、鍵盤、焦點、對比、reduced motion、TalkBack 可行範圍完成 |
+| WORK-101 | 主要系統逐項功能稽核與去留判定 | GAMEPLAY-002 | IN PROGRESS | 每個可見入口有真實玩法、成功／失敗／重載證據；否則隱藏 |
+| WORK-102 | 響應式與無障礙驗收 | UI-004 | IN PROGRESS | 基準尺寸、鍵盤、焦點、對比、reduced motion、TalkBack 可行範圍完成 |
 | WORK-103 | 正式音樂、環境音與戰鬥音效規格及資產 | — | BLOCKED | 取得可授權音檔，完成音量、循環、背景與關閉行為驗收 |
-| WORK-104 | 重整貨幣來源／消耗、商店與成長曲線 | ECON-001 | READY | 有數值表、模擬、防溢出與重複領取測試；商店形成可持續消耗點 |
-| WORK-105 | 選一個副模式改為重用正式戰鬥 | GAMEPLAY-002 | READY | 不再即時比較總戰力；有關卡、敵陣、勝敗與獎勵證據 |
+| WORK-104 | 重整貨幣來源／消耗、商店與成長曲線 | ECON-001 | IN PROGRESS | 有數值表、模擬、防溢出與重複領取測試；商店形成可持續消耗點 |
+| WORK-105 | 選一個副模式改為重用正式戰鬥 | GAMEPLAY-002 | IN PROGRESS | 不再即時比較總戰力；有關卡、敵陣、勝敗與獎勵證據 |
 | WORK-106 | 以小批次擴張武將與章節 | — | READY | 前一批全 gate 通過後才新增；每批都有唯一身份、技能與完整生命週期 |
-| WORK-107 | 全遊戲繁中、名詞與歷史內容校對 | CONTENT-002 | READY | 無錯字、繁簡混用、內部英文與章／關／敵人語意衝突 |
+| WORK-107 | 全遊戲繁中、名詞與歷史內容校對 | CONTENT-002 | IN PROGRESS | 無錯字、繁簡混用、內部英文與章／關／敵人語意衝突 |
 
 ## 暫緩項目
 

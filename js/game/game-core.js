@@ -78,6 +78,55 @@ function createEquipmentDefaults() {
   return Object.fromEntries(HEROES.map((hero) => [hero.id, { ...(PAPER_DOLL_DEFAULTS[hero.id] || PAPER_DOLL_DEFAULTS.locked) }]));
 }
 
+function createOwnedEquipment() {
+  const owned = { weapon: [], armor: [], mount: [], accessory: [] };
+  const add = (slotId, itemId) => {
+    if (!itemId || owned[slotId].includes(itemId)) return;
+    owned[slotId].push(itemId);
+  };
+  for (const loadout of Object.values(PAPER_DOLL_DEFAULTS)) {
+    add("weapon", loadout.weapon);
+    add("armor", loadout.armor);
+    add("mount", loadout.mount);
+    add("accessory", loadout.accessory);
+  }
+  add("weapon", "twin");
+  add("armor", "oath");
+  add("mount", "grey");
+  add("accessory", "jade");
+  return owned;
+}
+
+function isEquipmentOwned(slotId, itemId) {
+  if (!save.ownedEquipment) save.ownedEquipment = createOwnedEquipment();
+  return (save.ownedEquipment[slotId] || []).includes(itemId);
+}
+
+function grantEquipment(slotId, itemId) {
+  if (!save.ownedEquipment) save.ownedEquipment = createOwnedEquipment();
+  if (!save.ownedEquipment[slotId]) save.ownedEquipment[slotId] = [];
+  if (itemId && !save.ownedEquipment[slotId].includes(itemId)) save.ownedEquipment[slotId].push(itemId);
+}
+
+function cycleOwnedEquipment(heroId, slot) {
+  const owned = slot.choices.filter((choice) => isEquipmentOwned(slot.id, choice.id));
+  const current = paperDollItem(heroId, slot.id);
+  const pool = owned.length ? owned : (current ? [current] : slot.choices.slice(0, 1));
+  const loadout = heroLoadout(heroId);
+  const currentIndex = Math.max(0, pool.findIndex((choice) => choice.id === loadout[slot.id]));
+  return pool[(currentIndex + 1) % pool.length];
+}
+
+function compareEquipmentBonus(current, next) {
+  const keys = ["atk", "hp", "def", "speed", "range"];
+  const labels = { atk: "武力", hp: "兵力", def: "統率", speed: "速度", range: "射程" };
+  return keys.map((key) => {
+    const delta = (next?.stats?.[key] || 0) - (current?.stats?.[key] || 0);
+    if (!delta) return "";
+    return labels[key] + (delta > 0 ? " +" : " ") + delta;
+  }).filter(Boolean).join("　");
+}
+
 const TACTICS_FALLBACK = [
   { id: "snake", name: "長蛇陣", sigil: "鋒", desc: "全軍攻擊提高，騎兵衝鋒傷害額外增幅。", base: 0.08, cost: 70 },
   { id: "wall", name: "鐵壁陣", sigil: "守", desc: "全軍生命提高，步兵受到的傷害降低。", base: 0.10, cost: 80 },
@@ -171,6 +220,7 @@ const defaultSave = () => ({
   positions: { liubei: 7, guanyu: 3, zhangfei: 5, zhaoyun: 4 },
   tactics: { snake: 1, wall: 1, wind: 1 },
   equipment: createEquipmentDefaults(),
+  ownedEquipment: createOwnedEquipment(),
   mailClaimed: false,
   achievementClaimed: [],
   daily: createDailyState(),
@@ -235,6 +285,12 @@ function loadSave() {
       eventState: { ...fresh.eventState, ...(stored.eventState || {}), progress: { ...fresh.eventState.progress, ...((stored.eventState || {}).progress || {}) } },
       equippedTitle: stored.equippedTitle || fresh.equippedTitle,
       equippedTreasure: stored.equippedTreasure || fresh.equippedTreasure,
+      ownedEquipment: {
+        weapon: [...new Set([...(fresh.ownedEquipment.weapon || []), ...((stored.ownedEquipment || {}).weapon || [])])],
+        armor: [...new Set([...(fresh.ownedEquipment.armor || []), ...((stored.ownedEquipment || {}).armor || [])])],
+        mount: [...new Set([...(fresh.ownedEquipment.mount || []), ...((stored.ownedEquipment || {}).mount || [])])],
+        accessory: [...new Set([...(fresh.ownedEquipment.accessory || []), ...((stored.ownedEquipment || {}).accessory || [])])]
+      },
       heroLevels: { ...fresh.heroLevels, ...(stored.heroLevels || {}) },
       positions: { ...fresh.positions, ...(stored.positions || {}) },
       tactics: { ...fresh.tactics, ...(stored.tactics || {}) },
@@ -367,6 +423,7 @@ function ensureCycleState() {
   refillStamina();
   if (!save.dungeons || save.dungeons.date !== today) save.dungeons = { date: today, claimed: {} };
   if (!save.tower) save.tower = { floor: 0, best: 0 };
+  if (!save.ownedEquipment) save.ownedEquipment = createOwnedEquipment();
   if (!save.equipmentRefine) save.equipmentRefine = Object.fromEntries(HEROES.map((hero) => [hero.id, 0]));
   if (!save.equippedTitle || !titleById(save.equippedTitle)) save.equippedTitle = TITLES[0]?.id || "";
   if (!save.equippedTreasure || !treasureById(save.equippedTreasure)) save.equippedTreasure = TREASURES[0]?.id || "";
@@ -468,6 +525,9 @@ const runtime = {
   heroFilter: "all",
   heroSort: save.heroSort || "power",
   selectedHero: null,
+  formationPick: null,
+  mode: "campaign",
+  towerFloor: 0,
   pendingOffline: null,
   activeStage: save.stage,
   log: ["義軍於涿郡整軍出發。"],

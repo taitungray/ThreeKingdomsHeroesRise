@@ -16,7 +16,7 @@
       <div class="auth-card">
         <div class="auth-brand">
           <img class="auth-brand-icon" src="assets/icon.webp" alt="三國：群英再起 App icon">
-          <p class="auth-kicker">本地軍府 · CLOUD SAVE</p>
+          <p class="auth-kicker">本地軍府 · 雲端存檔</p>
           <h1 id="authModeTitle">三國：群英再起</h1>
           <p>使用 Google 帳號登入，跨裝置保留你的武將、關卡與軍資。</p>
         </div>
@@ -31,7 +31,7 @@
         <p class="auth-note">Google 登入由 Firebase Authentication 處理；遊戲存檔只寫入此專案的 Firestore UID 文件。本機訪客存檔不會上傳。</p>
       </div>
     </section>
-    <section id="battleScreen" class="battle-screen">
+    <section id="battleScreen" class="battle-screen compact-hud">
       <canvas id="battleCanvas" width="390" height="720" aria-label="像素武將自動戰鬥場景"></canvas>
 
       <header class="top-hud">
@@ -65,10 +65,10 @@
         </header>
         <div class="rail-drawer-list">
         <button type="button" data-panel="events"><i class="icon-flag"></i><span>&#x6d3b;&#x52d5;</span><b class="alert-dot" id="eventDot"></b></button>
-        <button type="button" data-panel="arena"><i class="icon-arena"></i><span>&#x6f14;&#x6b66;</span></button>
+        <button type="button" data-panel="arena"><i class="icon-arena"></i><span>演武（未開放）</span></button>
         <button type="button" data-panel="collection"><i class="icon-book"></i><span>&#x5716;&#x9451;</span></button>
         <button type="button" data-panel="tower"><i class="icon-tower"></i><span>&#x554f;&#x5929;</span></button>
-        <button type="button" data-panel="dungeon"><i class="icon-dungeon"></i><span>&#x526f;&#x672c;</span></button>
+        <button type="button" data-panel="dungeon"><i class="icon-dungeon"></i><span>副本（未開放）</span></button>
         <button type="button" data-panel="rank"><i class="icon-rank"></i><span>排行</span></button>
         <button type="button" data-panel="achievement"><i class="icon-medal"></i><span>成就</span></button>
         <button type="button" data-panel="record"><i class="icon-scroll"></i><span>戰報</span></button>
@@ -178,7 +178,7 @@
   <script src="js/auth.js"></script>
   <script>
     (async function bootTaoyuanGame() {
-      const bust = "20260828f";
+      const bust = "20260828h";
       const scripts = [
         "js/audio.js",
         "data/game-data.js",
@@ -198,9 +198,13 @@
         document.body.appendChild(script);
       });
       try {
-        await window.TaoyuanAuth?.ready;
+        await Promise.race([
+          window.TaoyuanAuth?.ready || Promise.resolve(),
+          new Promise((resolve) => setTimeout(resolve, 2500))
+        ]);
         for (const source of scripts) await loadScript(source);
       } catch (error) {
+        window.__bootError = String(error && error.stack || error);
         console.error("遊戲啟動失敗", error);
         const message = document.getElementById("authMessage");
         if (message) {
@@ -209,7 +213,7 @@
         }
       }
     }());
-    if ("serviceWorker" in navigator && location.protocol !== "file:") {
+    if ("serviceWorker" in navigator && location.protocol !== "file:" && !/[?&]bust=/.test(location.search)) {
       window.addEventListener("load", () => {
         navigator.serviceWorker.register("sw.js?v=20260828f").catch(() => {});
         navigator.serviceWorker.addEventListener("message", (event) => {

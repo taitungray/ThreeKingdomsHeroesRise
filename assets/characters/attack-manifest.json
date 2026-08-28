@@ -1,5 +1,5 @@
 {
-  "version": 2,
+  "version": 3,
   "type": "combat-attack-sprite-sheet",
   "cellSize": 64,
   "columns": 8,

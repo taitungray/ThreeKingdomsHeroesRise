@@ -57,7 +57,8 @@ async function runCombatAssetChecks() {
 
   const weaponManifest = JSON.parse(fs.readFileSync(path.join(characterRoot, "combat-weapon-manifest.json"), "utf8"));
   assert.deepEqual(weaponManifest.canvas, { width: 64, height: 64 }, "combat weapon canvas must be 64x64");
-  assert.deepEqual(weaponManifest.anchor, [32, 54], "combat weapons must use the shared hand anchor");
+  assert.deepEqual(weaponManifest.anchor, [32, 54], "combat weapons keep a shared default hand anchor");
+  assert.ok(weaponManifest.assets.every((asset) => Array.isArray(asset.anchor) && asset.anchor.length === 2), "each combat weapon needs its own hand anchor");
   assert.equal(new Set(weaponManifest.assets.map((asset) => asset.id)).size, weaponManifest.assets.length, "combat weapon ids must be unique");
   for (const asset of weaponManifest.assets) {
     const file = path.join(root, asset.path);

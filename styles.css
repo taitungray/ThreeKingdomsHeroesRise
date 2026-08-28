@@ -1791,7 +1791,7 @@ html, body {
 .panel-header::before { left: 6%; }
 .panel-header::after { right: 6%; transform: scaleX(-1); }
 .panel-header h2 { color: #ffe6a1; font-size: 22px; letter-spacing: .2em; }
-.header-ornament { width: 9px; height: 9px; border: 2px solid #ddb85f; background: #80352a; transform: rotate(45deg); }
+.header-ornament { display: none; }
 .panel-back, .panel-close {
   top: 14px;
   width: 31px;
@@ -1863,19 +1863,37 @@ html, body {
 .hero-card small { color: #635239; }
 .hero-card .rarity { color: #b43e2b; }
 .hero-card .lock-label { background: #27251fda; }
-.detail-hero, .hero-progression, .stat-list, .hero-skill-card, .paper-doll-panel, .formation-summary, .tactic-card, .campaign-card, .task-card, .checkin-day, .shop-card, .arena-banner, .arena-card, .mail-card, .story-card, .rank-table, .setting-list, .achievement-item {
+.hero-progression, .stat-list, .hero-skill-card, .paper-doll-panel, .formation-summary, .tactic-card, .campaign-card, .task-card, .checkin-day, .mail-card, .story-card, .rank-table, .setting-list, .achievement-item {
   border-color: #725a38;
-  background: linear-gradient(135deg, #f0dfb5, #c3ad7a);
+  background: linear-gradient(180deg, #f0dfb5, #c3ad7a);
   box-shadow: inset 0 0 0 1px #fff0c054, 0 2px 0 #775d3b66;
 }
-.detail-hero { padding: 12px; }
+.shop-card, .arena-banner, .arena-card, .mode-banner, .daily-head {
+  border-color: #725a38;
+  background: linear-gradient(180deg, #f4e6b8, #d4be8a);
+  box-shadow: inset 0 0 0 1px #fff6d088, 0 2px 0 #5c462866;
+}
+.detail-hero {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr);
+  gap: 6px 12px;
+  align-items: start;
+  padding: 12px;
+  min-height: 0;
+}
+.detail-hero > .pixel-avatar {
+  position: static;
+  width: 96px;
+  height: 112px;
+  grid-row: 1 / span 4;
+}
 .detail-hero h3, .paper-doll-heading h3 { color: #6f2c22; font-family: "DFKai-SB", "KaiTi", serif; }
 .hero-role, .hero-power { color: #80633d; }
 .hero-power b { color: #9f382a; font-family: ui-monospace, Consolas, monospace; }
 .hero-progression { background: linear-gradient(90deg, #3b4d3b, #252d24); color: #f3e3b3; border-color: #937443; }
 .stat-list dt { color: #765d3b; }
 .stat-list dd { color: #382a20; }
-.hero-skill-card { min-height: 74px; padding: 9px 10px 9px 64px; }
+.hero-skill-card { min-height: 74px; padding: 9px 10px; }
 .hero-skill-card h4 { color: #6f2b22; }
 .hero-skill-card p { color: #655239; }
 .skill-icon, .tactic-sigil, .shop-icon { border-color: #8e6b39; background: linear-gradient(145deg, #8f3b2f, #47231e); box-shadow: inset 0 0 0 1px #e0ae60, 0 2px 0 #4a3025; }
@@ -2189,11 +2207,15 @@ html, body {
 @media (max-width: 360px) {
   .lord-card.compact { width: 108px; }
   .battle-meta { min-width: 98px; grid-template-columns: minmax(0, 66px) 28px; }
-  .battle-info-lane { left: 116px; right: 108px; }
+  .battle-info-lane { left: 116px; right: 108px; max-height: 58px; overflow: hidden; }
   .right-rail { right: 6px; width: 34px; }
   .right-rail button { width: 32px; height: 32px; min-width: 32px; min-height: 32px; }
   .right-rail .alert-dot { top: 0; right: 0; }
   .right-rail-drawer { right: 42px; }
+  .compact-hud .resource-strip { height: 34px; grid-template-columns: repeat(4, minmax(0, 1fr)) 72px; padding-inline: 4px; }
+  .compact-hud .resource-strip > span { font-size: 11px; min-width: 0; }
+  .compact-hud .resource-strip > span b { font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .compact-hud .dialogue-box { max-height: 72px; overflow: hidden; }
   .resource-strip > span { font-size: 13px; }
 }
 @media (max-height: 700px) {
@@ -2828,6 +2850,7 @@ html, body {
 .loading-screen {
   background: radial-gradient(circle at 50% 32%, #5a3420 0 5%, transparent 22%), #0c0e0a;
 }
+.formation-slot.selected { outline: 2px solid #c24a38; box-shadow: 0 0 0 2px #f0c65e; }
 @media (max-width: 360px) {
   .top-hud { grid-template-columns: 128px minmax(0, 1fr) 42px; padding-inline: 6px; }
   .lord-card, .lord-card.compact { width: 128px; }

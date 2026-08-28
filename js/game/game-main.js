@@ -1,6 +1,12 @@
 /* Input and boot: event listeners, offline reward and startup */
 "use strict";
 
+window.TaoyuanBattle = window.TaoyuanBattle || {
+  peek() {
+    return { booting: true, allies: 0, enemies: 0, spawning: false, overlays: {} };
+  }
+};
+
 document.querySelectorAll("[data-panel]").forEach((button) => {
   button.addEventListener("click", () => {
     closeRailDrawer();
@@ -200,8 +206,25 @@ window.TaoyuanBattle = {
       elapsed: runtime.elapsed,
       loopPulse: runtime.loopPulse || 0,
       positions: runtime.allies.slice(0, 5).map((unit) => [Math.round(unit.x), Math.round(unit.y), Math.round(unit.hp)]),
-      enemyPositions: runtime.enemies.filter((unit) => !unit.dead).slice(0, 5).map((unit) => [Math.round(unit.x), Math.round(unit.y), Math.round(unit.entryY || unit.y)])
+      enemyPositions: runtime.enemies.filter((unit) => !unit.dead).slice(0, 5).map((unit) => [Math.round(unit.x), Math.round(unit.y), Math.round(unit.entryY || unit.y)]),
+      bossActive: runtime.bossActive,
+      panel: runtime.panel,
+      mode: runtime.mode,
+      overlays: {
+        preview: Boolean($("enemyPreview")?.classList.contains("show")),
+        banner: Boolean($("bossBanner")?.classList.contains("show")),
+        dialogue: Boolean($("dialogueBox")?.classList.contains("show")),
+        settlement: Boolean($("settlementModal") && !$("settlementModal").hidden)
+      }
     };
+  },
+  spawnBoss() {
+    spawnWave(true, false);
+    return this.peek();
+  },
+  startStageKeepPanel(stage) {
+    startStage(stage || activeStageNumber(), "QA keep panel", { keepPanel: true });
+    return this.peek();
   },
   kick() {
     runtime.backgrounded = false;

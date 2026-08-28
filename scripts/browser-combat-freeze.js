@@ -6,7 +6,7 @@ const path = require("node:path");
 const http = require("node:http");
 
 const root = path.resolve(__dirname, "..");
-const port = 8799;
+const port = Number(process.env.COMBAT_QA_PORT) || 8803;
 const serveBuiltOutput = process.argv.includes("--www");
 
 async function waitForServer(url, tries = 50) {
@@ -32,6 +32,7 @@ async function main() {
     cwd: root,
     stdio: ["ignore", "pipe", "pipe"]
   });
+  let browser;
   try {
     await waitForServer("http://127.0.0.1:" + port + "/");
     const { chromium } = require("playwright");
@@ -41,7 +42,7 @@ async function main() {
       "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
       "C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe"
     ].find((candidate) => candidate && fs.existsSync(candidate));
-    const browser = await chromium.launch({ headless: true, ...(browserExecutable ? { executablePath: browserExecutable } : {}) });
+    browser = await chromium.launch({ headless: true, ...(browserExecutable ? { executablePath: browserExecutable } : {}) });
     const page = await browser.newPage({ viewport: { width: 390, height: 720 }, deviceScaleFactor: 1 });
     await page.addInitScript(() => {
       // This suite isolates combat from first-run auth/tutorial behavior. Seed a
@@ -90,6 +91,7 @@ async function main() {
     });
     page.on("requestfailed", (request) => requestFailures.push({ url: request.url(), error: request.failure()?.errorText || "request failed" }));
 
+    await page.route("**/sw.js*", (route) => route.abort());
     await page.goto("http://127.0.0.1:" + port + "/index.html?bust=" + Date.now(), {
       waitUntil: "domcontentloaded",
       timeout: 60000
@@ -105,7 +107,28 @@ async function main() {
         authGuest.click({ timeout: 5000 })
       ]);
     }
-    await page.waitForFunction(() => Boolean(window.TaoyuanBattle?.peek), { timeout: 20000 });
+    try {
+      await page.waitForFunction(() => Boolean(window.TaoyuanBattle?.peek) && !window.TaoyuanBattle.peek().booting, { timeout: 20000 });
+    } catch (error) {
+      const boot = await page.evaluate(() => ({
+        data: Boolean(window.THREE_KINGDOMS_DATA),
+        auth: Boolean(window.TaoyuanAuth),
+        battle: Boolean(window.TaoyuanBattle),
+        authUser: window.TaoyuanAuth?.getActiveUser?.() || null,
+        loadingHidden: document.getElementById("loadingScreen")?.hidden,
+        loadingHtml: document.getElementById("loadingScreen")?.outerHTML?.slice(0, 180),
+        authHidden: document.getElementById("authScreen")?.hidden,
+        scripts: [...document.scripts].map((script) => script.src.split("/").pop()),
+        lastError: window.__bootError || null
+      })).catch((err) => ({ evaluateError: String(err) }));
+      const mainSrc = await page.evaluate(async () => {
+        const src = [...document.scripts].find((script) => /game-main\.js/.test(script.src))?.src;
+        if (!src) return { src: null };
+        const text = await fetch(src, { cache: "no-store" }).then((res) => res.text());
+        return { src, hasStub: text.includes("window.TaoyuanBattle = window.TaoyuanBattle"), head: text.slice(0, 220) };
+      }).catch((err) => ({ fetchError: String(err) }));
+      throw new Error("game boot failed: " + JSON.stringify({ boot, mainSrc, pageErrors: pageErrors.slice(0, 8) }) + " / " + error.message);
+    }
     // showTutorial is intentionally delayed 420 ms after boot. Wait beyond that
     // point so this combat-only check cannot race a guest-login reload.
     await page.waitForTimeout(600);
@@ -116,6 +139,21 @@ async function main() {
     }
 
     const first = await page.evaluate(() => window.TaoyuanBattle.peek());
+    await page.evaluate(() => document.querySelector('[data-panel="settings"]')?.click());
+    await page.waitForTimeout(200);
+    const panelBefore = await page.evaluate(() => ({
+      hidden: document.getElementById("panelBackdrop")?.hidden,
+      title: document.getElementById("panelTitle")?.textContent || ""
+    }));
+    await page.evaluate(() => window.TaoyuanBattle.startStageKeepPanel());
+    const panelAfter = await page.evaluate(() => ({
+      hidden: document.getElementById("panelBackdrop")?.hidden,
+      title: document.getElementById("panelTitle")?.textContent || "",
+      panel: window.TaoyuanBattle.peek().panel
+    }));
+    await page.evaluate(() => window.TaoyuanBattle.spawnBoss());
+    await page.waitForTimeout(800);
+    const bossPeek = await page.evaluate(() => window.TaoyuanBattle.peek());
     await page.waitForTimeout(2000);
     const second = await page.evaluate(() => window.TaoyuanBattle.peek());
     const kicked = await page.evaluate(() => window.TaoyuanBattle.kick());
@@ -133,6 +171,7 @@ async function main() {
       || JSON.stringify(second.positions) !== JSON.stringify(third.positions)
       || first.elapsed !== second.elapsed
       || second.elapsed !== third.elapsed;
+    await page.evaluate(() => document.getElementById("panelClose")?.click());
     const uniqueRequestFailures = [...new Map(requestFailures.map((failure) => [failure.url + "|" + failure.error, failure])).values()];
     const localRequestFailures = uniqueRequestFailures.filter((failure) => failure.url.startsWith("http://127.0.0.1:" + port));
     const externalRequestFailures = uniqueRequestFailures.filter((failure) => !failure.url.startsWith("http://127.0.0.1:" + port));
@@ -150,6 +189,7 @@ async function main() {
       const images = [...(window.TaoyuanAssets?.cache?.entries?.() || [])];
       return { declared: images.length, loaded: images.filter(([, image]) => image.complete && image.naturalWidth).length, heroes };
     });
+    await page.waitForFunction(() => (window.__combatDrawStats?.boss || 0) > 0, { timeout: 4000 }).catch(() => {});
     const drawStats = await page.evaluate(() => window.__combatDrawStats);
     const screenshotPath = process.env.COMBAT_QA_SCREENSHOT || "";
     if (screenshotPath) {
@@ -158,11 +198,17 @@ async function main() {
     }
 
     await browser.close();
-    console.log(JSON.stringify({ target: serveBuiltOutput ? "www" : "source", browserExecutable: browserExecutable || "playwright-bundled", screenshotPath: screenshotPath || null, uiState, assetState, drawStats, first, second, kicked, third, moved, pageErrors: pageErrors.slice(0, 12), localRequestFailures, externalRequestFailures }, null, 2));
+    console.log(JSON.stringify({ target: serveBuiltOutput ? "www" : "source", browserExecutable: browserExecutable || "playwright-bundled", screenshotPath: screenshotPath || null, uiState, assetState, drawStats, panelBefore, panelAfter, bossPeek, first, second, kicked, third, moved, pageErrors: pageErrors.slice(0, 12), localRequestFailures, externalRequestFailures }, null, 2));
 
     if (!moved) throw new Error("units/elapsed did not change — AI freeze confirmed in browser");
     if (third.spawning && third.enemies === 0) throw new Error("spawning remained stuck with no enemies beyond the allowed transition window");
     if (!drawStats || drawStats.body < 1) throw new Error("combat body assets loaded but were never drawn to the Canvas");
+    if (!panelBefore || panelBefore.hidden) throw new Error("QA could not open a command panel before stage transition");
+    if (panelAfter.hidden || panelAfter.panel !== "settings") throw new Error("auto stage transition closed or reset the open panel: " + JSON.stringify(panelAfter));
+    if (!bossPeek?.bossActive) throw new Error("forced Boss spawn did not activate the boss wave");
+    const overlayCount = ["preview", "banner", "dialogue"].filter((key) => bossPeek.overlays?.[key]).length;
+    if (overlayCount > 1) throw new Error("Boss spawn stacked more than one central overlay: " + JSON.stringify(bossPeek.overlays));
+    if ((drawStats.boss || 0) < 1) throw new Error("Boss spawn completed but drawStats.boss stayed 0");
     const bounds = drawStats.transforms || {};
     if (!bounds.count || bounds.maxAxis > 3.5 || bounds.minE < -100 || bounds.maxE > 490 || bounds.minF < -150 || bounds.maxF > 800) {
       throw new Error("combat draw transform bounds escaped the Canvas; save/restore may be unbalanced: " + JSON.stringify(bounds));
@@ -180,6 +226,7 @@ async function main() {
     if (externalRequestFailures.length) console.warn("External resources were unavailable in this environment:", externalRequestFailures);
     console.log("Browser combat freeze check PASSED");
   } finally {
+    if (browser) await browser.close().catch(() => {});
     server.kill("SIGTERM");
   }
 }

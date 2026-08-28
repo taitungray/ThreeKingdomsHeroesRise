@@ -99,7 +99,7 @@ function showEnemyPreview(stage = activeStageNumber(), wave = null) {
     "<article class=\"enemy-preview-card" + (general.isBoss ? " boss" : "") + "\">" +
       enemyPreviewAvatarHtml(general) +
       "<div><strong>" + (general.name || "\u6575\u5c07") + "</strong><small>" + (general.title || general.role || "\u6575\u5c07") + "</small></div>" +
-      (general.isBoss ? "<span class=\"general-badge\">BOSS</span>" : "") +
+      (general.isBoss ? "<span class=\"general-badge\">首領</span>" : "") +
     "</article>"
   ).join("");
   const stageName = config?.name || "\u95dc\u5361 " + stage;
@@ -116,6 +116,14 @@ function showEnemyPreview(stage = activeStageNumber(), wave = null) {
     preview.classList.remove("show");
     runtime.enemyPreviewTimer = null;
   }, 2000);
+}
+
+function hideEnemyPreview() {
+  const preview = $("enemyPreview");
+  if (!preview) return;
+  preview.classList.remove("show");
+  clearTimeout(runtime.enemyPreviewTimer);
+  runtime.enemyPreviewTimer = null;
 }
 
 function toggleRailDrawer(forceOpen) {
@@ -221,8 +229,9 @@ function renderHeroes(filter = runtime.heroFilter) {
 function paperDollHtml(hero) {
   const slots = PAPER_DOLL_SLOTS.map((slot) => {
     const item = paperDollItem(hero.id, slot.id);
+    const owned = isEquipmentOwned(slot.id, item.id);
     return '<button class="paper-slot paper-slot-' + slot.id + ' item-icon-' + item.id + '" type="button" data-action="paper-cycle" data-hero="' + hero.id + '" data-slot="' + slot.id + '" aria-label="更換' + slot.label + '">' +
-      '<i class="slot-mark slot-mark-' + slot.id + '" aria-hidden="true"></i><span>' + slot.label + '</span><b>' + item.name + '</b><small>' + item.bonus + '</small><em>點擊輪換</em></button>';
+      '<i class="slot-mark slot-mark-' + slot.id + '" aria-hidden="true"></i><span>' + slot.label + '</span><b>' + item.name + '</b><small>' + item.bonus + (owned ? "" : " · 未擁有") + '</small><em>點擊輪換已擁有裝備</em></button>';
   }).join("");
   return '<section class="paper-doll-panel">' +
     '<div class="paper-doll-heading"><div><span class="eyebrow">外觀配置</span><h3>紙娃娃</h3></div><span class="paper-doll-hint">點裝備槽切換外觀</span></div>' +
@@ -280,11 +289,13 @@ function renderHeroDetail(heroId) {
 }
 
 function renderFormation() {
+  const picked = runtime.formationPick;
   const slots = Array.from({ length: 9 }, (_, slot) => {
     const heroId = save.formation.find((id) => save.positions[id] === slot);
     const hero = heroId ? heroById(heroId) : null;
-    return '<button class="formation-slot' + (hero ? " filled" : "") + '" type="button" data-action="' + (hero ? "hero-detail" : "empty-slot") + '"' + (hero ? ' data-hero="' + hero.id + '"' : "") + '>' +
-      (hero ? avatarHtml(hero) + "<b>" + hero.name + "</b>" : "") +
+    const selected = picked === slot;
+    return '<button class="formation-slot' + (hero ? " filled" : "") + (selected ? " selected" : "") + '" type="button" data-action="formation-slot-swap" data-slot="' + slot + '"' + (hero ? ' data-hero="' + hero.id + '"' : "") + '>' +
+      (hero ? avatarHtml(hero) + "<b>" + hero.name + "</b>" : "<small>空位</small>") +
     "</button>";
   }).join("");
   const power = save.formation.reduce((sum, id) => {
@@ -299,7 +310,7 @@ function renderFormation() {
         '<h3>義勇軍</h3>' +
         '<p>出戰 <strong>' + save.formation.length + ' / 5</strong></p>' +
         '<p>總戰力<br><strong>' + formatNumber(power) + '</strong></p>' +
-        '<p>前排步騎承傷<br>後排弓謀輸出</p>' +
+        '<p>點選兩個格子即可換位<br>前排承傷 · 後排輸出</p>' +
         '<button class="seal-button" type="button" data-action="formation-save">套用編隊</button>' +
       '</aside>' +
     '</div>' +
@@ -320,15 +331,15 @@ function renderTactics() {
     "</article>";
   }).join("");
   setPanel("兵法戰策",
-    '<div class="panel-tabs"><button class="active" type="button">軍陣</button><span class="tab-note">ACTIVE ARMY PASSIVE</span></div>' +
+    '<div class="panel-tabs"><button class="active" type="button">軍陣</button><span class="tab-note">全隊常駐加成</span></div>' +
     '<p class="section-caption">全隊永久生效</p>' +
     '<div class="tactic-list">' + tacticCards + "</div>");
 }
 
-function startStage(stage, reason = "") {
+function startStage(stage, reason = "", options = {}) {
   const maxStage = GAME_DATA.stages?.length || CHAPTERS.length * STAGES_PER_CHAPTER;
   const target = clamp(Number(stage) || save.stage, 1, Math.max(save.stage, maxStage));
-  if (target > save.stage) {
+  if (runtime.mode !== "tower" && target > save.stage) {
     toast("先完成前面的戰役才能進入此關");
     return;
   }
@@ -336,7 +347,7 @@ function startStage(stage, reason = "") {
   runtime.battleResult = null;
   clearScheduledGameTimers();
   recordStat("battles");
-  window.TaoyuanPlatform?.track?.("stage_start", { stage: target });
+  window.TaoyuanPlatform?.track?.("stage_start", { stage: target, mode: runtime.mode || "campaign" });
   runtime.waveClears = 0;
   runtime.bossActive = false;
   runtime.spawning = false;
@@ -352,7 +363,7 @@ function startStage(stage, reason = "") {
   spawnWave(false);
   updateHud();
   persist();
-  closePanel();
+  if (!options.keepPanel) closePanel();
   toast(reason || (target === save.stage ? "已進入目前關卡" : "開始重打第 " + target + " 關"));
 }
 
@@ -406,6 +417,30 @@ function toggleFormation(heroId) {
   beep(420, .05);
 }
 
+function swapFormationSlots(slotIndex) {
+  const slot = Number(slotIndex);
+  if (!Number.isInteger(slot) || slot < 0 || slot > 8) return;
+  const occupant = save.formation.find((id) => save.positions[id] === slot) || null;
+  if (runtime.formationPick == null) {
+    if (!occupant) {
+      toast("先點有人的格子，再點要換到的位置");
+      return;
+    }
+    runtime.formationPick = slot;
+    renderFormation();
+    return;
+  }
+  const fromSlot = runtime.formationPick;
+  const fromHero = save.formation.find((id) => save.positions[id] === fromSlot) || null;
+  if (fromHero) save.positions[fromHero] = slot;
+  if (occupant && occupant !== fromHero) save.positions[occupant] = fromSlot;
+  runtime.formationPick = null;
+  resetAllies();
+  persist();
+  toast("站位已調整");
+  renderFormation();
+}
+
 function renderProfile() {
   const power = runtime.allies.reduce((sum, unit) => sum + unit.maxHp + unit.atk * 8, 0);
   setPanel("主公軍府",
@@ -448,7 +483,7 @@ const UI_TEXT = {
 };
 
 function rewardHtml(reward = {}, compact = false) {
-  const labels = { gold: "\u9285\u9322", food: "\u7ce7\u8349", jade: "\u7389\u74a7", shards: "\u540d\u5c07\u788e\u7247", exp: "EXP" };
+  const labels = { gold: "\u9285\u9322", food: "\u7ce7\u8349", jade: "\u7389\u74a7", shards: "\u540d\u5c07\u788e\u7247", exp: "經驗" };
   const icons = { gold: "res-coin", food: "res-food", jade: "res-jade", shards: "res-shard", exp: "res-exp" };
   return Object.entries(reward).filter(([, value]) => value && value !== true).map(([key, value]) => '<span class="reward-chip" title="' + (labels[key] || key) + '"><i class="' + (icons[key] || "res-coin") + '"></i><b>' + formatNumber(value) + '</b>' + (compact ? "" : " " + (labels[key] || key)) + '</span>').join("");
 }
@@ -488,13 +523,20 @@ function renderShop() {
     const native = item.requiresNativePurchase;
     const cost = Object.entries(item.cost || {}).map(([key, value]) => (value ? '<span><i class="' + (key === "jade" ? "res-jade" : "res-coin") + '"></i>' + formatNumber(value) + '</span>' : "")).join("");
     const bought = Boolean(save.shopPurchases[item.id]);
-    const label = native ? (window.TaoyuanIAP?.isAvailable?.() ? "\u958b\u5556\u8cfc\u8cb7" : "\u539f\u751f\u7248\u958b\u653e") : bought ? UI_TEXT.claimed : UI_TEXT.claim;
-    return '<article class="shop-card rarity-' + item.tone + '"><div class="shop-icon">' + (item.tone === "legend" ? "\u2605" : "\u25c6") + '</div><div><h3>' + item.name + '</h3><p>' + item.desc + '</p><small>' + (native ? "\u9700\u5546\u5e97\u4ea4\u6613" : cost || "\u514d\u8cbb") + '</small></div><button class="' + (native || bought ? "stone-button" : "seal-button") + ' panel-action" type="button" data-action="shop-buy" data-shop="' + item.id + '"' + (bought ? " disabled" : "") + '>' + label + '</button></article>';
+    const label = native ? (window.TaoyuanIAP?.isAvailable?.() ? "\u958b\u5556\u8cfc\u8cb7" : "\u539f\u751f\u7248\u958b\u653e") : bought && !item.repeatable ? UI_TEXT.claimed : (item.repeatable || item.cost?.gold || item.cost?.jade ? "兌換" : UI_TEXT.claim);
+    const disabled = bought && !item.repeatable;
+    return '<article class="shop-card rarity-' + item.tone + '"><div class="shop-icon">' + (item.tone === "legend" ? "\u2605" : "\u25c6") + '</div><div><h3>' + item.name + '</h3><p>' + item.desc + '</p><small>' + (native ? "\u9700\u5546\u5e97\u4ea4\u6613" : cost || "\u514d\u8cbb") + '</small></div><button class="' + (native || disabled ? "stone-button" : "seal-button") + ' panel-action" type="button" data-action="shop-buy" data-shop="' + item.id + '"' + (disabled ? " disabled" : "") + '>' + label + '</button></article>';
   }).join("");
   setPanel(UI_TEXT.shop, '<p class="section-caption">\u8ecd\u9700\u6240\u53d6\u5f97\uff0c\u4e0d\u8a2d\u865b\u5047\u6c38\u4e45\u8cb7\u8ce3\u3002</p><div class="shop-list">' + cards + '</div><p class="panel-footnote">\u539f\u751f\u5546\u5e97\u5546\u54c1\u672a\u914d\u7f6e\u6b63\u5f0f SKU \u6642\u6703\u81ea\u52d5\u4fdd\u6301\u505c\u7528\u3002</p>');
 }
 
+function hideUnavailableMode(title, copy) {
+  setPanel(title, '<section class="mode-banner"><span class="eyebrow">尚未開放</span><h3>' + title + '</h3><p>' + copy + '</p></section><p class="panel-footnote">垂直切片先完成主線戰鬥。此入口暫不提供即時戰力判定。</p>');
+}
+
 function renderArena() {
+  hideUnavailableMode(UI_TEXT.arena, "演武改為正式戰鬥前先隱藏。目前只保留主線與問天樓。");
+  return;
   const power = currentArmyPower();
   const cards = ARENA_OPPONENTS.map((opponent) => {
     const challenged = save.arena.claimed.includes(opponent.id);
@@ -531,7 +573,7 @@ function autoAdvanceAfterBattle(result) {
     clearResourceDrops();
     runtime.waveClears = 0;
     runtime.bossActive = false;
-    startStage(nextStage, win ? "新戰場" : "重新整軍");
+    startStage(nextStage, win ? "新戰場" : "重新整軍", { keepPanel: true });
   }, win ? 1500 : 1800);
 }
 
@@ -622,7 +664,7 @@ async function claimDailyAd() {
 
 async function buyShopItem(itemId) {
   const item = SHOP_ITEMS.find((entry) => entry.id === itemId);
-  if (!item || save.shopPurchases[item.id]) return;
+  if (!item || (!item.repeatable && save.shopPurchases[item.id])) return;
   if (item.requiresNativePurchase) {
     const result = await window.TaoyuanIAP.purchase(item.productId);
     if (!result.ok) return toast(result.reason === "native-required" ? "\u6b64\u5546\u54c1\u8acb\u65bc App \u5546\u5e97\u8cfc\u8cb7" : "\u5546\u5e97\u5c1a\u672a\u5b8c\u6210\u914d\u7f6e");
@@ -630,13 +672,14 @@ async function buyShopItem(itemId) {
     for (const [key, value] of Object.entries(item.cost || {})) if ((save[key] || 0) < value) return toast("\u8cc7\u6e90\u4e0d\u8db3");
     for (const [key, value] of Object.entries(item.cost || {})) save[key] -= value;
   }
-  save.shopPurchases[item.id] = true;
+  if (!item.repeatable) save.shopPurchases[item.id] = true;
   if (item.id === "monthly-pass") save.monthlyPassUntil = Date.now() + 30 * 86400000;
-  if (item.reward.adFree) save.adFree = true;
-  awardResources(item.reward);
+  if (item.reward?.adFree) save.adFree = true;
+  if (item.reward?.equipment) grantEquipment(item.reward.equipment.slot, item.reward.equipment.id);
+  awardResources(item.reward || {});
   persist();
   updateHud();
-  toast("\u8ecd\u9700\u5df2\u5165\u5eab");
+  toast(item.reward?.equipment ? "裝備已入庫，可到武將頁比較換裝" : "軍需已入帳");
   renderShop();
 }
 
@@ -660,9 +703,15 @@ function challengeArena(opponentId) {
   renderArena();
 }
 
+function accountDisplayName(user) {
+  if (!user) return "未登入";
+  const raw = user.username || user.displayName || user.email || (user.guest ? "訪客" : "玩家");
+  return String(raw).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
+
 function renderSettings() {
   const activeUser = window.TaoyuanAuth?.getActiveUser?.();
-  const accountLabel = activeUser ? String(activeUser.username).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;") : "未登入";
+  const accountLabel = accountDisplayName(activeUser);
   const accountType = activeUser?.guest ? "訪客軍府 · 本機存檔" : "Google 帳號 · 雲端同步";
   const cloudStatus = window.TaoyuanCloud?.getStatusText?.() || (activeUser?.guest ? "訪客存檔不會上傳" : "等待雲端連線");
   const accountHtml = activeUser
@@ -674,8 +723,8 @@ function renderSettings() {
     '<button class="setting-item" type="button" data-action="setting-toggle" data-setting="effects"><span><strong>\u6230\u9b25\u7279\u6548</strong><br><small>\u5200\u5149\u3001\u6cd5\u8853\u8207\u9023\u64ca\u8868\u73fe</small></span><i class="toggle ' + (save.effects ? "on" : "") + '"></i></button>' +
     '<button class="setting-item" type="button" data-action="notification-request"><span><strong>\u8ecd\u60c5\u901a\u77e5</strong><br><small>\u76ee\u524d\u72c0\u614b\uff1a' + (save.notifications ? "\u5df2\u958b\u555f" : "\u672a\u958b\u555f") + '</small></span><b>\u8a2d\u5b9a</b></button>' +
     '<div class="setting-item"><span><strong>\u73a9\u5bb6\u540d\u7a31</strong><br><small>\u5c40\u90e8\u5b58\u6a94\uff0c\u4e0d\u4e0a\u50b3</small></span><button class="stone-button panel-action" type="button" data-action="rename-player">\u4fee\u6539</button></div>' +
-    '<div class="setting-item"><span><strong>\u904b\u884c\u6a21\u5f0f</strong><br><small>\u80cc\u666f\u56de\u6536\u52d5\u756b\uff0c\u4fdd\u8b77\u4f4e\u968e\u88dd\u7f6e</small></span><b>H5 SAFE</b></div>' +
-    '</div><button class="setting-item" type="button" data-action="quality-toggle"><span><strong>\u756b\u9762\u54c1\u8cea</strong><br><small>\u4f4e\u529f\u8017\u6a21\u5f0f\u6703\u6e1b\u5c11\u7279\u6548\u7e6a\u88fd</small></span><b>' + (save.renderQuality === "low" ? "LOW" : "HIGH") + '</b></button><p class="section-caption">\u5b58\u6a94\u8207 App</p><button class="stone-button" type="button" data-action="report-issue">\u554f\u984c\u56de\u5831</button> <button class="stone-button" type="button" data-action="save-now">\u7acb\u5373\u4fdd\u5b58</button> <button class="stone-button" type="button" data-action="restore-purchases">\u6062\u5fa9\u8cfc\u8cb7</button> <button class="seal-button" type="button" data-action="reset-save">\u91cd\u7f6e\u9032\u5ea6</button>');
+    '<div class="setting-item"><span><strong>\u904b\u884c\u6a21\u5f0f</strong><br><small>\u80cc\u666f\u56de\u6536\u52d5\u756b\uff0c\u4fdd\u8b77\u4f4e\u968e\u88dd\u7f6e</small></span><b>網頁安全模式</b></div>' +
+    '</div><button class="setting-item" type="button" data-action="quality-toggle"><span><strong>\u756b\u9762\u54c1\u8cea</strong><br><small>\u4f4e\u529f\u8017\u6a21\u5f0f\u6703\u6e1b\u5c11\u7279\u6548\u7e6a\u88fd</small></span><b>' + (save.renderQuality === "low" ? "低功耗" : "高畫質") + '</b></button><p class="section-caption">\u5b58\u6a94\u8207 App</p><button class="stone-button" type="button" data-action="report-issue">\u554f\u984c\u56de\u5831</button> <button class="stone-button" type="button" data-action="save-now">\u7acb\u5373\u4fdd\u5b58</button> <button class="stone-button" type="button" data-action="restore-purchases">\u6062\u5fa9\u8cfc\u8cb7</button> <button class="seal-button" type="button" data-action="reset-save">\u91cd\u7f6e\u9032\u5ea6</button>');
   $("panelContent").insertAdjacentHTML("beforeend", '<p class="panel-footnote">BUILD ' + APP_VERSION + '</p><button class="stone-button wide-button" type="button" data-action="version-check">\u6aa2\u67e5\u7248\u672c</button>');
 }
 function renderMail() {
@@ -702,9 +751,9 @@ function achievementData() {
     skills: save.stats.skills || 0,
     arena: save.arena.wins || 0
   };
-  const label = { jade: "\u7389\u7487", gold: "\u9285\u9322", food: "\u7ce7\u8349" };
+  const label = { jade: "\u7389\u74a7", gold: "\u9285\u9322", food: "\u7ce7\u8349" };
   const catalog = [
-    ["stage3", "\u6843\u5712\u521d\u9673", "\u901a\u904e\u7b2c 3 \u95dc", "stage", 3, { jade: 3 }],
+    ["stage3", "\u6843\u5712\u521d\u9663", "\u901a\u904e\u7b2c 3 \u95dc", "stage", 3, { jade: 3 }],
     ["stage10", "\u864e\u7262\u65a9\u5c07", "\u901a\u904e\u7b2c 10 \u95dc", "stage", 10, { gold: 700 }],
     ["stage25", "\u8d64\u58c1\u706b\u8a08", "\u901a\u904e\u7b2c 25 \u95dc", "stage", 25, { jade: 8 }],
     ["stage50", "\u5317\u4f10\u5343\u91cc", "\u901a\u904e\u7b2c 50 \u95dc", "stage", 50, { gold: 1800 }],
@@ -723,7 +772,7 @@ function achievementData() {
     ["bosses25", "\u5b9a\u4e2d\u539f", "\u64ca\u6bba 25 \u540d\u9996\u9818", "bosses", 25, { jade: 15 }],
     ["kills100", "\u767e\u6226\u7cbe\u5175", "\u64ca\u6bba 100 \u540d\u6575\u4eba", "kills", 100, { gold: 500 }],
     ["kills500", "\u842c\u592b\u4e4b\u52c7", "\u64ca\u6bba 500 \u540d\u6575\u4eba", "kills", 500, { jade: 8 }],
-    ["combo20", "\u9023\u74b0\u5981\u6bba", "\u9054\u6210 20 \u9023\u64ca", "combo", 20, { gold: 800 }],
+    ["combo20", "\u9023\u74b0\u65ac\u6bba", "\u9054\u6210 20 \u9023\u64ca", "combo", 20, { gold: 800 }],
     ["combo50", "\u7121\u96d9\u9023\u65a9", "\u9054\u6210 50 \u9023\u64ca", "combo", 50, { jade: 10 }],
     ["skills25", "\u767e\u8853\u521d\u6210", "\u91cb\u653e 25 \u6b21\u6280\u80fd", "skills", 25, { food: 500 }],
     ["skills100", "\u6230\u6cd5\u5927\u5e2b", "\u91cb\u653e 100 \u6b21\u6280\u80fd", "skills", 100, { jade: 10 }],
@@ -799,6 +848,8 @@ function renderTower() {
 }
 
 function renderDungeons() {
+  hideUnavailableMode("日常副本", "副本改為正式戰鬥前先隱藏。目前只保留主線與問天樓。");
+  return;
   const stamina = staminaStatus();
   const cards = DAILY_DUNGEONS.map((dungeon) => {
     const claimed = Boolean(save.dungeons?.claimed?.[dungeon.id]);
@@ -850,22 +901,10 @@ function challengeTower() {
   const nextFloor = (save.tower?.floor || 0) + 1;
   const cost = TOWER_CONFIG.stamina || 4;
   if (!spendStamina(cost)) return toast("\u9ad4\u529b\u4e0d\u8db3\uff0c\u7b49\u5f85\u56de\u5fa9");
-  const required = TOWER_CONFIG.basePower + (nextFloor - 1) * TOWER_CONFIG.powerStep;
-  const win = currentArmyPower() >= required * .84;
-  recordStat("battles");
-  if (win) {
-    save.tower.floor = nextFloor;
-    save.tower.best = Math.max(save.tower.best || 0, nextFloor);
-    awardResources({ gold: 170 + nextFloor * 22, food: 55 + nextFloor * 8, jade: nextFloor % 5 === 0 ? 2 : 0, exp: 24 + nextFloor * 3 });
-    recordStat("wins");
-    toast("\u554f\u5929\u6a13\u7b2c " + nextFloor + " \u5c64\u901a\u95dc");
-  } else {
-    recordStat("losses");
-    toast("\u554f\u5929\u6a13\u5c64\u6578\u4e0d\u8b8a\uff0c\u5148\u5f37\u5316\u9663\u5bb9");
-  }
+  runtime.mode = "tower";
+  runtime.towerFloor = nextFloor;
   persist();
-  updateHud();
-  renderTower();
+  startStage(Math.min(save.stage, GAME_DATA.stages?.length || save.stage), "問天樓第 " + nextFloor + " 層");
 }
 
 function refineHeroEquipment(heroId) {
@@ -987,13 +1026,14 @@ function handlePanelAction(button) {
     const slot = PAPER_DOLL_SLOTS.find((item) => item.id === button.dataset.slot);
     if (!slot || !heroById(heroId)) return;
     const loadout = heroLoadout(heroId);
-    const currentIndex = Math.max(0, slot.choices.findIndex((choice) => choice.id === loadout[slot.id]));
-    const next = slot.choices[(currentIndex + 1) % slot.choices.length];
+    const current = paperDollItem(heroId, slot.id);
+    const next = cycleOwnedEquipment(heroId, slot);
     loadout[slot.id] = next.id;
     resetAllies();
     persist();
     beep(460, .07, "triangle", .025);
-    toast(heroById(heroId).name + "更換「" + next.name + "」");
+    const delta = compareEquipmentBonus(current, next);
+    toast(heroById(heroId).name + "更換「" + next.name + "」" + (delta ? "（" + delta + "）" : ""));
     renderHeroDetail(heroId);
   } else if (action === "equipment-refine") refineHeroEquipment(button.dataset.hero);
   else if (action === "hero-star") upgradeHeroStar(button.dataset.hero);
@@ -1017,7 +1057,8 @@ function handlePanelAction(button) {
     toggleFormation(button.dataset.hero);
     runtime.panel === "formation" ? renderFormation() : renderHeroDetail(button.dataset.hero);
   } else if (action === "formation-save") { resetAllies(); persist(); toast("\u7de8\u968a\u5df2\u5957\u7528");
-  } else if (action === "empty-slot") toast("\u5f9e\u4e0b\u65b9\u9ede\u9078\u6b66\u5c07\u52a0\u5165\u6b64\u9663");
+  } else if (action === "formation-slot-swap") swapFormationSlots(button.dataset.slot);
+  else if (action === "empty-slot") toast("\u5f9e\u4e0b\u65b9\u9ede\u9078\u6b66\u5c07\u52a0\u5165\u6b64\u9663");
   else if (action === "tactic-level") {
     const id = button.dataset.tactic;
     const tactic = TACTICS.find((item) => item.id === id);

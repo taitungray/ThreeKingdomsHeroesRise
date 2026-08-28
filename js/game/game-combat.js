@@ -260,6 +260,17 @@ function resetAllies() {
     .map((id, index) => makeAlly(id, save.positions[id] ?? (index + 3), index));
 }
 
+function reducedMotionActive() {
+  return !save.effects || Boolean(window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches);
+}
+
+function applyLocalImpact(unit, amount) {
+  if (reducedMotionActive() || !unit) return;
+  const force = Number(amount) || 0;
+  unit.kickX = (unit.kickX || 0) + (Math.random() - 0.5) * force * 0.4;
+  unit.kickY = (unit.kickY || 0) - force * 0.18;
+}
+
 function beginWaveTransition(label) {
   runtime.waveTransition = { life: 0.55, maxLife: 0.55, label: label || "" };
   runtime.flash = 0.15;
@@ -298,7 +309,8 @@ function makeEnemy(index, boss = false) {
     strategist: { role: "謀士", hp: 76, atk: 13, def: 2, speed: 11, range: 138, color: "#5a527d" }
   };
   const profile = enemyProfiles[enemyType] || enemyProfiles.bandit;
-  const maxHp = Math.round((boss ? (config?.bossHp || 680) : profile.hp + Math.random() * 18) * stagePower);
+  const towerScale = runtime.mode === "tower" ? 1 + Math.max(0, (runtime.towerFloor || 1) - 1) * 0.12 : 1;
+  const maxHp = Math.round((boss ? (config?.bossHp || 680) : profile.hp + Math.random() * 18) * stagePower * towerScale);
   const lanes = [78, 132, 190, 248, 309];
   const spawnX = lanes[index % lanes.length] + (Math.random() - 0.5) * 24;
   const targetY = (boss ? BOSS_SPAWN_Y : ENEMY_SPAWN_Y) + Math.floor(index / lanes.length) * 44 + Math.random() * 16;
@@ -320,7 +332,7 @@ function makeEnemy(index, boss = false) {
     hpLag: maxHp,
     statuses: [],
     passiveState: {},
-    atk: (boss ? (config?.bossAtk || 27) : profile.atk + Math.random() * 2) * stagePower,
+    atk: (boss ? (config?.bossAtk || 27) : profile.atk + Math.random() * 2) * stagePower * towerScale,
     def: (boss ? 11 : profile.def) * stagePower,
     speed: boss ? 16 : profile.speed + Math.random() * 3,
     range: boss ? 42 : profile.range,
@@ -367,7 +379,8 @@ function spawnWave(boss = false, showTransition = true) {
   const count = boss ? 1 + Math.min(4, activeStageNumber()) : config?.enemyCount || 4 + Math.min(7, activeStageNumber() + runtime.waveClears);
   for (let i = 0; i < count; i += 1) runtime.enemies.push(makeEnemy(i, boss && i === 0));
   runtime.entryUnits = false;
-  showEnemyPreview(activeStageNumber(), waveNumber);
+  if (boss) hideEnemyPreview();
+  else showEnemyPreview(activeStageNumber(), waveNumber);
   if (boss) {
     const chapter = chapterForStage();
     $("bossName").textContent = enemyGeneralById(config?.bossGeneral)?.name || chapter.boss;
@@ -375,6 +388,7 @@ function spawnWave(boss = false, showTransition = true) {
     // so the banner, preview and bottom dialogue never stack over the battle.
     $("dialogueBox")?.classList.remove("show");
     runtime.dialogueTimer = 0;
+    hideEnemyPreview();
     const banner = $("bossBanner");
     banner.classList.remove("show");
     banner.setAttribute("aria-hidden", "false");
@@ -569,7 +583,7 @@ function applyDamage(attacker, target, multiplier = 1, criticalChanceBase = 0.12
     runtime.hitStop = Math.max(runtime.hitStop, critical ? 0.045 : finalMultiplier > 1.25 ? 0.028 : 0.012);
   }
   if (critical) {
-    runtime.shake = Math.max(runtime.shake, 5);
+    applyLocalImpact(target, 5);
     addEffect("shockwave", target.x, target.y - 10, "#ffd769", { radius: 42, life: 0.34 });
   }
   if (attacker.hero?.id === "zhurong" && critical) applyStatus(target, "burn", 4, 8, attacker);
@@ -608,7 +622,7 @@ function killUnit(target, attacker) {
     save.battlePass.xp = (save.battlePass.xp || 0) + (target.type === "boss" ? 10 : 1);
     if (attacker?.hero?.id === "weiyan" || attacker?.hero?.id === "guanxing") applyStatus(attacker, "haste", 3, .12, attacker);
     if (target.type === "boss") {
-      runtime.shake = 10;
+      applyLocalImpact(target, 10);
       beep(135, 0.22, "square", 0.045);
     }
   } else if (attacker && target.hero) {
@@ -619,8 +633,8 @@ function useHeroSkill(unit, target) {
   unit.attackCount = 0;
   unit.skillCooldown = (unit.hero.skillCooldown || 5) / (1 + teamPassiveBonus("cooldown"));
   unit.passiveState.skillCount = (unit.passiveState.skillCount || 0) + 1;
-  runtime.shake = Math.max(runtime.shake, 6);
-  runtime.flash = 0.13;
+  applyLocalImpact(unit, 6);
+  runtime.flash = reducedMotionActive() ? 0 : 0.13;
   runtime.flashColor = unit.hero.accent;
   const hero = unit.hero;
   const skillFactor = 1 + (heroSkillLevel(hero.id) - 1) * .12;
@@ -650,7 +664,7 @@ function useHeroSkill(unit, target) {
       applyStatus(enemy, "stun", 1.15, 0, unit);
       applyDamage(unit, enemy, 1.7, .24, { skill: true });
     });
-    runtime.shake = Math.max(runtime.shake, 10);
+    applyLocalImpact(unit, 10);
   } else if (hero.id === "zhaoyun") {
     for (let i = 1; i <= 4; i += 1) addEffect("afterimage", unit.x - Math.cos(unit.action?.angle || 0) * i * 14, unit.y - Math.sin(unit.action?.angle || 0) * i * 14, hero.accent, { life: .16 + i * .06, scale: unit.scale * (1 - i * .05), facing: unit.facing });
     (closeEnemies.length ? closeEnemies : [target]).forEach((enemy) => applyDamage(unit, enemy, 1.72, .26, { skill: true, charge: true }));
@@ -695,7 +709,7 @@ function useHeroSkill(unit, target) {
       if (Math.hypot(enemy.x - unit.x, enemy.y - unit.y) < 210) applyDamage(unit, enemy, 2.4, .3, { skill: true });
     });
     addEffect("meteor", unit.x, unit.y - 20, "#f06a4d", { radius: 132, life: .76 });
-    runtime.shake = Math.max(runtime.shake, 13);
+    applyLocalImpact(unit, 13);
   } else if (hero.role === "\u5f13\u5175" || hero.role === "\u8b00\u58eb") {
     enemies.slice(0, 4).forEach((enemy) => {
       fireProjectile(unit, enemy, hero.accent, { skill: true });
@@ -772,7 +786,7 @@ function resolveAttack(unit, action) {
       addEffect("slash", target.x, target.y - 13, "#d4b356", { radius: 38, life: 0.3, angle: action.angle - 0.35 });
     } else if (unit.team === "ally" && unit.hero.id === "zhangfei") {
       addEffect("shockwave", target.x, target.y, "#b84a35", { radius: 30, life: 0.25 });
-      runtime.shake = Math.max(runtime.shake, 3.2);
+      applyLocalImpact(target, 3.2);
     } else if (unit.team === "ally" && unit.hero.id === "zhaoyun") {
       addEffect("afterimage", unit.x - Math.cos(action.angle) * 13, unit.y - Math.sin(action.angle) * 13, "#75bceb", { life: 0.2, scale: unit.scale * 0.9, facing: unit.facing });
     }
@@ -922,7 +936,7 @@ function updateEffects(delta) {
   }
   recycleExpiredEffects();
   runtime.numbers = runtime.numbers.filter((item) => item.life > 0);
-  runtime.shake = Math.max(0, runtime.shake - delta * 18);
+  runtime.shake = 0;
   runtime.flash = Math.max(0, runtime.flash - delta);
 }
 
@@ -938,6 +952,25 @@ function waveCleared() {
   if (runtime.spawning || runtime.enemies.length === 0 || runtime.enemies.some((enemy) => !enemy.dead)) return;
   runtime.spawning = true;
   if (runtime.bossActive) {
+    if (runtime.mode === "tower") {
+      const floor = runtime.towerFloor || 1;
+      const reward = { gold: 170 + floor * 22, food: 55 + floor * 8, jade: floor % 5 === 0 ? 2 : 0, exp: 24 + floor * 3, shards: 1 };
+      awardResources(reward);
+      save.tower.floor = floor;
+      save.tower.best = Math.max(save.tower.best || 0, floor);
+      recordStat("wins");
+      recordStat("bosses");
+      runtime.waveClears = 0;
+      runtime.bossActive = false;
+      runtime.nextStageAfterSettlement = save.stage;
+      runtime.battleResult = { type: "win", stage: save.stage, boss: "問天樓第 " + floor + " 層", progressed: false, newlyUnlocked: "", reward, damage: damageSummary(), mode: "tower" };
+      addLog("問天樓第 " + floor + " 層通關。");
+      runtime.mode = "campaign";
+      runtime.towerFloor = 0;
+      persist();
+      if (typeof showSettlement === "function") showSettlement(runtime.battleResult);
+      return;
+    }
     const battleStage = activeStageNumber();
     const chapter = chapterForStage();
     const progressed = battleStage >= save.stage;
@@ -996,6 +1029,11 @@ function partyDefeated() {
   if (runtime.spawning || runtime.allies.length === 0 || runtime.allies.some((ally) => !ally.dead)) return;
   runtime.spawning = true;
   runtime.enemies.length = 0;
+  if (runtime.mode === "tower") {
+    addLog("問天樓第 " + (runtime.towerFloor || 1) + " 層整軍失敗，層數不變。");
+    runtime.mode = "campaign";
+    runtime.towerFloor = 0;
+  }
   recordStat("losses");
   runtime.nextStageAfterSettlement = activeStageNumber();
   runtime.battleResult = { type: "lose", stage: activeStageNumber(), reward: {}, damage: damageSummary() };

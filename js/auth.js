@@ -51,7 +51,7 @@
         guest: false
       };
     }
-    return state.guest ? { ...state.guest, provider: "guest", guest: true } : null;
+    return state.guest ? { ...state.guest, username: state.guest.displayName || "訪客", provider: "guest", guest: true } : null;
   }
 
   function getSaveKey() {
