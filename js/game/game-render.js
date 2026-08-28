@@ -317,27 +317,8 @@ function drawAttackPose(unit, accent, useAttackSprite = false) {
   const shoulderY = -24;
   const handX = shoulderX + forwardX * pull + sideX * 2;
   const handY = shoulderY + forwardY * pull + sideY * 2 - frameJolt;
+
   ctx.save();
-  ctx.lineCap = "square";
-  ctx.lineJoin = "miter";
-  drawPixelLine(shoulderX, shoulderY, handX, handY, "#241e19", ranged ? 4 : 5);
-  drawPixelLine(shoulderX, shoulderY, handX, handY, accent, 2);
-
-  const offShoulderX = -5;
-  const offShoulderY = -23;
-  const offReach = (ranged ? 7 : 8) * pose;
-  const offPull = action.phase === "anticipation" ? -offReach * 0.45 : offReach * 0.7;
-  const offHandX = offShoulderX + forwardX * offPull - sideX * 3;
-  const offHandY = offShoulderY + forwardY * offPull - sideY * 3 - frameJolt;
-  drawPixelLine(offShoulderX, offShoulderY, offHandX, offHandY, "#241e19", 4);
-  drawPixelLine(offShoulderX, offShoulderY, offHandX, offHandY, accent, 1.5);
-  // A hand is a point of contact, not a rectangular placeholder. Keep it
-  // round so the pose never introduces the old block-shaped character parts.
-  ctx.fillStyle = "#e1b34d";
-  ctx.beginPath();
-  ctx.arc(handX, handY, 1.5, 0, Math.PI * 2);
-  ctx.fill();
-
   if (pose > 0.18 && action.phase !== "anticipation") {
     const trail = ranged ? 10 : 16;
     const trailAlpha = Math.min(0.8, pose * 0.9);
@@ -345,14 +326,6 @@ function drawAttackPose(unit, accent, useAttackSprite = false) {
     drawPixelLine(handX - forwardX * 3, handY - forwardY * 3, handX - forwardX * trail + sideX * 3, handY - forwardY * trail + sideY * 3, accent, ranged ? 1 : 2);
     if (!ranged) drawPixelLine(handX - forwardX * 5, handY - forwardY * 5, handX - forwardX * (trail + 5) - sideX * 2, handY - forwardY * (trail + 5) - sideY * 2, "#f5d276", 1);
     ctx.globalAlpha = 1;
-  }
-  if (ranged && pose > 0.2) {
-    const bowX = shoulderX + forwardX * 4;
-    const bowY = shoulderY + forwardY * 4;
-    const bowSide = 6 + pose * 3;
-    drawPixelLine(bowX + sideX * bowSide, bowY + sideY * bowSide, bowX - sideX * bowSide, bowY - sideY * bowSide, accent, 1);
-    drawPixelLine(bowX + sideX * bowSide, bowY + sideY * bowSide, handX, handY, "#e6d7aa", 1);
-    drawPixelLine(bowX - sideX * bowSide, bowY - sideY * bowSide, handX, handY, "#e6d7aa", 1);
   }
   if (action.skill && pose > 0.24) {
     ctx.globalAlpha = 0.45 + pose * 0.45;
@@ -1462,7 +1435,6 @@ function drawHeroDetailOverlay(unit, walkCycle, idleCycle) {
   const heroId = unit.hero?.id || "liubei";
   const accent = unit.hero?.accent || "#d29f3a";
   const ready = (unit.attackCount || 0) >= 5 && (unit.skillCooldown || 0) <= 0;
-  const glint = idleCycle > 0.35 ? "#fff6cc" : "#e0caa0";
 
   ctx.save();
   
@@ -1479,63 +1451,6 @@ function drawHeroDetailOverlay(unit, walkCycle, idleCycle) {
   ctx.closePath();
   ctx.fill();
   ctx.restore();
-
-  // Armor shoulder studs, breastplate highlight and belt buckle
-  drawPixelRect(-11, -26, 3, 2, accent);
-  drawPixelRect(8, -26, 3, 2, accent);
-  drawPixelRect(-2, -28, 4, 2, glint);
-  drawPixelRect(-7, -13, 3, 1, "#261e16");
-  drawPixelRect(4, -13, 3, 1, "#261e16");
-  drawPixelRect(-1, -14, 2, 2, glint);
-
-  // Hero-specific signature touches
-  if (heroId === "guanyu") {
-    drawPixelRect(-7, -22, 14, 2, "#18583c");
-    drawPixelRect(-2, -26, 4, 3, "#cf3b32");
-    drawPixelRect(-2, -16 + Math.round(idleCycle * 0.3), 4, 6, "#231814");
-    drawPixelRect(0, -32, 2, 2, "#241812");
-  } else if (heroId === "zhangfei") {
-    drawPixelRect(-9, -20, 18, 2, "#9f3c31");
-    drawPixelRect(-10, -26, 3, 3, "#c8d0cd");
-    drawPixelRect(7, -26, 3, 3, "#c8d0cd");
-    drawPixelRect(-2, -43, 4, 2, "#e5a74e");
-  } else if (heroId === "zhaoyun") {
-    drawPixelRect(-7, -23, 14, 2, "#4d84b8");
-    drawPixelRect(-1, -52 + Math.round(idleCycle), 2, 4, "#59a1d1");
-    drawPixelRect(-8, -22, 2, 2, "#f4f5ee");
-    drawPixelRect(6, -22, 2, 2, "#f4f5ee");
-  } else if (heroId === "lubu") {
-    drawPixelRect(-9, -21, 18, 2, "#e3b34d");
-    drawPixelRect(-12, -28, 3, 6, "#f1c85c");
-    drawPixelRect(9, -28, 3, 6, "#f1c85c");
-    drawPixelRect(-2, -49, 4, 3, glint);
-    // Pheasant feather tips
-    drawPixelRect(-8, -58 + Math.round(idleCycle * 0.5), 2, 5, "#dc3536");
-    drawPixelRect(6, -58 - Math.round(idleCycle * 0.5), 2, 5, "#dc3536");
-  } else if (heroId === "caocao") {
-    drawPixelRect(-8, -20, 16, 2, "#b9914a");
-    drawPixelRect(-2, -26, 4, 6, "#8d55ad");
-  } else if (heroId === "zhugeliang") {
-    drawPixelRect(-7, -18, 14, 2, "#536e69");
-    drawPixelRect(2, -25, 3, 8, "#e6e0ce");
-  }
-
-  // Paper-doll equipment markers
-  const loadout = heroLoadout(heroId);
-  const armorId = loadout?.armor;
-  const accessoryId = loadout?.accessory;
-  if (armorId === "iron" || armorId === "silver") {
-    drawPixelRect(-10, -24, 2, 4, "#dce1da");
-    drawPixelRect(8, -24, 2, 4, "#dce1da");
-  } else if (armorId === "crimson" || armorId === "flame") {
-    drawPixelRect(-10, -25, 2, 5, "#e3b34d");
-    drawPixelRect(8, -25, 2, 5, "#e3b34d");
-  }
-  if (accessoryId === "jade" || accessoryId === "phoenix-jade") {
-    drawPixelRect(-1, -21 + Math.round(idleCycle), 2, 3, "#76dfb2");
-  } else if (accessoryId === "dragon" || accessoryId === "tiger-seal") {
-    drawPixelRect(4, -20 + Math.round(idleCycle), 3, 2, "#e5b84f");
-  }
 
   // Skill Ready Aura: Tactical Rotating Bagua / Formation Battle Halo at unit feet + ascending golden motes
   if (ready) {
@@ -1583,8 +1498,6 @@ function drawHeroDetailOverlay(unit, walkCycle, idleCycle) {
 
 function drawEnemyDetailOverlay(unit, walkCycle, idleCycle) {
   const isBoss = unit.type === "boss";
-  const enemyType = unit.type || "bandit";
-  const glint = idleCycle > 0.35 ? "#ffe8b0" : "#d0be98";
 
   ctx.save();
   if (isBoss) {
@@ -1597,39 +1510,6 @@ function drawEnemyDetailOverlay(unit, walkCycle, idleCycle) {
     ctx.ellipse(0, 0, 32 + bossPulse * 4, 11 + bossPulse * 2, 0, 0, Math.PI * 2);
     ctx.fill();
     ctx.globalCompositeOperation = "source-over";
-
-    // Ornate boss crown & armor highlights
-    drawPixelRect(-14, -28, 4, 8, "#d7b255");
-    drawPixelRect(10, -28, 4, 8, "#d7b255");
-    drawPixelRect(-10, -22, 20, 2, "#e3ba4d");
-    drawPixelRect(-2, -50 + Math.round(idleCycle), 4, 6, "#fff0a8");
-  } else if (enemyType === "brute") {
-    // Spiked heavy iron pauldrons & horned crest
-    drawPixelRect(-12, -30, 4, 7, "#889196");
-    drawPixelRect(8, -30, 4, 7, "#889196");
-    drawPixelRect(-8, -48, 16, 2, "#4a5054");
-    drawPixelRect(-10, -52, 2, 4, "#cbd1d4");
-    drawPixelRect(8, -52, 2, 4, "#cbd1d4");
-  } else if (enemyType === "archer") {
-    // Quiver and strap
-    drawPixelRect(-14, -28, 4, 11, "#634726");
-    drawPixelRect(-13, -33, 3, 5, "#d7be88");
-    drawPixelLine(-12, -26, 6, -14, "#4a351d", 1);
-  } else if (enemyType === "cavalry") {
-    // Cavalry saddle trim and chest plate
-    drawPixelRect(-8, -22, 16, 2, "#8f6745");
-    drawPixelRect(-11, -26, 3, 5, "#c5ab86");
-    drawPixelRect(8, -26, 3, 5, "#c5ab86");
-  } else if (enemyType === "strategist") {
-    // Mystic robe trim
-    drawPixelRect(-7, -24, 14, 2, "#856aa6");
-    drawPixelRect(-2, -26, 4, 10, "#d8c280");
-  } else {
-    // Bandit forehead bandana & studded vest
-    drawPixelRect(-8, -42, 16, 2, "#b24132");
-    drawPixelRect(-7, -22, 14, 2, "#4e382d");
-    drawPixelRect(-9, -25, 2, 2, glint);
-    drawPixelRect(7, -25, 2, 2, glint);
   }
   ctx.restore();
 }
@@ -1774,8 +1654,7 @@ function drawUnit(unit) {
   if (useAttackSprite) {
     const column = clamp(Number(unit.action?.direction ?? unit.direction) || 0, 0, 7);
     const row = clamp(Number(unit.attackFrame) || 0, 0, 4);
-    if (spritePromise) drawCombatBodySprite(unit, spritePromise, animationState, walkCycle, idleCycle, deathProgress, motionOptions);
-    else drawProceduralCombatBody(unit, visualId, accent, animationState, walkCycle, idleCycle, deathProgress, motionOptions);
+    ctx.imageSmoothingEnabled = false;
     ctx.drawImage(attackSprite, column * 64, row * 64, 64, 64, -32, -64, 64, 64);
   } else if (unit.team === "ally") {
     if (spritePromise) drawCombatBodySprite(unit, spritePromise, animationState, walkCycle, idleCycle, deathProgress, motionOptions);
