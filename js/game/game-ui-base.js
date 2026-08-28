@@ -400,3 +400,42 @@ function handlePanelAction(button) {
     renderEvents("pass");
   } else if (action === "toast") toast(button.dataset.message || "功能準備中");
 }
+
+function showTutorial() {
+  if (save.tutorialDone) {
+    const layer = $("tutorialLayer");
+    if (layer) layer.hidden = true;
+    return;
+  }
+  const stepIndex = Math.min(save.tutorialStep || 0, (TUTORIAL_STEPS.length || 1) - 1);
+  const step = TUTORIAL_STEPS[stepIndex];
+  if (!step) {
+    save.tutorialDone = true;
+    persist();
+    const layer = $("tutorialLayer");
+    if (layer) layer.hidden = true;
+    return;
+  }
+  const titleEl = $("tutorialTitle");
+  const bodyEl = $("tutorialBody");
+  const nextBtn = $("tutorialNext");
+  const barEl = $("tutorialProgressBar");
+  if (titleEl) titleEl.textContent = step.title;
+  if (bodyEl) bodyEl.textContent = step.body;
+  if (nextBtn) nextBtn.textContent = step.action || "繼續";
+  if (barEl) barEl.style.width = ((stepIndex + 1) / Math.max(1, TUTORIAL_STEPS.length) * 100) + "%";
+  const layer = $("tutorialLayer");
+  if (layer) layer.hidden = false;
+}
+
+function advanceTutorial() {
+  save.tutorialStep = (save.tutorialStep || 0) + 1;
+  if (save.tutorialStep >= TUTORIAL_STEPS.length) {
+    save.tutorialDone = true;
+    const layer = $("tutorialLayer");
+    if (layer) layer.hidden = true;
+  } else {
+    showTutorial();
+  }
+  persist();
+}
