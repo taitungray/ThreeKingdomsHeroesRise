@@ -152,7 +152,7 @@ function renderHeroDetail(heroId, previewMax = false) {
   setPanel("武將詳情",
     headerNotice +
     '<section class="detail-hero">' +
-      avatarHtml(hero, true) +
+      avatarHtml(hero, false) +
       '<h3>' + hero.name + synergyTag + '</h3>' +
       '<span class="hero-role">' + hero.role + ' · ' + hero.title + '</span>' +
       '<p class="hero-power">戰力 <strong>' + formatNumber(power) + '</strong> ' + (previewMax ? '<small style="color:var(--gold,#d7b84f)">(滿級預覽)</small>' : '') + '</p>' +

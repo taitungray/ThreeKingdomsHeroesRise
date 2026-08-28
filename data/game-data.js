@@ -209,7 +209,7 @@ const EXTRA_HERO_SPECS = [
 const baseHeroByVisual = (visual) => window.THREE_KINGDOMS_DATA.heroes.find((hero) => hero.id === visual) || window.THREE_KINGDOMS_DATA.heroes[0];
 const extraHeroes = EXTRA_HERO_SPECS.map((spec) => {
   const template = baseHeroByVisual(spec.visual);
-  return { ...template, ...spec, avatar: template.avatar, portrait: "assets/characters/portrait-" + spec.id + "-v1.webp", portraitKey: spec.id, combatSprite: "assets/characters/combat-body-" + spec.id + "-v1.webp" };
+  return { ...template, ...spec, avatar: "avatar-" + spec.id, portrait: "assets/characters/portrait-" + spec.id + "-v1.webp", portraitKey: spec.id, combatSprite: "assets/characters/combat-body-" + spec.id + "-v1.webp" };
 });
 const lockedHeroIndex = window.THREE_KINGDOMS_DATA.heroes.findIndex((hero) => hero.id === "locked");
 window.THREE_KINGDOMS_DATA.heroes.splice(lockedHeroIndex < 0 ? window.THREE_KINGDOMS_DATA.heroes.length : lockedHeroIndex, 0, ...extraHeroes);
