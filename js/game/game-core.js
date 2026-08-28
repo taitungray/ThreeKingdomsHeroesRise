@@ -1137,6 +1137,27 @@ function equipmentSynergyTier(heroId) {
   return { tier: 0, name: "未共鳴", bonus: 0, desc: "精煉達 +3/+6/+10 啟動全套共鳴加成" };
 }
 
+const SIGNATURE_WEAPONS = {
+  guanyu: { weaponId: "guandao", name: "真·青龍偃月", desc: "青龍刀魂：對 Boss 傷害額外 +15%，攻擊 +15", stats: { atk: 15 }, bossDmg: 0.15 },
+  zhangfei: { weaponId: "serpent", name: "真·丈八蛇矛", desc: "丈八狂蛇：普攻造成重擊震盪，兵力 +60，防禦 +6", stats: { hp: 60, def: 6 }, knockback: 0.25 },
+  zhaoyun: { weaponId: "lance", name: "真·龍膽亮銀", desc: "龍膽亮銀：突進攻速提高 18%，速度 +6，攻擊 +10", stats: { speed: 6, atk: 10 }, speedBonus: 0.18 },
+  zhugeliang: { weaponId: "fan", name: "真·羽扇綸巾", desc: "臥龍東風：技能冷卻縮短 12%，謀略攻擊 +18", stats: { atk: 18 }, cdReduction: 0.12 },
+  lubu: { weaponId: "halberd", name: "真·方天畫戟", desc: "天下無雙：暴擊率提高 15%，攻擊 +20", stats: { atk: 20 }, crit: 0.15 },
+  liubei: { weaponId: "twin", name: "真·雌雄雙股", desc: "仁君雙劍：仁德治療效果提升 25%，全隊防禦 +5%", stats: { hp: 45, atk: 8 }, healBonus: 0.25 },
+  huangzhong: { weaponId: "bow", name: "真·百步穿楊", desc: "落日神弓：射程 +25，超遠距離暴擊率 +15%", stats: { range: 25, atk: 12 }, crit: 0.15 },
+  sunshang: { weaponId: "bow", name: "真·梟姬烈弓", desc: "梟姬赤弓：射程 +20，攻速 +10%，攻擊 +10", stats: { range: 20, atk: 10, speed: 5 }, speedBonus: 0.10 },
+  caocao: { weaponId: "twin", name: "真·倚天魏武", desc: "魏武雙雄：全隊技能冷卻縮短 6%，攻擊 +12", stats: { atk: 12 }, teamCd: 0.06 },
+  diaochan: { weaponId: "rings", name: "真·閉月雙環", desc: "閉月雙環：技能標記傷害提升至 25%，速度 +6", stats: { atk: 10, speed: 6 }, markDmg: 0.25 }
+};
+
+function heroSignatureResonance(heroId) {
+  const config = SIGNATURE_WEAPONS[heroId];
+  if (!config) return null;
+  const equippedWeapon = save.equipment?.[heroId]?.weapon;
+  const active = equippedWeapon === config.weaponId;
+  return { ...config, active, equippedWeapon };
+}
+
 function heroEquipmentStats(heroId) {
   const stats = PAPER_DOLL_SLOTS.reduce((result, slot) => {
     const item = paperDollItem(heroId, slot.id);
@@ -1148,6 +1169,12 @@ function heroEquipmentStats(heroId) {
   const totalMultiplier = (1 + refineLevel * 0.08) * (1 + synergy.bonus);
   if (refineLevel > 0 || synergy.bonus > 0) {
     for (const key of Object.keys(stats)) stats[key] = Math.round(stats[key] * totalMultiplier);
+  }
+  const signature = heroSignatureResonance(heroId);
+  if (signature?.active && signature.stats) {
+    for (const [key, value] of Object.entries(signature.stats)) {
+      stats[key] = (stats[key] || 0) + value;
+    }
   }
   return stats;
 }

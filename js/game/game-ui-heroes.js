@@ -137,6 +137,18 @@ function renderHeroDetail(heroId, previewMax = false) {
       '<div style="font-size:11px;color:#c7aa68;border-top:1px dashed rgba(215,184,79,0.15);padding-top:4px;"><b>功績典故</b> · ' + bio.deeds + '</div>' +
     '</div>';
 
+  const sig = typeof heroSignatureResonance === "function" ? heroSignatureResonance(heroId) : null;
+  const sigHtml = sig
+    ? '<p class="section-caption">專屬神兵真名共鳴</p>' +
+      '<div class="hero-skill-card" style="border-color:' + (sig.active ? 'rgba(215,184,79,0.6)' : 'rgba(100,100,100,0.3)') + ';background:' + (sig.active ? 'linear-gradient(135deg,#261c12,#3a2c16)' : '#1a1a1a') + ';margin-bottom:10px;">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:4px;">' +
+          '<strong style="color:' + (sig.active ? 'var(--gold,#d7b84f)' : '#888') + ';">' + sig.name + '</strong>' +
+          '<span class="level-tag" style="background:' + (sig.active ? 'linear-gradient(135deg,#c69234,#f0d376);color:#2b1900' : '#444;color:#999') + ';">' + (sig.active ? '神兵真名已啟動' : '未裝備專屬神兵') + '</span>' +
+        '</div>' +
+        '<p style="margin:4px 0 0 0;font-size:12px;line-height:1.4;color:' + (sig.active ? '#fff2b3' : '#777') + ';">' + sig.desc + '</p>' +
+      '</div>'
+    : '';
+
   setPanel("武將詳情",
     headerNotice +
     '<section class="detail-hero">' +
@@ -154,6 +166,7 @@ function renderHeroDetail(heroId, previewMax = false) {
     '</section>' +
     '<p class="section-caption">戰法與被動</p>' +
     '<div class="hero-skill-card"><div><strong>戰法 · ' + hero.skill + ' Lv.' + skillLevel + '</strong><span>冷卻 ' + Number(hero.skillCooldown || 5).toFixed(1) + ' 秒</span></div><p><b>效果</b> · ' + (HERO_SKILL_META[hero.id]?.effect || "根據兵種發揮") + '</p><p><b>範圍</b> · ' + (HERO_SKILL_META[hero.id]?.area || hero.role) + '</p><p><b>被動</b> · ' + (hero.passive || "尚未記載") + '</p></div>' +
+    sigHtml +
     heroBondsHtml +
     bioHtml +
     (unlocked ? paperDollHtml(hero) : '<div class="record-item" style="margin-top:10px;">' + synergy.desc + '</div>') +

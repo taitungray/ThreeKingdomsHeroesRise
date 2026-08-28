@@ -197,15 +197,26 @@ function attackMultiplier(attacker, target, baseMultiplier, context = {}) {
   if (hero.id === "machao" && context.charge && !attacker.passiveState.chargeUsed) multiplier *= 1.3;
   if (hero.id === "guojia" && context.skill && target?.hp / target?.maxHp < .35) multiplier *= 1.18;
   if (hero.id === "zhouyu" && context.skill && attacker.passiveState?.skillCount % 3 === 0) multiplier *= 1.08;
+  const sig = typeof heroSignatureResonance === "function" ? heroSignatureResonance(hero.id) : null;
+  if (sig?.active) {
+    if (sig.bossDmg && target?.type === "boss") multiplier *= (1 + sig.bossDmg);
+    if (sig.markDmg && hasStatus(target, "mark")) multiplier *= (1 + sig.markDmg);
+  }
   return multiplier;
 }
 
 function criticalChance(attacker, target, baseChance, distance) {
   let chanceValue = baseChance;
   const hero = attacker?.hero;
-  if (hero?.id === "huangzhong") chanceValue += Math.min(.12, Math.max(0, distance - 80) / 520);
-  if (hero?.id === "panzhang" && target?.type === "boss") chanceValue += .1;
-  if (hero?.id === "taishici" && attacker.lastTargetId === target?.id) chanceValue += Math.min(.16, (attacker.targetStreak || 0) * .04);
+  if (!hero) return chanceValue;
+  const sig = typeof heroSignatureResonance === "function" ? heroSignatureResonance(hero.id) : null;
+  if (sig?.active && sig.crit) chanceValue += sig.crit;
+  if (hero.id === "huangzhong") chanceValue += Math.min(.18, Math.max(0, (distance - 80) / 120) * .18);
+  if (hero.id === "lubu") chanceValue += .12;
+  if (hero.id === "guanxing") chanceValue += .1;
+  if (hero.id === "sunshang" && target?.role === "\u9a0e\u5175") chanceValue += .08;
+  if (hasStatus(attacker, "rage")) chanceValue += .15;
+  chanceValue += teamPassiveBonus("crit");
   return Math.min(.7, chanceValue);
 }
 
