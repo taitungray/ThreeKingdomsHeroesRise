@@ -126,6 +126,17 @@ function renderHeroDetail(heroId, previewMax = false) {
       }).join("") + '</div>'
     : '';
 
+  const bio = (typeof HERO_BIOGRAPHIES === "object" && HERO_BIOGRAPHIES[heroId]) || { courtesy: "名將", origin: "三國州郡", summary: hero.name + "，三國之世赫赫有名之將，隨主公征戰四方，立下汗馬功勞。", deeds: "身先士卒 · 屢立戰功" };
+  const bioHtml = '<p class="section-caption">名將生平列傳</p>' +
+    '<div class="hero-skill-card" style="border-color:rgba(215,184,79,0.3);background:linear-gradient(135deg,#1f1a14,#282017);margin-bottom:10px;">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(215,184,79,0.2);padding-bottom:4px;margin-bottom:6px;">' +
+        '<strong style="color:var(--gold,#d7b84f);">' + hero.name + ' · ' + bio.courtesy + '</strong>' +
+        '<span style="font-size:11px;opacity:0.75;">籍貫：' + bio.origin + '</span>' +
+      '</div>' +
+      '<p style="margin:0 0 6px 0;line-height:1.5;font-size:12px;color:#e8ded1;">' + bio.summary + '</p>' +
+      '<div style="font-size:11px;color:#c7aa68;border-top:1px dashed rgba(215,184,79,0.15);padding-top:4px;"><b>功績典故</b> · ' + bio.deeds + '</div>' +
+    '</div>';
+
   setPanel("武將詳情",
     headerNotice +
     '<section class="detail-hero">' +
@@ -144,6 +155,7 @@ function renderHeroDetail(heroId, previewMax = false) {
     '<p class="section-caption">戰法與被動</p>' +
     '<div class="hero-skill-card"><div><strong>戰法 · ' + hero.skill + ' Lv.' + skillLevel + '</strong><span>冷卻 ' + Number(hero.skillCooldown || 5).toFixed(1) + ' 秒</span></div><p><b>效果</b> · ' + (HERO_SKILL_META[hero.id]?.effect || "根據兵種發揮") + '</p><p><b>範圍</b> · ' + (HERO_SKILL_META[hero.id]?.area || hero.role) + '</p><p><b>被動</b> · ' + (hero.passive || "尚未記載") + '</p></div>' +
     heroBondsHtml +
+    bioHtml +
     (unlocked ? paperDollHtml(hero) : '<div class="record-item" style="margin-top:10px;">' + synergy.desc + '</div>') +
     '<div class="action-row">' +
       (unlocked ?
