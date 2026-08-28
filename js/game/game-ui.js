@@ -311,8 +311,11 @@ function renderFormation() {
     const heroId = save.formation.find((id) => save.positions[id] === slot);
     const hero = heroId ? heroById(heroId) : null;
     const selected = picked === slot;
+    const row = Math.floor(slot / 3);
+    const rowTag = row === 0 ? "前·堅壁" : row === 1 ? "中·突擊" : "後·策應";
     return '<button class="formation-slot' + (hero ? " filled" : "") + (selected ? " selected" : "") + '" type="button" data-action="formation-slot-swap" data-slot="' + slot + '"' + (hero ? ' data-hero="' + hero.id + '"' : "") + '>' +
-      (hero ? avatarHtml(hero) + "<b>" + hero.name + "</b>" : "<small>空位</small>") +
+      '<span class="slot-pos-tag" style="position:absolute;top:2px;left:4px;font-size:10px;opacity:0.75;">' + rowTag + '</span>' +
+      (hero ? avatarHtml(hero) + "<b>" + hero.name + "</b>" : "<small style='margin-top:10px;'>空位</small>") +
     "</button>";
   }).join("");
   const power = save.formation.reduce((sum, id) => {
@@ -320,35 +323,46 @@ function renderFormation() {
     const equipment = heroEquipmentStats(id);
     return sum + Math.round(((hero.atk + equipment.atk) * 7 + hero.hp + equipment.hp) * (1 + save.heroLevels[id] * .13));
   }, 0);
+  const bonds = activeBonds();
+  const bondsHtml = bonds.length
+    ? '<div class="active-bonds-strip" style="margin-top:10px;padding:6px 10px;background:rgba(215,184,79,0.12);border:1px solid rgba(215,184,79,0.3);border-radius:4px;font-size:12px;"><strong>啟動羈絆：</strong>' + bonds.map((b) => '<span style="margin-right:8px;color:var(--gold,#d7b84f);">[' + b.name + '] ' + b.desc + '</span>').join("") + '</div>'
+    : '<div class="active-bonds-strip" style="margin-top:10px;padding:4px 8px;font-size:11px;opacity:0.75;">湊齊桃園三結義、五虎將、臥龍鳳雛等可啟動額外羈絆。</div>';
+
   setPanel("出戰編隊",
     '<div class="formation-layout">' +
       '<div class="formation-board"><div class="slot-grid">' + slots + '</div></div>' +
       '<aside class="formation-summary">' +
-        '<h3>義勇軍</h3>' +
+        '<h3>義勇軍陣</h3>' +
         '<p>出戰 <strong>' + save.formation.length + ' / 5</strong></p>' +
         '<p>總戰力<br><strong>' + formatNumber(power) + '</strong></p>' +
-        '<p>點選兩個格子即可換位<br>前排承傷 · 後排輸出</p>' +
+        '<p style="font-size:11px;line-height:1.4;">前排：生命+10% 防禦+12%<br>中排：攻擊+8% 暴擊<br>後排：攻速+8% 射程+18</p>' +
         '<button class="seal-button" type="button" data-action="formation-save">套用編隊</button>' +
       '</aside>' +
     '</div>' +
+    bondsHtml +
     '<p class="section-caption">點選武將加入或撤下</p>' +
     '<div class="hero-grid">' + HEROES.filter(isUnlocked).map((hero) => heroCardHtml(hero, "formation-toggle")).join("") + "</div>");
 }
 
 function renderTactics() {
+  const activeTactic = save.equippedTactic || "snake";
   const tacticCards = TACTICS.map((tactic) => {
-    const level = save.tactics[tactic.id];
+    const level = save.tactics[tactic.id] || 1;
     const cost = tactic.cost * level;
-    return '<article class="tactic-card">' +
+    const isEquipped = tactic.id === activeTactic;
+    const rawBonus = tactic.base + (level - 1) * 0.025;
+    return '<article class="tactic-card' + (isEquipped ? " active-equipped" : "") + '">' +
       '<div class="tactic-sigil"><span>' + tactic.sigil + '</span></div>' +
-      '<h3>' + tactic.name + '</h3>' +
+      '<h3>' + tactic.name + (isEquipped ? ' <small class="level-tag">出戰中</small>' : '') + '</h3>' +
       '<span class="level-tag">Lv.' + level + '</span>' +
-      '<p>' + tactic.desc + '<br>目前加成：' + Math.round(tacticBonus(tactic.id) * 100) + '%</p>' +
-      '<button class="seal-button" type="button" data-action="tactic-level" data-tactic="' + tactic.id + '"' + (save.food < cost ? " disabled" : "") + '>強化 ' + cost + ' 糧</button>' +
+      '<p>' + tactic.desc + '<br>滿級加成：' + Math.round(rawBonus * 100) + '%' + (isEquipped ? ' · <strong style="color:var(--gold,#d7b84f)">生效中</strong>' : ' · 未啟用') + '</p>' +
+      '<div class="action-row" style="display:flex;gap:6px;margin-top:8px;">' +
+        '<button class="' + (isEquipped ? "stone-button" : "seal-button") + ' panel-action" type="button" data-action="tactic-equip" data-tactic="' + tactic.id + '"' + (isEquipped ? " disabled" : "") + '>' + (isEquipped ? "已配備" : "出戰") + '</button>' +
+        '<button class="stone-button panel-action" type="button" data-action="tactic-level" data-tactic="' + tactic.id + '"' + (save.food < cost ? " disabled" : "") + '>強化 ' + cost + ' 糧</button>' +
+      '</div>' +
     "</article>";
   }).join("");
   setPanel("兵法戰策",
-    '<div class="panel-tabs"><button class="active" type="button">軍陣</button><span class="tab-note">全隊常駐加成</span></div>' +
     '<p class="section-caption">全隊永久生效</p>' +
     '<div class="tactic-list">' + tacticCards + "</div>");
 }
@@ -552,14 +566,13 @@ function hideUnavailableMode(title, copy) {
 }
 
 function renderArena() {
-  hideUnavailableMode(UI_TEXT.arena, "演武改為正式戰鬥前先隱藏。目前只保留主線與問天樓。");
-  return;
   const power = currentArmyPower();
+  const claimedCount = save.arena?.claimed?.length || 0;
   const cards = ARENA_OPPONENTS.map((opponent) => {
-    const challenged = save.arena.claimed.includes(opponent.id);
-    return '<article class="arena-card ' + (challenged ? "cleared" : "") + '"><div class="arena-badge">戰</div><div><h3>' + opponent.name + '</h3><p>\u8a55\u4f30\u6230\u529b <strong>' + formatNumber(opponent.power) + '</strong></p><small>\u6211\u65b9\u6230\u529b ' + formatNumber(power) + '</small></div><button class="' + (challenged ? "stone-button" : "seal-button") + ' panel-action" type="button" data-action="arena-challenge" data-opponent="' + opponent.id + '"' + (challenged ? " disabled" : "") + '>' + (challenged ? "\u5df2\u6311\u6230" : UI_TEXT.battle) + '</button></article>';
+    const challenged = (save.arena?.claimed || []).includes(opponent.id);
+    return '<article class="arena-card ' + (challenged ? "cleared" : "") + '"><div class="arena-badge">' + (opponent.tag || "戰") + '</div><div><h3>' + opponent.name + '</h3><p>評估戰力 <strong>' + formatNumber(opponent.power) + '</strong> · 敵陣 ' + (opponent.generals?.length || 3) + ' 將</p><small>獎勵 ' + rewardHtml(opponent.reward, true) + '</small></div><button class="' + (challenged ? "stone-button" : "seal-button") + ' panel-action" type="button" data-action="arena-challenge" data-opponent="' + opponent.id + '"' + (challenged ? " disabled" : "") + '>' + (challenged ? "已挑戰" : "切磋") + '</button></article>';
   }).join("");
-  setPanel(UI_TEXT.arena, '<section class="arena-banner"><span class="eyebrow">本機影武</span><h3>\u6f14\u6b66\u5e73\u53f0</h3><p>\u4e0d\u9023\u7dda\u4e5f\u53ef\u8207\u6b77\u53f2\u5f71\u5b50\u4ea4\u624b\uff0c\u6bcf\u9031\u91cd\u7f6e\u6311\u6230\u6b21\u6578\u3002</p></section><div class="arena-list">' + cards + '</div>');
+  setPanel(UI_TEXT.arena, '<section class="arena-banner"><span class="eyebrow">本機影武 · 每週切磋</span><h3>演武擂台</h3><p>與名將幻影進行 5v5 正式對決，驗證陣容剋制與戰法策略。每週結算重置。</p><div class="mode-stats"><span>我方戰力 <b>' + formatNumber(power) + '</b></span><span>本週已勝 <b>' + claimedCount + ' / ' + ARENA_OPPONENTS.length + '</b></span></div></section><div class="arena-list">' + cards + '</div>');
 }
 
 function damageStatsHtml(rows = []) {
@@ -703,21 +716,16 @@ async function buyShopItem(itemId) {
 function challengeArena(opponentId) {
   ensureCycleState();
   const opponent = ARENA_OPPONENTS.find((item) => item.id === opponentId);
-  if (!opponent || save.arena.claimed.includes(opponent.id)) return;
-  save.arena.attempts += 1;
-  save.arena.claimed.push(opponent.id);
-  recordTaskProgress("daily-arena");
-  const win = currentArmyPower() >= opponent.power;
-  if (win) {
-    save.arena.wins += 1;
-    awardResources(opponent.reward);
-    toast("\u6f14\u6b66\u52dd\u5229\uff0c\u7372\u5f97\u6230\u529f");
-  } else {
-    toast("\u4e0d\u654c\u5f37\u6575\uff0c\u4e0b\u9031\u518d\u4f86");
-  }
-  persist();
-  updateHud();
-  renderArena();
+  if (!opponent || (save.arena?.claimed || []).includes(opponent.id)) return;
+  runtime.mode = "arena";
+  runtime.arenaOpponent = opponent.id;
+  runtime.bossActive = false;
+  runtime.waveClears = 0;
+  closePanel();
+  resetAllies();
+  spawnWave(true, true);
+  addLog("前往演武場挑戰「" + opponent.name + "」。");
+  toast("進入演武場·對決「" + opponent.name + "」");
 }
 
 function accountDisplayName(user) {
@@ -865,20 +873,17 @@ function renderTower() {
 }
 
 function renderDungeons() {
-  hideUnavailableMode("日常副本", "副本改為正式戰鬥前先隱藏。目前只保留主線與問天樓。");
-  return;
   const stamina = staminaStatus();
   const cards = DAILY_DUNGEONS.map((dungeon) => {
     const claimed = Boolean(save.dungeons?.claimed?.[dungeon.id]);
-    const winPower = currentArmyPower() >= dungeon.power;
-    return '<article class="mode-card ' + (claimed ? "cleared" : "") + '"><div class="mode-icon">\u65e5</div><div><h3>' + dungeon.name + '</h3><p>' + dungeon.desc + '</p><small>\u5efa\u8b70\u6230\u529b ' + formatNumber(dungeon.power) + ' \u00b7 ' + rewardHtml(dungeon.reward, true) + '</small></div><button class="' + (claimed ? "stone-button" : "seal-button") + ' panel-action" type="button" data-action="dungeon-challenge" data-dungeon="' + dungeon.id + '"' + (claimed || stamina.current < dungeon.cost ? " disabled" : "") + '>' + (claimed ? "\u5df2\u5b8c\u6210" : winPower ? "\u6311\u6230" : "\u53ef\u8a66\u6230") + '<br><small>' + dungeon.cost + '\u9ad4\u529b</small></button></article>';
+    return '<article class="mode-card ' + (claimed ? "cleared" : "") + '"><div class="mode-icon">特</div><div><h3>' + dungeon.name + '</h3><p>' + dungeon.desc + '</p><small>建議戰力 ' + formatNumber(dungeon.power) + ' · ' + rewardHtml(dungeon.reward, true) + '</small></div><button class="' + (claimed ? "stone-button" : "seal-button") + ' panel-action" type="button" data-action="dungeon-challenge" data-dungeon="' + dungeon.id + '"' + (claimed || stamina.current < dungeon.cost ? " disabled" : "") + '>' + (claimed ? "已完成" : "挑戰") + '<br><small>' + dungeon.cost + ' 體力</small></button></article>';
   }).join("");
-  setPanel("\u65e5\u5e38\u526f\u672c", '<section class="mode-banner"><span class="eyebrow">每日特訓</span><h3>\u4eca\u65e5\u7279\u8a13</h3><p>\u6bcf 5 \u5206\u9418\u56de\u5fa9 1 \u9ede\u9ad4\u529b\uff0c\u6bcf\u65e5\u5404\u526f\u672c\u9650\u9818 1 \u6b21\u3002</p><div class="mode-stats"><span>\u9ad4\u529b <b>' + stamina.current + ' / ' + stamina.max + '</b></span><span>\u4e0b\u6b21\u56de\u5fa9 <b>\u81ea\u52d5</b></span></div></section><div class="mode-list">' + cards + '</div>');
+  setPanel("日常副本", '<section class="mode-banner"><span class="eyebrow">每日特訓 · 資源獲取</span><h3>日常副本</h3><p>挑戰特定主題部隊與首領，獲取大量銅錢、糧草、玉璧與鍛造碎片。每日 00:00 重置。</p><div class="mode-stats"><span>體力 <b>' + stamina.current + ' / ' + stamina.max + '</b></span><span>每 5 分鐘回復 <b>+1</b></span></div></section><div class="mode-list">' + cards + '</div>');
 }
 
 function sweepStage(stage = Math.max(1, save.stage - 1)) {
-  if (stage >= save.stage) return toast("\u9700\u5148\u901a\u95dc\u4e00\u6b21\u624d\u80fd\u6383\u8569");
-  if (!spendStamina(1)) return toast("\u9ad4\u529b\u4e0d\u8db3\uff0c\u7b49\u5f85\u56de\u5fa9");
+  if (stage >= save.stage) return toast("需先通關一次才能掃蕩");
+  if (!spendStamina(1)) return toast("體力不足，等待回復");
   const config = stageDefinition(stage);
   const reward = { gold: Math.round((config?.goldBonus || 20 + stage * 3) * .9), food: Math.round((35 + stage * 5) * .9), exp: 12 + stage };
   awardResources(reward);
@@ -888,29 +893,23 @@ function sweepStage(stage = Math.max(1, save.stage - 1)) {
   persist();
   updateHud();
   renderCampaign();
-  toast("\u6383\u8569\u5b8c\u6210\uff0c\u7372\u5f97\u8ecd\u8cc7");
+  toast("掃蕩完成，獲得軍資");
 }
 
 function challengeDungeon(dungeonId) {
   ensureCycleState();
   const dungeon = DAILY_DUNGEONS.find((item) => item.id === dungeonId);
-  if (!dungeon || save.dungeons.claimed[dungeon.id]) return;
-  if (!spendStamina(dungeon.cost)) return toast("\u9ad4\u529b\u4e0d\u8db3\uff0c\u7b49\u5f85\u56de\u5fa9");
-  save.dungeons.claimed[dungeon.id] = true;
-  const win = currentArmyPower() >= dungeon.power * .82;
-  recordStat("battles");
-  recordTaskProgress("daily-dungeon");
-  if (win) {
-    awardResources(dungeon.reward);
-    recordStat("wins");
-    toast(dungeon.name + "\u901a\u95dc\uff0c\u8ecd\u8cc7\u5165\u5eab");
-  } else {
-    recordStat("losses");
-    toast(dungeon.name + "\u6574\u8ecd\u5931\u6557\uff0c\u660e\u65e5\u518d\u6230");
-  }
-  persist();
-  updateHud();
-  renderDungeons();
+  if (!dungeon || save.dungeons?.claimed?.[dungeon.id]) return;
+  if (!spendStamina(dungeon.cost)) return toast("體力不足，等待回復");
+  runtime.mode = "dungeon";
+  runtime.dungeonId = dungeon.id;
+  runtime.bossActive = false;
+  runtime.waveClears = 0;
+  closePanel();
+  resetAllies();
+  spawnWave(false, true);
+  addLog("挑戰日常副本「" + dungeon.name + "」。");
+  toast("出征「" + dungeon.name + "」！");
 }
 
 function challengeTower() {
@@ -1074,9 +1073,18 @@ function handlePanelAction(button) {
     toggleFormation(button.dataset.hero);
     runtime.panel === "formation" ? renderFormation() : renderHeroDetail(button.dataset.hero);
   } else if (action === "formation-save") { resetAllies(); persist(); toast("\u7de8\u968a\u5df2\u5957\u7528");
-  } else if (action === "formation-slot-swap") swapFormationSlots(button.dataset.slot);
-  else if (action === "empty-slot") toast("\u5f9e\u4e0b\u65b9\u9ede\u9078\u6b66\u5c07\u52a0\u5165\u6b64\u9663");
-  else if (action === "tactic-level") {
+  } else if (action === "formation-slot-swap") {
+    swapFormationSlots(button.dataset.slot);
+  } else if (action === "empty-slot") {
+    toast("從下方點選武將加入此陣");
+  } else if (action === "tactic-equip") {
+    save.equippedTactic = button.dataset.tactic;
+    resetAllies();
+    persist();
+    const tactic = TACTICS.find((item) => item.id === save.equippedTactic);
+    toast("軍陣戰法已切換為「" + (tactic?.name || "戰法") + "」");
+    renderTactics();
+  } else if (action === "tactic-level") {
     const id = button.dataset.tactic;
     const tactic = TACTICS.find((item) => item.id === id);
     const cost = tactic.cost * save.tactics[id];

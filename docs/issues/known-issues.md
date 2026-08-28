@@ -50,7 +50,7 @@
 | UI-004 | `.compact-hud` + `360px` media | 390×720／320×568 三秒測試 |
 | UI-005 | 詳情改 grid；戰法文案改中文；無 `ACTIVE ARMY PASSIVE` | 詳情／戰法頁截圖 |
 | GAMEPLAY-001 | `formation-slot-swap` + `swapFormationSlots()` | 換位保存／重載與戰果差 |
-| GAMEPLAY-002 | 問天樓走正式戰鬥；演武／副本「尚未開放」 | 問天樓勝敗獎勵流程畫面 |
+| GAMEPLAY-002 | 問天樓、演武場與日常副本全部對接正式戰鬥生命週期與專屬結算 | 各模式戰勝／戰敗畫面包 |
 | ECON-001 | `ownedEquipment`；商城「兌換」＋可重複項＋玄鐵鎧 | 兌換消耗循環畫面 |
 | CONTENT-001 | `CHAPTER1_STAGE_SPECS` 10 關專名 | 章卡與關卡列表對讀 |
 | CONTENT-002 | 成就改「桃園初陣／赤壁火計／連環斬殺／百戰精兵」，直向螢幕提示，smoke-test 增加簡體字防護 | 全量繁中人工走查 |

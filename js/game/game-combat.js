@@ -46,8 +46,11 @@ function formationPoint(slot) {
 }
 
 function tacticBonus(id) {
+  const activeTactic = save.equippedTactic || "snake";
+  if (id !== activeTactic) return 0;
   const tactic = TACTICS.find((item) => item.id === id);
-  return tactic.base + (save.tactics[id] - 1) * 0.025;
+  if (!tactic) return 0;
+  return tactic.base + ((save.tactics?.[id] || 1) - 1) * 0.025;
 }
 
 function livingUnits(units) {
@@ -297,10 +300,31 @@ function makeEnemy(index, boss = false) {
   const stage = activeStageNumber();
   const config = stageDefinition(stage);
   const stagePower = config?.enemyPower || 1 + (stage - 1) * 0.16;
-  const enemyType = boss ? "boss" : config?.enemyPool?.[(index + runtime.waveClears) % config.enemyPool.length] || (chance(0.25) ? "archer" : chance(0.32) ? "brute" : "bandit");
-  const generalIds = config?.enemyGenerals || [];
+  let enemyType = boss ? "boss" : config?.enemyPool?.[(index + runtime.waveClears) % config.enemyPool.length] || (chance(0.25) ? "archer" : chance(0.32) ? "brute" : "bandit");
+  let generalIds = config?.enemyGenerals || [];
   const waveGeneralIndex = Math.min(runtime.waveClears, Math.max(0, generalIds.length - 1));
-  const enemyGeneralId = generalIds.length ? generalIds[waveGeneralIndex] : null;
+  let enemyGeneralId = generalIds.length ? generalIds[waveGeneralIndex] : null;
+  let modePowerScale = 1;
+
+  if (runtime.mode === "tower") {
+    modePowerScale = 1 + Math.max(0, (runtime.towerFloor || 1) - 1) * 0.12;
+  } else if (runtime.mode === "arena") {
+    const opp = (GAME_DATA.arenaOpponents || []).find((item) => item.id === runtime.arenaOpponent);
+    if (opp) {
+      modePowerScale = (opp.power || 2000) / 1600;
+      generalIds = opp.generals || ["zhangjiao", "yanliang", "wenchou"];
+      enemyGeneralId = generalIds[index % generalIds.length];
+      if (boss || index === 0) enemyGeneralId = generalIds[0];
+    }
+  } else if (runtime.mode === "dungeon") {
+    const dung = (GAME_DATA.dailyDungeons || []).find((item) => item.id === runtime.dungeonId);
+    if (dung) {
+      modePowerScale = (dung.power || 2200) / 1800;
+      if (!boss) enemyType = dung.enemyType || "bandit";
+      enemyGeneralId = dung.bossGeneral || "dongzhuo";
+    }
+  }
+
   const enemyProfiles = {
     bandit: { role: "步兵", hp: 105, atk: 11, def: 3.5, speed: 13, range: 27, color: "#8f3630" },
     brute: { role: "步兵", hp: 148, atk: 14, def: 6, speed: 10, range: 29, color: "#565858" },
@@ -309,8 +333,7 @@ function makeEnemy(index, boss = false) {
     strategist: { role: "謀士", hp: 76, atk: 13, def: 2, speed: 11, range: 138, color: "#5a527d" }
   };
   const profile = enemyProfiles[enemyType] || enemyProfiles.bandit;
-  const towerScale = runtime.mode === "tower" ? 1 + Math.max(0, (runtime.towerFloor || 1) - 1) * 0.12 : 1;
-  const maxHp = Math.round((boss ? (config?.bossHp || 680) : profile.hp + Math.random() * 18) * stagePower * towerScale);
+  const maxHp = Math.round((boss ? (config?.bossHp || 680) : profile.hp + Math.random() * 18) * stagePower * modePowerScale);
   const lanes = [78, 132, 190, 248, 309];
   const spawnX = lanes[index % lanes.length] + (Math.random() - 0.5) * 24;
   const targetY = (boss ? BOSS_SPAWN_Y : ENEMY_SPAWN_Y) + Math.floor(index / lanes.length) * 44 + Math.random() * 16;
@@ -320,7 +343,7 @@ function makeEnemy(index, boss = false) {
     id: "enemy-" + Date.now() + "-" + index,
     team: "enemy",
     type: enemyType,
-    enemyGeneralId: boss ? config?.bossGeneral || enemyGeneralId : enemyGeneralId,
+    enemyGeneralId: boss ? (runtime.mode === "dungeon" ? enemyGeneralId : config?.bossGeneral || enemyGeneralId) : enemyGeneralId,
     x: spawnX,
     y: spawnY,
     targetY,
@@ -951,7 +974,50 @@ function damageSummary() {
 function waveCleared() {
   if (runtime.spawning || runtime.enemies.length === 0 || runtime.enemies.some((enemy) => !enemy.dead)) return;
   runtime.spawning = true;
+
+  if (runtime.mode === "arena") {
+    const opp = (GAME_DATA.arenaOpponents || []).find((item) => item.id === runtime.arenaOpponent);
+    const reward = opp?.reward || { gold: 500, jade: 2 };
+    awardResources(reward);
+    if (opp && !save.arena.claimed.includes(opp.id)) save.arena.claimed.push(opp.id);
+    save.arena.wins = (save.arena.wins || 0) + 1;
+    save.arena.attempts = (save.arena.attempts || 0) + 1;
+    recordStat("wins");
+    recordTaskProgress("daily-arena");
+    runtime.waveClears = 0;
+    runtime.bossActive = false;
+    runtime.nextStageAfterSettlement = save.stage;
+    runtime.battleResult = { type: "win", stage: save.stage, boss: "演武·" + (opp?.name || "對手"), progressed: false, newlyUnlocked: "", reward, damage: damageSummary(), mode: "arena" };
+    addLog("演武場擊敗「" + (opp?.name || "對手") + "」，威震三軍！");
+    runtime.mode = "campaign";
+    runtime.arenaOpponent = null;
+    persist();
+    if (typeof showSettlement === "function") showSettlement(runtime.battleResult);
+    return;
+  }
+
   if (runtime.bossActive) {
+    if (runtime.mode === "dungeon") {
+      const dung = (GAME_DATA.dailyDungeons || []).find((item) => item.id === runtime.dungeonId);
+      const reward = dung?.reward || { gold: 800, exp: 50 };
+      awardResources(reward);
+      save.dungeons ||= { date: localDateKey(), claimed: {} };
+      if (dung) save.dungeons.claimed[dung.id] = true;
+      recordStat("wins");
+      recordStat("bosses");
+      recordTaskProgress("daily-dungeon");
+      runtime.waveClears = 0;
+      runtime.bossActive = false;
+      runtime.nextStageAfterSettlement = save.stage;
+      runtime.battleResult = { type: "win", stage: save.stage, boss: dung?.name || "每日特訓", progressed: false, newlyUnlocked: "", reward, damage: damageSummary(), mode: "dungeon" };
+      addLog("每日副本「" + (dung?.name || "特訓") + "」全勝通關！");
+      runtime.mode = "campaign";
+      runtime.dungeonId = null;
+      persist();
+      if (typeof showSettlement === "function") showSettlement(runtime.battleResult);
+      return;
+    }
+
     if (runtime.mode === "tower") {
       const floor = runtime.towerFloor || 1;
       const reward = { gold: 170 + floor * 22, food: 55 + floor * 8, jade: floor % 5 === 0 ? 2 : 0, exp: 24 + floor * 3, shards: 1 };
@@ -971,6 +1037,7 @@ function waveCleared() {
       if (typeof showSettlement === "function") showSettlement(runtime.battleResult);
       return;
     }
+
     const battleStage = activeStageNumber();
     const chapter = chapterForStage();
     const progressed = battleStage >= save.stage;
@@ -1025,15 +1092,26 @@ function waveCleared() {
     }
   }
 }
+
 function partyDefeated() {
   if (runtime.spawning || runtime.allies.length === 0 || runtime.allies.some((ally) => !ally.dead)) return;
   runtime.spawning = true;
   runtime.enemies.length = 0;
-  if (runtime.mode === "tower") {
+
+  if (runtime.mode === "arena") {
+    addLog("演武場切磋惜敗，調整陣容再試。");
+    runtime.mode = "campaign";
+    runtime.arenaOpponent = null;
+  } else if (runtime.mode === "dungeon") {
+    addLog("副本特訓未竟全功，整軍再戰。");
+    runtime.mode = "campaign";
+    runtime.dungeonId = null;
+  } else if (runtime.mode === "tower") {
     addLog("問天樓第 " + (runtime.towerFloor || 1) + " 層整軍失敗，層數不變。");
     runtime.mode = "campaign";
     runtime.towerFloor = 0;
   }
+
   recordStat("losses");
   runtime.nextStageAfterSettlement = activeStageNumber();
   runtime.battleResult = { type: "lose", stage: activeStageNumber(), reward: {}, damage: damageSummary() };

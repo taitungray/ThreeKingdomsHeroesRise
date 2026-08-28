@@ -136,7 +136,7 @@ assert.ok(gameSource.includes("formation-slot-swap") && gameSource.includes("fun
 assert.ok(gameSource.includes("ownedEquipment") && gameSource.includes("function cycleOwnedEquipment"), "equipment cycling must stay inside the owned inventory");
 assert.ok(gameSource.includes("兌換") && !gameSource.includes("ACTIVE ARMY PASSIVE"), "shop copy uses 兌換 and tactics must not leak internal English");
 assert.ok(!gameSource.includes("桃園初陳") && !gameSource.includes("玉璇") && !gameSource.includes("連環妁殺") && !gameSource.includes("\u6226") && !gameSource.includes("战"), "known Traditional-Chinese typos and simplified chars must stay removed");
-assert.ok(gameSource.includes("runtime.mode === \"tower\"") && gameSource.includes("hideUnavailableMode"), "tower reuses real combat; arena/dungeon stay hidden");
+assert.ok(gameSource.includes("runtime.mode === \"tower\"") && gameSource.includes("runtime.mode === \"arena\"") && gameSource.includes("runtime.mode === \"dungeon\""), "tower, arena and dungeon all reuse full real combat loop");
 assert.ok(gameSource.includes("function reducedMotionActive") && gameSource.includes("function applyLocalImpact"), "hit feedback must be local and honor reduced motion");
 assert.ok(!gameSource.includes("ctx.translate((Math.random() - 0.5) * runtime.shake"), "canvas must not apply a full-frame shake translate");
 assert.ok(gameSource.includes("outerDeath") && gameSource.includes("outerAction"), "body motion must not restack death/action transforms already applied by drawUnit");

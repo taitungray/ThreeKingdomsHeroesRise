@@ -346,10 +346,10 @@ window.THREE_KINGDOMS_DATA.shopItems = [
   { id: "no-ads", name: "永久無廣告", desc: "移除獎勵廣告限制", cost: { jade: 0 }, reward: { adFree: true }, tone: "legend", productId: "sku_no_ads_permanent", requiresNativePurchase: true }
 ]
 window.THREE_KINGDOMS_DATA.arenaOpponents = [
-  { id: "ghost-1", name: "\u9ec3\u5dfe\u65b0\u8ecd", power: 1800, reward: { gold: 320, jade: 1 } },
-  { id: "ghost-2", name: "\u897f\u6dbc\u9a0e\u5175", power: 2600, reward: { gold: 460, food: 120 } },
-  { id: "ghost-3", name: "\u6c34\u8ecd\u90fd\u7763", power: 3400, reward: { gold: 620, jade: 2 } },
-  { id: "ghost-4", name: "\u4e94\u6eaa\u86ee\u738b", power: 4300, reward: { food: 380, jade: 3 } }
+  { id: "ghost-1", name: "黃巾新軍", tag: "妖術伏兵", generals: ["zhangjiao", "yanliang", "wenchou"], level: 3, power: 1800, reward: { gold: 450, jade: 2, food: 150 } },
+  { id: "ghost-2", name: "西涼鐵騎", tag: "重裝突陣", generals: ["dongzhuo", "wenchou", "yuanshao"], level: 8, power: 2800, reward: { gold: 650, food: 250, jade: 3 } },
+  { id: "ghost-3", name: "水軍都督", tag: "神射連環", generals: ["taishici", "yuanshao", "simayi"], level: 14, power: 3900, reward: { gold: 900, jade: 4, shards: 5 } },
+  { id: "ghost-4", name: "飛將呂布", tag: "天下無雙", generals: ["lvbu", "dongzhuo", "zhangjiao"], level: 22, power: 5200, reward: { gold: 1400, food: 500, jade: 6, shards: 10 } }
 ];
 window.THREE_KINGDOMS_DATA.storyBeats = [
   { id: "peach-garden", stage: 1, speaker: "\u5289\u5099", text: "\u4eca\u65e5\u7d50\u7fa9\uff0c\u4ed6\u65e5\u5171\u5b88\u5c71\u6cb3\u3002" },
@@ -378,9 +378,9 @@ window.THREE_KINGDOMS_DATA.bonds = [
   { id: "five-tigers", name: "\u4e94\u864e\u9918\u5a01", heroes: ["guanyu", "zhangfei", "zhaoyun", "huangzhong", "machao"], kind: "def", value: 0.06, desc: "\u96c6\u7d50\u4e09\u540d\u4ee5\u4e0a\u4e94\u864e\uff1a\u5168\u968a\u9632\u79a6 +6%" }
 ];
 window.THREE_KINGDOMS_DATA.dailyDungeons = [
-  { id: "coin-vault", name: "\u9285\u96c0\u5bf6\u5eab", desc: "\u64ca\u9000\u5b88\u5eab\u8ecd\uff0c\u53d6\u5f97\u5927\u91cf\u9285\u9322\u3002", cost: 3, power: 2200, reward: { gold: 720, exp: 55 } },
-  { id: "grain-field", name: "\u8ecd\u7ce7\u5c6f\u7530", desc: "\u5b88\u4f4f\u7ce7\u9053\uff0c\u88dc\u8db3\u884c\u8ecd\u7ce7\u8349\u3002", cost: 3, power: 2700, reward: { food: 620, exp: 55 } },
-  { id: "weapon-yard", name: "\u795e\u5175\u8a66\u7149", desc: "\u6311\u6230\u935b\u5175\u5834\uff0c\u53d6\u5f97\u7389\u74a7\u8207\u7d93\u9a57\u3002", cost: 4, power: 3400, reward: { jade: 3, shards: 6, exp: 80 } }
+  { id: "coin-vault", name: "銅雀寶庫", desc: "擊退守庫強梁，奪回被掠奪的大量軍費銅錢。", cost: 3, power: 2200, enemyType: "bandit", bossGeneral: "dongzhuo", reward: { gold: 950, exp: 60 } },
+  { id: "grain-field", name: "軍糧屯田", desc: "守護軍糧運補隊，抵禦劫糧先鋒，補充行軍糧草。", cost: 3, power: 2700, enemyType: "cavalry", bossGeneral: "wenchou", reward: { food: 850, exp: 60 } },
+  { id: "weapon-yard", name: "神兵試煉", desc: "挑戰重甲精銳營，取得鍛造玉璧與名將碎片。", cost: 4, power: 3400, enemyType: "brute", bossGeneral: "yanliang", reward: { jade: 4, shards: 8, exp: 90 } }
 ];
 window.THREE_KINGDOMS_DATA.treasures = [
   { id: "peach-jade", name: "\u6843\u5712\u7389\u74a7", desc: "\u5168\u968a\u751f\u547d\u4e0a\u9650 +5%\u3002", kind: "hp", value: 0.05, unlock: 1 },
