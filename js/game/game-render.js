@@ -1820,22 +1820,23 @@ function drawUnit(unit) {
 
 
 function preloadConfiguredAssets() {
-  const paths = HEROES.filter((hero) => hero.portrait || hero.combatSprite).reduce((all, hero) => {
-    if (hero.portrait) all.push(hero.portrait);
-    if (hero.combatSprite) all.push(hero.combatSprite);
-    return all;
-  }, []);
-  const mountIds = ["foot", "grey", "redhare", "jadelion", "whitehorse", "blackhorse", "war-elephant", "cloud-deer", "hex-mark", "thunder-horse", "armored-rhino", "crimson-deer", "flying-horse", "black-panther"];
-  const mountPaths = mountIds.map((id) => "assets/characters/mount-" + id + "-v1.webp");
-  const attackIds = [...HEROES.map((hero) => hero.id), "bandit", "brute", "cavalry", "archer", "strategist", "boss-zhangjiao", "boss-dongzhuo", "boss-lvbu", "boss-menghuo"];
+  // Preload only the immediate starting combat assets; remaining 46 heroes and late stages lazy-load via ASSETS.get()
+  const attackIds = ["liubei", "guanyu", "zhangfei", "zhaoyun", "bandit", "boss-zhangjiao"];
   const attackPaths = attackIds.map((id) => "assets/characters/attack-" + id + "-v1.webp");
-  const terrainPaths = Array.from({ length: 16 }, (_, index) => "assets/backgrounds/terrain-tile-" + index + "-v1.webp");
-  const vfxPaths = Array.from({ length: 16 }, (_, index) => "assets/vfx/vfx-" + index + "-v1.webp");
-  const bossPaths = ["zhangjiao", "dongzhuo", "lvbu", "menghuo"].map((id) => "assets/characters/boss-" + id + "-v1.webp");
-  const enemyBodyIds = [...Object.values(ENEMY_BODY_BY_TYPE), ...Object.values(ENEMY_GENERAL_BODY_ALIASES), "locked"];
-  const enemyBodyPaths = [...new Set(enemyBodyIds)].map((id) => "assets/characters/combat-body-" + id + "-v1.webp");
-  const weaponPaths = ["twin", "guandao", "serpent", "lance", "bow", "fan", "rings", "halberd", "sword"].map((id) => "assets/characters/combat-weapon-" + id + "-v2.webp");
-  ASSETS.preload([...paths, ...mountPaths, ...attackPaths, ...terrainPaths, ...vfxPaths, ...bossPaths, ...enemyBodyPaths, ...weaponPaths]);
+  const startPaths = [
+    "assets/characters/portrait-liubei-v1.webp",
+    "assets/characters/portrait-guanyu-v1.webp",
+    "assets/characters/portrait-zhangfei-v1.webp",
+    "assets/characters/portrait-zhaoyun-v1.webp",
+    "assets/characters/combat-body-liubei-v1.webp",
+    "assets/characters/combat-body-guanyu-v1.webp",
+    "assets/characters/combat-body-zhangfei-v1.webp",
+    "assets/characters/combat-body-zhaoyun-v1.webp",
+    "assets/characters/combat-body-locked-v1.webp",
+    "assets/backgrounds/terrain-tile-0-v1.webp",
+    ...attackPaths
+  ];
+  ASSETS.preload(startPaths);
 }
 preloadConfiguredAssets();
 
