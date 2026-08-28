@@ -109,17 +109,13 @@ button:focus-visible { outline: 3px solid #fff0a0; outline-offset: 2px; }
   width: 45px;
   height: 45px;
   overflow: hidden;
-  border: 2px solid #1b1a14;
-  background:
-    linear-gradient(90deg, transparent 0 20%, var(--hair) 20% 28%, transparent 28% 72%, var(--hair) 72% 80%, transparent 80%) 50% 55% / 100% 44% no-repeat,
-    linear-gradient(90deg, transparent 0 15%, var(--skin) 15% 85%, transparent 85%) 50% 55% / 100% 44% no-repeat,
-    linear-gradient(90deg, transparent 0 26%, #fff2d1 26% 35%, transparent 35% 65%, #fff2d1 65% 74%, transparent 74%) 50% 55% / 100% 18% no-repeat,
-    linear-gradient(90deg, transparent 0 28%, #1a1714 28% 38%, transparent 38% 62%, #1a1714 62% 72%, transparent 72%) 50% 57% / 100% 10% no-repeat,
-    linear-gradient(90deg, transparent 0 9%, var(--helm) 9% 91%, transparent 91%) 50% 18% / 100% 32% no-repeat,
-    linear-gradient(90deg, transparent 0 12%, var(--cloth) 12% 88%, transparent 88%) 50% 100% / 100% 38% no-repeat,
-    #506443;
+  border: 2px solid #231b12;
+  border-radius: 4px;
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
   image-rendering: pixelated;
-  box-shadow: inset 0 0 0 1px #d7c681, 0 1px 0 #d8c58b;
+  box-shadow: inset 0 0 0 1px #d7c681, 0 2px 4px #000a;
 }
 .pixel-avatar::before {
   content: "";
@@ -460,18 +456,23 @@ button:focus-visible { outline: 3px solid #fff0a0; outline-offset: 2px; }
 .section-caption::after { transform: rotate(180deg); }
 
 .hero-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px 5px; padding: 6px; border: 2px solid #3b3529; background: linear-gradient(#857a60aa 1px, transparent 1px) 0 0 / 100% 62px, #aaa080; box-shadow: inset 0 0 0 2px #ded0aa; }
-.hero-card { position: relative; min-width: 0; padding: 3px 2px 4px; border: 1px solid #3a3021; color: #242019; background: linear-gradient(#d2c6a3, #958a6f); box-shadow: inset 0 0 0 1px #eee1bc, 0 1px 2px #342b1c88; }
+.hero-card { position: relative; min-width: 0; padding: 3px 2px 4px; border: 1px solid #3a3021; color: #242019; background: linear-gradient(#d2c6a3, #958a6f); box-shadow: inset 0 0 0 1px #eee1bc, 0 1px 2px #342b1c88; border-radius: 4px; }
+.hero-card.rarity-ssr { border-color: #ba8c30; background: linear-gradient(#f3e5c8, #baa379); box-shadow: inset 0 0 0 1px #fff4cc, 0 2px 3px #53391d66; }
+.hero-card.rarity-sr { border-color: #6a4f82; background: linear-gradient(#e0d6eb, #a28eb6); box-shadow: inset 0 0 0 1px #f5f0fb, 0 2px 3px #32214466; }
 .hero-card.selected { box-shadow: inset 0 0 0 2px #f1c44c, 0 0 0 2px #764e18, 0 0 7px #f1c44c; }
 .hero-card.locked { color: #4c4940; filter: saturate(.35); }
-.hero-card .pixel-avatar { display: block; width: 48px; height: 48px; max-width: 100%; margin: 0 auto 3px; }
+.hero-card .pixel-avatar { display: block; width: 48px; height: 48px; max-width: 100%; margin: 0 auto 3px; border-radius: 3px; }
+.hero-card .formation-badge { position: absolute; left: 3px; top: 3px; z-index: 5; padding: 1px 4px; border-radius: 2px; color: #fff; background: #c83828; font-size: 8px; font-weight: 700; box-shadow: 0 1px 2px #00000088; }
+.hero-card .role-badge { position: absolute; left: 3px; top: 18px; z-index: 4; padding: 1px 3px; border-radius: 2px; color: #fdf5d6; background: #45553d; font-size: 7px; }
 .hero-card strong, .hero-card small { display: block; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .hero-card strong { font-size: 11px; }
 .hero-card small { color: #534936; font-size: 8px; }
 .hero-card .rarity { position: absolute; top: 1px; right: 3px; color: #e66b25; font-size: 11px; text-shadow: 0 1px #411; }
+.hero-card.rarity-ssr .rarity { color: #d4951b; text-shadow: 0 1px #4a340b; }
 .hero-card .lock-label { position: absolute; left: 5px; right: 5px; top: 36px; padding: 2px; color: #eee; background: #161713cc; font-size: 8px; }
 
 .detail-hero { position: relative; min-height: 176px; padding: 12px 12px 12px 137px; border: 2px solid #4b3e29; background: radial-gradient(circle at 18% 38%, #dfe6bd, transparent 32%), linear-gradient(130deg, #9cad78, #cfc19a 57%); box-shadow: inset 0 0 0 2px #eee0b7; }
-.detail-hero > .pixel-avatar { position: absolute; left: 20px; top: 21px; width: 96px; height: 112px; box-shadow: 0 8px 0 #4c4b37, 0 10px 12px #1c2018aa; }
+.detail-hero > .pixel-avatar { position: absolute; left: 20px; top: 21px; width: 96px; height: 112px; box-shadow: 0 8px 0 #4c4b37, 0 10px 12px #1c2018aa; border-radius: 6px; background-position: top center; background-size: cover; }
 .detail-hero > .pixel-avatar::before { border-width: 4px; }
 .detail-hero h3 { margin: 2px 0 1px; color: #31271c; font-family: "DFKai-SB", "KaiTi", serif; font-size: 25px; }
 .detail-hero .hero-role { display: inline-block; padding: 2px 7px; border: 1px solid #4d3b25; color: #fff3cf; background: #5c684d; font-size: 10px; }
@@ -936,7 +937,8 @@ button { touch-action: manipulation; }
 .enemy-preview-avatar .portrait-rune { display: none; }
 
 /* First-pass generated portrait assets: only the three review samples use images. */
-.pixel-avatar.portrait-asset {
+.pixel-avatar.portrait-asset,
+.pixel-avatar[style*="background-image"] {
   background-position: center;
   background-size: cover;
   background-repeat: no-repeat;
@@ -944,11 +946,20 @@ button { touch-action: manipulation; }
 }
 .pixel-avatar.portrait-asset::before,
 .pixel-avatar.portrait-asset::after,
+.pixel-avatar.portrait-asset i,
 .pixel-avatar.portrait-asset .portrait-eyes,
 .pixel-avatar.portrait-asset .portrait-rune,
 .pixel-avatar.portrait-asset .avatar-detail,
 .pixel-avatar.portrait-asset:not(.large) > .paper-layer,
-.pixel-avatar.portrait-asset:not(.large) > .mount-mark { display: none !important; }
+.pixel-avatar.portrait-asset:not(.large) > .mount-mark,
+.pixel-avatar[style*="background-image"]::before,
+.pixel-avatar[style*="background-image"]::after,
+.pixel-avatar[style*="background-image"] i,
+.pixel-avatar[style*="background-image"] .portrait-eyes,
+.pixel-avatar[style*="background-image"] .portrait-rune,
+.pixel-avatar[style*="background-image"] .avatar-detail,
+.pixel-avatar[style*="background-image"]:not(.large) > .paper-layer,
+.pixel-avatar[style*="background-image"]:not(.large) > .mount-mark { display: none !important; }
 .pixel-avatar.portrait-asset-liubei {
   background-color: #315f43;
   background-image: url("assets/characters/portrait-liubei-v1.webp");

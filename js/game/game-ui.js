@@ -142,11 +142,17 @@ function closeRailDrawer() {
 }
 function showDialogue(name, text, avatarClass) {
   const portrait = $("dialoguePortrait");
-  const portraitHero = HEROES.find((hero) => hero.avatar === avatarClass);
+  const portraitHero = HEROES.find((hero) => hero.avatar === avatarClass || hero.name === name || hero.id === avatarClass);
   const portraitKey = portraitHero?.portraitKey || portraitHero?.id;
-  const portraitAsset = portraitHero?.portrait ? " portrait-asset portrait-asset-" + portraitKey : "";
-  portrait.className = "pixel-avatar " + avatarClass + portraitAsset;
-  portrait.innerHTML = '<i></i><span class="portrait-eyes" aria-hidden="true"></span><span class="avatar-detail" aria-hidden="true"></span>';
+  const portraitPath = portraitHero?.portrait || (portraitKey ? "assets/characters/portrait-" + portraitKey + "-v1.webp" : "");
+  const portraitAsset = portraitPath ? " portrait-asset" : "";
+  portrait.className = "pixel-avatar " + (avatarClass || "avatar-liubei") + portraitAsset;
+  if (portraitPath) {
+    portrait.style.backgroundImage = "url('" + portraitPath + "')";
+  } else {
+    portrait.style.backgroundImage = "";
+  }
+  portrait.innerHTML = '';
   $("dialogueName").textContent = name;
   $("dialogueText").textContent = text;
   $("dialogueBox").classList.add("show");
@@ -168,20 +174,31 @@ function avatarHtml(hero, large = false) {
   const portraitAssetClass = hero.portrait ? " portrait-asset portrait-asset-" + portraitKey : "";
   const heroData = hero.id ? ' data-hero="' + hero.id + '"' : "";
   const paperLayer = hero.id ? '<b class="paper-layer" aria-hidden="true"></b><em class="mount-mark" aria-hidden="true"></em>' : "";
-  const portraitStyle = hero.accent ? ' style="--portrait-tone:' + hero.color + ';--portrait-accent:' + hero.accent + (hero.portrait ? ';background-image:url(\x27' + hero.portrait + '\x27)' : "") + '"' : (hero.portrait ? ' style="background-image:url(\x27' + hero.portrait + '\x27)"' : "");
-  return '<span class="pixel-avatar ' + hero.avatar + portraitAssetClass + loadoutClasses + frameClass + (large ? " large" : "") + '"' + heroData + portraitStyle + '><i></i><span class="portrait-eyes" aria-hidden="true"></span><span class="portrait-rune" aria-hidden="true"></span><span class="avatar-detail" aria-hidden="true"></span>' + paperLayer + '</span>';
+  
+  const namedAvatars = ["liubei", "guanyu", "zhangfei", "zhaoyun", "huangzhong", "sunshang", "caocao", "xiahoudun", "zhugeliang", "diaochan", "lubu"];
+  const avatarPath = (large && hero.id && namedAvatars.includes(hero.id))
+    ? "assets/characters/avatar-" + hero.id + "-v1.webp"
+    : hero.portrait;
+  const bgImg = avatarPath ? ';background-image:url(\x27' + avatarPath + '\x27)' : "";
+  const portraitStyle = hero.accent ? ' style="--portrait-tone:' + hero.color + ';--portrait-accent:' + hero.accent + bgImg + '"' : (avatarPath ? ' style="background-image:url(\x27' + avatarPath + '\x27)"' : "");
+  return '<span class="pixel-avatar ' + (hero.avatar || "avatar-locked") + portraitAssetClass + loadoutClasses + frameClass + (large ? " large" : "") + '"' + heroData + portraitStyle + '><i></i><span class="portrait-eyes" aria-hidden="true"></span><span class="portrait-rune" aria-hidden="true"></span><span class="avatar-detail" aria-hidden="true"></span>' + paperLayer + '</span>';
 }
 
 function heroCardHtml(hero, action = "hero-detail") {
   const unlocked = isUnlocked(hero);
   const selected = save.formation.includes(hero.id);
   const progression = unlocked ? heroProgression(hero.id) : null;
-  return '<button class="hero-card' + (unlocked ? "" : " locked") + (selected ? " selected" : "") + '" type="button" data-action="' + action + '" data-hero="' + hero.id + '">' +
+  const rarityClass = (hero.rarity || 4) >= 5 ? " rarity-ssr" : " rarity-sr";
+  const inFormationBadge = selected ? '<span class="formation-badge">出陣</span>' : '';
+  const roleBadge = unlocked ? '<span class="role-badge role-' + (hero.role || "步兵") + '">' + (hero.role || "步") + '</span>' : '';
+  return '<button class="hero-card' + (unlocked ? "" : " locked") + (selected ? " selected" : "") + rarityClass + '" type="button" data-action="' + action + '" data-hero="' + hero.id + '">' +
     avatarHtml(unlocked ? hero : { avatar: "avatar-locked" }) +
     '<strong>' + (unlocked ? hero.name : "？？？") + '</strong>' +
-    '<small>' + (unlocked ? hero.role + " · Lv." + save.heroLevels[hero.id] + " P" + Math.round((hero.atk * 7 + hero.hp + hero.def * 12) * (1 + save.heroLevels[hero.id] * .13)) : "第 " + hero.unlock + " 關解鎖") + '</small>' +
-    '<b class="rarity">' + "◆".repeat(Math.min(3, Math.max(1, hero.rarity - 2))) + '</b>' +
-    (unlocked ? '<span class="hero-stars">\u2605' + progression.stars + '/5</span>' : "") +
+    '<small>' + (unlocked ? hero.role + " · Lv." + (save.heroLevels[hero.id] || 1) + " P" + Math.round((hero.atk * 7 + hero.hp + hero.def * 12) * (1 + (save.heroLevels[hero.id] || 1) * .13)) : "第 " + hero.unlock + " 關解鎖") + '</small>' +
+    '<b class="rarity">' + "★".repeat(Math.min(5, Math.max(1, hero.rarity || 4))) + '</b>' +
+    (unlocked ? '<span class="hero-stars">★' + progression.stars + '/5</span>' : "") +
+    inFormationBadge +
+    roleBadge +
     (unlocked ? "" : '<span class="lock-label">尚未相遇</span>') +
     "</button>";
 }

@@ -60,7 +60,7 @@ function drawTerrainTileLayer(chapterIndex) {
   const tile = terrainTileAsset(chapterIndex);
   if (!tile) return;
   ctx.save();
-  ctx.globalAlpha = 0.28;
+  ctx.globalAlpha = 0.48;
   for (let y = 0; y < 720; y += 96) {
     for (let x = 0; x < 390; x += 96) ctx.drawImage(tile, x, y, 96, 96);
   }
@@ -79,24 +79,24 @@ function drawBackground() {
   drawTerrainTileLayer(Math.floor((activeStageNumber() - 1) / STAGES_PER_CHAPTER));
 
   const gradient = ctx.createLinearGradient(0, 80, 390, 610);
-  gradient.addColorStop(0, "#d9d3b51a");
-  gradient.addColorStop(0.55, "#22291d00");
-  gradient.addColorStop(1, "#1a1e1788");
+  gradient.addColorStop(0, "#d9d3b522");
+  gradient.addColorStop(0.5, "#22291d00");
+  gradient.addColorStop(1, "#14171299");
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, 390, 720);
 
   ctx.save();
-  ctx.globalAlpha = 0.52;
+  ctx.globalAlpha = 0.45;
   ctx.strokeStyle = chapter.path;
-  ctx.lineWidth = 112;
+  ctx.lineWidth = 104;
   ctx.lineCap = "round";
   ctx.beginPath();
   ctx.moveTo(185, 86);
   ctx.bezierCurveTo(255, 230, 118, 340, 210, 620);
   ctx.stroke();
-  ctx.globalAlpha = 0.3;
+  ctx.globalAlpha = 0.25;
   ctx.strokeStyle = "#d5c699";
-  ctx.lineWidth = 5;
+  ctx.lineWidth = 4;
   ctx.stroke();
   ctx.restore();
 
@@ -135,7 +135,7 @@ function drawBackground() {
 
   const vignette = ctx.createRadialGradient(195, 335, 120, 195, 335, 350);
   vignette.addColorStop(0, "transparent");
-  vignette.addColorStop(1, "#12150f88");
+  vignette.addColorStop(1, "#0e110b99");
   ctx.fillStyle = vignette;
   ctx.fillRect(0, 0, 390, 720);
 }
@@ -146,20 +146,39 @@ function drawWeatherOverlay() {
   if (weather === "clear") return;
   ctx.save();
   if (weather === "night") {
-    ctx.fillStyle = "#16203a55";
+    ctx.fillStyle = "#121b3366";
     ctx.fillRect(0, 0, 390, 720);
-    ctx.fillStyle = "#d9e7ff";
-    for (let i = 0; i < 8; i += 1) drawPixelRect((i * 59 + 22) % 390, 110 + (i % 3) * 34, 2, 2, "#e8edc7");
+    for (let i = 0; i < 12; i += 1) {
+      const pulse = (Math.sin(runtime.elapsed * 3 + i * 1.5) + 1) * 0.5;
+      const x = (i * 37 + Math.sin(runtime.elapsed * 0.8 + i) * 12) % 370 + 10;
+      const y = 100 + ((i * 47 + Math.cos(runtime.elapsed * 0.6 + i) * 16) % 520);
+      ctx.globalAlpha = 0.3 + pulse * 0.55;
+      ctx.fillStyle = i % 2 === 0 ? "#ffd97a" : "#c4f2bb";
+      drawPixelRect(x, y, 2, 2, ctx.fillStyle);
+    }
+  } else if (weather === "snow") {
+    ctx.fillStyle = "#ffffff";
+    for (let i = 0; i < 36; i += 1) {
+      const sway = Math.sin(runtime.elapsed * 2 + i) * 6;
+      const x = (i * 39 + Math.floor(runtime.elapsed * 12) + sway) % 410 - 10;
+      const y = (i * 27 + Math.floor(runtime.elapsed * 28)) % 620 + 80;
+      const size = (i % 3 === 0) ? 3 : 2;
+      ctx.globalAlpha = (i % 2 === 0) ? 0.65 : 0.4;
+      ctx.beginPath();
+      ctx.arc(x, y, size * 0.6, 0, Math.PI * 2);
+      ctx.fill();
+    }
   } else {
-    ctx.globalAlpha = weather === "snow" ? .6 : .35;
-    ctx.strokeStyle = weather === "snow" ? "#e5f0ed" : "#9eb6c5";
-    ctx.lineWidth = weather === "snow" ? 2 : 1;
-    for (let i = 0; i < 28; i += 1) {
-      const x = (i * 47 + Math.floor(runtime.elapsed * (weather === "snow" ? 8 : 21))) % 410 - 10;
-      const y = (i * 31 + Math.floor(runtime.elapsed * (weather === "snow" ? 15 : 42))) % 610 + 90;
+    // Rain
+    ctx.strokeStyle = "#a2bfd2";
+    ctx.lineWidth = 1.2;
+    for (let i = 0; i < 32; i += 1) {
+      const x = (i * 43 + Math.floor(runtime.elapsed * 18)) % 410 - 10;
+      const y = (i * 29 + Math.floor(runtime.elapsed * 65)) % 620 + 80;
+      ctx.globalAlpha = 0.25 + (i % 4) * 0.08;
       ctx.beginPath();
       ctx.moveTo(x, y);
-      ctx.lineTo(x + (weather === "snow" ? 2 : -5), y + (weather === "snow" ? 2 : 12));
+      ctx.lineTo(x - 4, y + 14);
       ctx.stroke();
     }
   }
@@ -1299,23 +1318,50 @@ function drawEnemyBody(unit, body, accent, idleCycle) {
 function drawHealthBar(unit, x, visualY) {
   const isBoss = unit.type === "boss";
   const isAlly = unit.team === "ally";
-  if (!isAlly && !isBoss) return;
-  const barW = isBoss ? 46 : 40;
-  const barH = 5;
-  const y = Math.round(visualY + (isBoss ? -58 : -50));
+  if (!isAlly && !isBoss && !(unit.hitFlash > 0 || (unit.hp < unit.maxHp * 0.98))) return;
+  const barW = isBoss ? 50 : isAlly ? 40 : 28;
+  const barH = isBoss ? 5 : 4;
+  const y = Math.round(visualY + (isBoss ? -60 : -48));
   const ratio = clamp(unit.hp / Math.max(1, unit.maxHp), 0, 1);
   const lagRatio = clamp((Number.isFinite(unit.hpLag) ? unit.hpLag : unit.hp) / Math.max(1, unit.maxHp), 0, 1);
   ctx.save();
-  ctx.fillStyle = "#0e0f0c";
+  ctx.fillStyle = isBoss ? "#4d0e0a" : isAlly ? "#1f1c16" : "#2f1414";
   ctx.fillRect(x - barW / 2 - 1, y - 1, barW + 2, barH + 2);
-  ctx.fillStyle = "#2a2418";
+  ctx.fillStyle = "#181510";
   ctx.fillRect(x - barW / 2, y, barW, barH);
-  ctx.fillStyle = "#5a3a28";
+  ctx.fillStyle = "#733324";
   ctx.fillRect(x - barW / 2, y, barW * lagRatio, barH);
-  ctx.fillStyle = isAlly ? "#4fa85a" : isBoss ? "#c84737" : "#b34935";
+  ctx.fillStyle = isAlly ? "#4cb858" : isBoss ? "#dc3828" : "#c64235";
   ctx.fillRect(x - barW / 2, y, barW * ratio, barH);
-  ctx.fillStyle = "#ffffff22";
+  ctx.fillStyle = "#ffffff44";
   ctx.fillRect(x - barW / 2, y, barW * ratio, 1);
+  ctx.restore();
+}
+
+function drawUnitNameTag(unit, x, visualY) {
+  if (!unit || unit.dead) return;
+  ctx.save();
+  if (unit.type === "boss") {
+    const y = Math.round(visualY - 68);
+    const general = ENEMY_GENERALS.find(g => g.id === unit.enemyGeneralId);
+    const name = general?.name || "敵首領";
+    ctx.font = "bold 9px 'DFKai-SB', 'KaiTi', sans-serif";
+    ctx.textAlign = "center";
+    ctx.strokeStyle = "#380907";
+    ctx.lineWidth = 2.5;
+    ctx.strokeText("★ " + name + " ★", x, y);
+    ctx.fillStyle = "#ff5544";
+    ctx.fillText("★ " + name + " ★", x, y);
+  } else if (unit.team === "ally" && unit.hero) {
+    const y = Math.round(visualY - 54);
+    ctx.font = "bold 8px 'DFKai-SB', 'KaiTi', sans-serif";
+    ctx.textAlign = "center";
+    ctx.strokeStyle = "#1a1612";
+    ctx.lineWidth = 2;
+    ctx.strokeText(unit.hero.name, x, y);
+    ctx.fillStyle = unit.hero.rarity >= 5 ? "#ffe88a" : "#f0ede6";
+    ctx.fillText(unit.hero.name, x, y);
+  }
   ctx.restore();
 }
 
@@ -1413,6 +1459,21 @@ function drawHeroDetailOverlay(unit, walkCycle, idleCycle) {
   const glint = idleCycle > 0.35 ? "#fff6cc" : "#e0caa0";
 
   ctx.save();
+  
+  // Dynamic flowing cape behind hero body
+  const capeSway = Math.sin(runtime.elapsed * 4.5 + unit.x * 0.1) * (unit.moving ? 3.5 : 1.2) + (unit.motionX ? -unit.motionX * 0.35 : 0);
+  const capeColor = heroId === "guanyu" ? "#164d30" : heroId === "caocao" ? "#412656" : heroId === "zhaoyun" ? "#264870" : heroId === "lubu" ? "#7d161d" : accent;
+  ctx.save();
+  ctx.fillStyle = capeColor;
+  ctx.globalAlpha = 0.85;
+  ctx.beginPath();
+  ctx.moveTo(-10, -28);
+  ctx.quadraticCurveTo(-14 + capeSway, -18, -12 + capeSway * 1.2, -8);
+  ctx.lineTo(-6, -14);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+
   // Armor shoulder studs, breastplate highlight and belt buckle
   drawPixelRect(-11, -26, 3, 2, accent);
   drawPixelRect(8, -26, 3, 2, accent);
@@ -1470,16 +1531,46 @@ function drawHeroDetailOverlay(unit, walkCycle, idleCycle) {
     drawPixelRect(4, -20 + Math.round(idleCycle), 3, 2, "#e5b84f");
   }
 
-  // Skill Ready Aura
+  // Skill Ready Aura: Tactical Rotating Bagua / Formation Battle Halo at unit feet + ascending golden motes
   if (ready) {
+    ctx.save();
     ctx.globalCompositeOperation = "screen";
-    const auraPulse = (Math.sin(runtime.elapsed * 10 + unit.x * 0.1) + 1) * 0.5;
-    ctx.globalAlpha = 0.35 + auraPulse * 0.35;
-    ctx.fillStyle = "#ffe06b";
+    const auraPulse = (Math.sin(runtime.elapsed * 8 + unit.x * 0.1) + 1) * 0.5;
+    const rot = runtime.elapsed * 2.2;
+    
+    // Ground Battle Ring
+    ctx.globalAlpha = 0.45 + auraPulse * 0.35;
+    ctx.strokeStyle = "#f3c64c";
+    ctx.lineWidth = 1.6;
     ctx.beginPath();
-    ctx.arc(0, -22, 20 + auraPulse * 4, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.ellipse(0, 0, 21 + auraPulse * 2, 7 + auraPulse, 0, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // Secondary inner ring
+    ctx.globalAlpha = 0.25 + auraPulse * 0.25;
+    ctx.strokeStyle = "#ffe48a";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, 14 + auraPulse, 4.5 + auraPulse * 0.5, 0, 0, Math.PI * 2);
+    ctx.stroke();
+    
+    // Rotating Formation Sparks
+    for (let i = 0; i < 4; i += 1) {
+      const ang = rot + (i * Math.PI) / 2;
+      const sx = Math.cos(ang) * (20 + auraPulse * 2);
+      const sy = Math.sin(ang) * 7;
+      ctx.fillStyle = "#fff5ab";
+      ctx.fillRect(sx - 1.5, sy - 1.5, 3, 3);
+    }
+    
+    // Ascending golden qi motes around weapon / body
+    const moteY = -8 - ((runtime.elapsed * 32 + (unit.x % 17) * 4) % 34);
+    ctx.fillStyle = "#ffd55e";
+    ctx.fillRect(-6 + Math.sin(runtime.elapsed * 6) * 4, moteY, 2, 2);
+    ctx.fillRect(7 - Math.cos(runtime.elapsed * 6) * 4, moteY + 8, 2, 2);
+    
     ctx.globalCompositeOperation = "source-over";
+    ctx.restore();
   }
   ctx.restore();
 }
@@ -1493,11 +1584,11 @@ function drawEnemyDetailOverlay(unit, walkCycle, idleCycle) {
   if (isBoss) {
     // Boss intimidating presence aura & ornate crest
     ctx.globalCompositeOperation = "screen";
-    const bossPulse = (Math.sin(runtime.elapsed * 6 + unit.x * 0.08) + 1) * 0.5;
-    ctx.globalAlpha = 0.25 + bossPulse * 0.3;
-    ctx.fillStyle = unit.accent || "#d29f3a";
+    const bossPulse = (Math.sin(runtime.elapsed * 5 + unit.x * 0.08) + 1) * 0.5;
+    ctx.globalAlpha = 0.3 + bossPulse * 0.3;
+    ctx.fillStyle = unit.accent || "#e03828";
     ctx.beginPath();
-    ctx.arc(0, -26, 28 + bossPulse * 6, 0, Math.PI * 2);
+    ctx.ellipse(0, 0, 32 + bossPulse * 4, 11 + bossPulse * 2, 0, 0, Math.PI * 2);
     ctx.fill();
     ctx.globalCompositeOperation = "source-over";
 
@@ -1601,10 +1692,36 @@ function drawUnit(unit) {
   ctx.translate(spriteX, spriteY);
 
   ctx.globalAlpha = unit.dead ? 0.2 * (1 - deathProgress) : 0.38;
-  ctx.fillStyle = "#10120e";
+  ctx.fillStyle = unit.type === "boss" ? "#280706" : unit.team === "enemy" ? "#200e0e" : "#10120e";
   ctx.beginPath();
   ctx.ellipse(0, 2, (unit.type === "boss" ? 30 : 20) * unit.scale * (1 + deathProgress * 0.35), (unit.type === "boss" ? 10 : 6.5) * unit.scale, 0, 0, Math.PI * 2);
   ctx.fill();
+
+  // Enemy Tactical Ground Indicator
+  if (!unit.dead && unit.team === "enemy") {
+    ctx.save();
+    ctx.globalAlpha = unit.type === "boss" ? 0.5 : 0.25;
+    ctx.strokeStyle = unit.type === "boss" ? "#d83828" : "#ba3d30";
+    ctx.lineWidth = unit.type === "boss" ? 2 : 1;
+    ctx.beginPath();
+    ctx.ellipse(0, 2, (unit.type === "boss" ? 26 : 17) * unit.scale, (unit.type === "boss" ? 8.5 : 5.5) * unit.scale, 0, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // 5-Star Hero Golden Ground Halo
+  if (unit.team === "ally" && !unit.dead && (unit.hero?.rarity >= 5)) {
+    ctx.save();
+    const heroHaloPulse = (Math.sin(runtime.elapsed * 4 + unit.x * 0.05) + 1) * 0.5;
+    ctx.globalAlpha = 0.22 + heroHaloPulse * 0.18;
+    ctx.strokeStyle = "#e8b84d";
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.ellipse(0, 2, (18 + heroHaloPulse * 2) * unit.scale, (6 + heroHaloPulse) * unit.scale, 0, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+  }
+
   ctx.globalAlpha = unit.dead ? clamp(unit.deathTime / deathMax * 1.35, 0, 1) : 1;
 
   if (unit.dead) {
@@ -1688,6 +1805,7 @@ function drawUnit(unit) {
   ctx.restore();
   if (!unit.dead) {
     const barY = unit.renderY + bob + unit.kickY;
+    drawUnitNameTag(unit, unit.renderX + unit.kickX, barY);
     drawHealthBar(unit, unit.renderX + unit.kickX, barY);
     drawSkillEnergyBar(unit, unit.renderX + unit.kickX, barY);
     drawStatusBadges(unit, unit.renderX + unit.kickX, barY);
@@ -1768,7 +1886,10 @@ function drawEffects({ groundOnly = false } = {}) {
       ctx.rotate(effect.angle);
       for (let i = 0; i < 6; i += 1) {
         ctx.rotate(Math.PI / 3);
+        ctx.fillStyle = effect.color;
         ctx.fillRect(effect.radius * progress * 0.25, -2, effect.radius * (0.35 + progress * 0.4), Math.max(1, 4 * (1 - progress)));
+        ctx.fillStyle = "#fff";
+        ctx.fillRect(effect.radius * progress * 0.35, -1, effect.radius * (0.15 + progress * 0.2), Math.max(1, 2 * (1 - progress)));
       }
       ctx.restore();
     } else if (effect.type === "shockwave") {
@@ -1786,10 +1907,15 @@ function drawEffects({ groundOnly = false } = {}) {
       }
     } else if (effect.type === "slash") {
       ctx.beginPath();
-      ctx.arc(effect.x, effect.y, effect.radius * (0.45 + progress * 0.7), effect.angle - 1.3, effect.angle + 1.3);
+      ctx.arc(effect.x, effect.y, effect.radius * (0.45 + progress * 0.7), effect.angle - 1.4, effect.angle + 1.4);
       ctx.stroke();
       ctx.beginPath();
-      ctx.arc(effect.x, effect.y, effect.radius * (0.25 + progress * 0.45), effect.angle - 1.1, effect.angle + 1.1);
+      ctx.arc(effect.x, effect.y, effect.radius * (0.28 + progress * 0.45), effect.angle - 1.2, effect.angle + 1.2);
+      ctx.stroke();
+      ctx.strokeStyle = "#fffde8";
+      ctx.lineWidth = Math.max(1, 2.5 * (1 - progress));
+      ctx.beginPath();
+      ctx.arc(effect.x, effect.y, effect.radius * (0.42 + progress * 0.65), effect.angle - 1.0, effect.angle + 1.0);
       ctx.stroke();
     } else if (effect.type === "ring") {
       ctx.beginPath();
@@ -1809,13 +1935,14 @@ function drawEffects({ groundOnly = false } = {}) {
       ctx.fillRect(effect.x - 2, effect.y - 2, 4, 4);
     } else if (effect.type === "combo") {
       ctx.save();
-      ctx.translate(effect.x, effect.y - progress * 22);
-      ctx.font = "900 " + Math.round(18 + progress * 8) + "px ui-monospace, Consolas, monospace";
+      const bounce = Math.sin(progress * Math.PI) * 6;
+      ctx.translate(effect.x, effect.y - progress * 24 - bounce);
+      ctx.font = "900 " + Math.round(18 + progress * 6) + "px ui-monospace, Consolas, monospace";
       ctx.textAlign = "center";
-      ctx.strokeStyle = "#382313";
+      ctx.strokeStyle = "#24160c";
       ctx.lineWidth = 4;
       ctx.strokeText("COMBO", 0, 0);
-      ctx.fillStyle = effect.color;
+      ctx.fillStyle = effect.color || "#f1c552";
       ctx.fillText("COMBO", 0, 0);
       ctx.restore();
     } else if (effect.type === "rally") {
