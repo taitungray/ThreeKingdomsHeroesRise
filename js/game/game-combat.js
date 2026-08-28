@@ -403,7 +403,7 @@ function makeEnemy(index, boss = false) {
     hpLag: maxHp,
     statuses: [],
     passiveState: {},
-    atk: (boss ? (config?.bossAtk || 27) : profile.atk + Math.random() * 2) * stagePower * towerScale,
+    atk: (boss ? (config?.bossAtk || 27) : profile.atk + Math.random() * 2) * stagePower * modePowerScale,
     def: (boss ? 11 : profile.def) * stagePower,
     speed: boss ? 16 : profile.speed + Math.random() * 3,
     range: boss ? 42 : profile.range,
@@ -834,7 +834,7 @@ function attack(unit, target) {
   unit.lastTargetId = target.id;
   unit.targetStreak = unit.passiveState.targetStreak;
   const skill = unit.team === "ally" && unit.attackCount >= 5 && unit.skillCooldown <= 0 && !hasStatus(unit, "silence");
-  const ranged = unit.team === "ally" && (role === "\u5f13\u5175" || role === "\u8b00\u58eb");
+  const ranged = (role === "弓兵" || role === "謀士" || unit.type === "archer" || unit.type === "strategist");
   const angle = Math.atan2(target.y - unit.y, target.x - unit.x);
   unit.action = {
     target,
@@ -852,7 +852,7 @@ function attack(unit, target) {
   unit.attackAngle = angle;
   setUnitDirection(unit, angle);
   if (skill) {
-    addEffect("charge", unit.x, unit.y - 13, unit.hero.accent, { radius: 38, life: .32 });
+    addEffect("charge", unit.x, unit.y - 13, unit.hero?.accent || "#ffd868", { radius: 38, life: .32 });
     beep(220, .075, "triangle", .022);
   }
 }
@@ -869,8 +869,8 @@ function resolveAttack(unit, action) {
     return;
   }
   if (action.ranged) {
-    fireProjectile(unit, target, unit.hero.accent);
-    if ((unit.hero.id === "sunshang" || unit.hero.id === "xiahouyuan") && chance(.14)) scheduleGameTimer(() => {
+    fireProjectile(unit, target, unit.hero?.accent || unit.accent || "#e09553");
+    if ((unit.hero?.id === "sunshang" || unit.hero?.id === "xiahouyuan") && chance(.14)) scheduleGameTimer(() => {
       if (!target.dead) fireProjectile(unit, target, "#ffd47a");
     }, 70);
     unit.motionX -= Math.cos(action.angle) * 4;
