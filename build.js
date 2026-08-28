@@ -40,7 +40,8 @@ fs.mkdirSync(output, { recursive: true });
   "manifest.json",
   "sw.js",
   "app-ads.txt",
-  "privacy.html"
+  "privacy.html",
+  "landing.html"
 ].forEach(copyFileIfPresent);
 copyDirectoryIfPresent("assets");
 copyDirectoryIfPresent("data");
