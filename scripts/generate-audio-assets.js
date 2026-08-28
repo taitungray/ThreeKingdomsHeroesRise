@@ -3,7 +3,7 @@
 const fs = require("fs");
 const path = require("path");
 
-// 採用 22050 Hz 輕量取樣率：檔案小、載入快、長度超長（64 秒）
+// 採用 22050 Hz 輕量取樣率，長度 48 秒無縫循環熱血戰鬥行軍曲 (120 BPM)
 const SAMPLE_RATE = 22050;
 const AUDIO_DIR = path.join(__dirname, "..", "assets", "audio");
 
@@ -46,7 +46,6 @@ function createWavBuffer(samples, sampleRate = SAMPLE_RATE, channels = 1) {
   return buffer;
 }
 
-// 柔和低通濾波器（使音質溫潤、不刺耳）
 function applyLowPass(input, cutoffHz) {
   const output = new Float32Array(input.length);
   const rc = 1.0 / (2.0 * Math.PI * cutoffHz);
@@ -60,38 +59,87 @@ function applyLowPass(input, cutoffHz) {
   return output;
 }
 
-// 空間混響器 (Mono Reverb，輕量自然)
-function applySimpleReverb(input, delaySeconds = 0.18, feedback = 0.35, wet = 0.28) {
-  const delaySamples = Math.floor(SAMPLE_RATE * delaySeconds);
-  const output = new Float32Array(input.length);
-  for (let i = 0; i < input.length; i++) {
-    const delayed = i >= delaySamples ? output[i - delaySamples] : 0;
-    output[i] = input[i] + delayed * feedback;
-  }
-  const result = new Float32Array(input.length);
-  for (let i = 0; i < input.length; i++) {
-    result[i] = input[i] * (1 - wet) + output[i] * wet;
-  }
-  return result;
-}
-
 /* =========================================================================
-   樂器合成器
+   戰鬥專屬樂器合成器
    ========================================================================= */
 
-// 1. 溫暖弦樂合奏鋪底 (Strings Pad)
-function synthStringsChord(freqs, duration, gain = 0.32) {
+// 1. 強力行軍重戰鼓 (Marching Bass Drum)
+function synthKick(gain = 0.6) {
+  const dur = 0.35;
+  const numSamples = Math.floor(SAMPLE_RATE * dur);
+  const buffer = new Float32Array(numSamples);
+  for (let i = 0; i < numSamples; i++) {
+    const t = i / SAMPLE_RATE;
+    const progress = i / numSamples;
+    const f = 110 - progress * 70; // 110Hz -> 40Hz punch
+    const env = Math.exp(-progress * 9);
+    buffer[i] = Math.sin(2 * Math.PI * f * t) * gain * env;
+  }
+  return buffer;
+}
+
+// 2. 軍陣小軍鼓/拍子鼓 (Snare / Taiko Slap)
+function synthSnare(gain = 0.38) {
+  const dur = 0.22;
+  const numSamples = Math.floor(SAMPLE_RATE * dur);
+  const buffer = new Float32Array(numSamples);
+  for (let i = 0; i < numSamples; i++) {
+    const progress = i / numSamples;
+    const t = i / SAMPLE_RATE;
+    const tone = Math.sin(2 * Math.PI * 180 * t) * 0.4;
+    const snap = (Math.random() * 2 - 1) * 0.6;
+    const env = Math.exp(-progress * 14);
+    buffer[i] = (tone + snap) * gain * env;
+  }
+  return applyLowPass(buffer, 2400);
+}
+
+// 3. 短促有力的軍陣低音斷奏 (Battle Bass Staccato)
+function synthBassStaccato(freq, duration = 0.22, gain = 0.42) {
   const numSamples = Math.floor(SAMPLE_RATE * duration);
   const buffer = new Float32Array(numSamples);
-  const attack = Math.floor(SAMPLE_RATE * 0.4);
-  const release = Math.floor(SAMPLE_RATE * 0.6);
+  for (let i = 0; i < numSamples; i++) {
+    const t = i / SAMPLE_RATE;
+    const progress = i / numSamples;
+    // 粗獷的鋸齒波低音
+    const s = Math.sin(2 * Math.PI * freq * t) +
+              0.5 * Math.sin(2 * Math.PI * freq * 2 * t) +
+              0.25 * Math.sin(2 * Math.PI * freq * 3 * t);
+    const env = Math.exp(-progress * 6.5);
+    buffer[i] = s * gain * env;
+  }
+  return applyLowPass(buffer, 850);
+}
+
+// 4. 激昂出征號角/戰陣五音古箏 (Heroic Battle Lead)
+function synthBattleLead(freq, duration = 0.4, gain = 0.38) {
+  const numSamples = Math.floor(SAMPLE_RATE * duration);
+  const buffer = new Float32Array(numSamples);
+  for (let i = 0; i < numSamples; i++) {
+    const t = i / SAMPLE_RATE;
+    const progress = i / numSamples;
+    const s = Math.sin(2 * Math.PI * freq * t) +
+              0.4 * Math.sin(2 * Math.PI * freq * 2 * t) +
+              0.2 * Math.sin(2 * Math.PI * freq * 3 * t);
+    const env = Math.exp(-progress * 3.2);
+    const att = Math.min(1, i / (SAMPLE_RATE * 0.005));
+    buffer[i] = s * gain * env * att;
+  }
+  return applyLowPass(buffer, 2200);
+}
+
+// 5. 戰役長音和弦鋪底 (Battle Strings Pad)
+function synthBattlePad(freqs, duration, gain = 0.25) {
+  const numSamples = Math.floor(SAMPLE_RATE * duration);
+  const buffer = new Float32Array(numSamples);
+  const attack = Math.floor(SAMPLE_RATE * 0.2);
+  const release = Math.floor(SAMPLE_RATE * 0.4);
 
   for (let i = 0; i < numSamples; i++) {
     const t = i / SAMPLE_RATE;
     let s = 0;
     for (let f = 0; f < freqs.length; f++) {
-      const freq = freqs[f];
-      s += Math.sin(2 * Math.PI * freq * t) + 0.5 * Math.sin(2 * Math.PI * freq * 1.002 * t);
+      s += Math.sin(2 * Math.PI * freqs[f] * t);
     }
     let env = 1.0;
     if (i < attack) env = i / attack;
@@ -99,49 +147,6 @@ function synthStringsChord(freqs, duration, gain = 0.32) {
     buffer[i] = s * (gain / freqs.length) * env;
   }
   return applyLowPass(buffer, 900);
-}
-
-// 2. 清脆古箏撥弦 (Guzheng)
-function synthGuzheng(freq, duration, gain = 0.38) {
-  const numSamples = Math.floor(SAMPLE_RATE * duration);
-  const buffer = new Float32Array(numSamples);
-  for (let i = 0; i < numSamples; i++) {
-    const t = i / SAMPLE_RATE;
-    const s = Math.sin(2 * Math.PI * freq * t) +
-              0.35 * Math.sin(2 * Math.PI * freq * 2 * t) +
-              0.15 * Math.sin(2 * Math.PI * freq * 3 * t);
-    const env = Math.exp(-t * 2.5);
-    const att = Math.min(1, i / (SAMPLE_RATE * 0.003));
-    buffer[i] = s * gain * env * att;
-  }
-  return applyLowPass(buffer, 2200);
-}
-
-// 3. 沉穩戰鼓 (Taiko War Drum)
-function synthDrum(duration = 0.6, gain = 0.45, startFreq = 85, endFreq = 38) {
-  const numSamples = Math.floor(SAMPLE_RATE * duration);
-  const buffer = new Float32Array(numSamples);
-  for (let i = 0; i < numSamples; i++) {
-    const progress = i / numSamples;
-    const t = i / SAMPLE_RATE;
-    const f = startFreq + (endFreq - startFreq) * Math.pow(progress, 0.4);
-    const env = Math.exp(-progress * 5.0);
-    buffer[i] = Math.sin(2 * Math.PI * f * t) * gain * env;
-  }
-  return applyLowPass(buffer, 300);
-}
-
-// 4. 古編鐘 (Chime)
-function synthChime(freq, duration = 2.0, gain = 0.22) {
-  const numSamples = Math.floor(SAMPLE_RATE * duration);
-  const buffer = new Float32Array(numSamples);
-  for (let i = 0; i < numSamples; i++) {
-    const t = i / SAMPLE_RATE;
-    const s = Math.sin(2 * Math.PI * freq * t) * 0.7 + Math.sin(2 * Math.PI * (freq * 1.414) * t) * 0.3;
-    const env = Math.exp(-t * 2.0);
-    buffer[i] = s * gain * env;
-  }
-  return buffer;
 }
 
 function mixTrack(dest, src, startOffsetSample, volume = 1.0) {
@@ -152,12 +157,12 @@ function mixTrack(dest, src, startOffsetSample, volume = 1.0) {
 }
 
 /* =========================================================================
-   64 秒超長四樂章三國古風 BGM 生成
+   熱血三國行軍戰鬥曲生成 (120 BPM, 48 秒無縫循環)
    ========================================================================= */
 
 function generateBgm() {
-  console.log("Generating 64-second Epic BGM: assets/audio/bgm-main.wav...");
-  const duration = 64.0; // 64 秒完整大樂章
+  console.log("Generating 120-BPM Heroic Battle March BGM: assets/audio/bgm-main.wav...");
+  const duration = 48.0; // 48 秒循環，節奏緊湊
   const totalSamples = Math.floor(SAMPLE_RATE * duration);
   const track = new Float32Array(totalSamples);
 
@@ -168,111 +173,114 @@ function generateBgm() {
     D5: 587.33, E5: 659.25, F5: 698.46, G5: 783.99, A5: 880.00
   };
 
-  // 1. 弦樂背景和聲 (16 個 4 秒和弦進行)
-  const chordProg = [
-    // 樂章一：桃園初誓 (0~16s)
-    { freqs: [N.D3, N.F3, N.A3], start: 0, dur: 4.2 },
-    { freqs: [N.Bb2, N.D3, N.F3], start: 4, dur: 4.2 },
-    { freqs: [N.C3, N.E3, N.G3], start: 8, dur: 4.2 },
-    { freqs: [N.D3, N.F3, N.A3], start: 12, dur: 4.2 },
+  // 120 BPM -> 每拍 0.5 秒，半拍 0.25 秒
+  const beat = 0.5;
 
-    // 樂章二：漢末烽火 (16~32s)
-    { freqs: [N.G2, N.Bb2, N.D3], start: 16, dur: 4.2 },
-    { freqs: [N.F2, N.A2, N.C3], start: 20, dur: 4.2 },
-    { freqs: [N.Bb2, N.D3, N.F3], start: 24, dur: 4.2 },
-    { freqs: [N.A2, N.C3, N.E3], start: 28, dur: 4.2 },
-
-    // 樂章三：赤壁鏖兵 (32~48s)
-    { freqs: [N.D3, N.F3, N.A3, N.D4], start: 32, dur: 4.2 },
-    { freqs: [N.Bb2, N.D3, N.F3, N.Bb3], start: 36, dur: 4.2 },
-    { freqs: [N.C3, N.E3, N.G3, N.C4], start: 40, dur: 4.2 },
-    { freqs: [N.D3, N.F3, N.A3, N.D4], start: 44, dur: 4.2 },
-
-    // 樂章四：天下三分 (48~64s)
-    { freqs: [N.G2, N.Bb2, N.D3], start: 48, dur: 4.2 },
-    { freqs: [N.C3, N.E3, N.G3], start: 52, dur: 4.2 },
-    { freqs: [N.A2, N.C3, N.E3], start: 56, dur: 4.2 },
-    { freqs: [N.D3, N.F3, N.A3], start: 60, dur: 4.2 }
-  ];
-
-  chordProg.forEach(({ freqs, start, dur }) => {
-    const pad = synthStringsChord(freqs, dur, 0.38);
-    mixTrack(track, pad, Math.floor(start * SAMPLE_RATE));
-  });
-
-  // 2. 戰鼓節奏 (從 16s 開始加入，32s 進入雙重戰鼓)
-  for (let t = 16.0; t < 62.0; t += 1.0) {
-    const isHeavy = (Math.round(t) % 4 === 0);
-    const drum = synthDrum(0.65, isHeavy ? 0.45 : 0.25, isHeavy ? 90 : 75, 35);
-    mixTrack(track, drum, Math.floor(t * SAMPLE_RATE));
-
-    if (t >= 32.0 && t < 48.0 && !isHeavy) {
-      const subDrum = synthDrum(0.35, 0.18, 110, 50);
-      mixTrack(track, subDrum, Math.floor((t + 0.5) * SAMPLE_RATE));
+  // 1. 強勁行軍戰鬥鼓點 (Kick + Snare 120 BPM Drive)
+  for (let t = 0; t < duration; t += beat) {
+    const beatIndex = Math.round(t / beat);
+    // 拍 1, 3 擊重鼓 (Kick)
+    if (beatIndex % 2 === 0) {
+      const kick = synthKick(0.55);
+      mixTrack(track, kick, Math.floor(t * SAMPLE_RATE));
+    }
+    // 拍 2, 4 擊軍鼓 (Snare)
+    if (beatIndex % 2 === 1) {
+      const snare = synthSnare(0.4);
+      mixTrack(track, snare, Math.floor(t * SAMPLE_RATE));
+    }
+    // 16 分音符小碎鼓加強前進感
+    if (beatIndex % 4 === 3) {
+      const ghost = synthSnare(0.18);
+      mixTrack(track, ghost, Math.floor((t + 0.25) * SAMPLE_RATE));
     }
   }
 
-  // 3. 古編鐘 (每 8 秒敲響一聲大氣編鐘)
-  for (let t = 0; t < 64.0; t += 8.0) {
-    const chime = synthChime(N.D4, 3.0, 0.22);
-    mixTrack(track, chime, Math.floor(t * SAMPLE_RATE));
+  // 2. 緊湊軍陣低音線 (Battle Bass Staccato Groove)
+  // 和弦循環：Dm (4s) -> Bb (4s) -> C (4s) -> Dm (4s)
+  for (let t = 0; t < duration; t += 0.25) {
+    const bar = Math.floor(t / 4.0) % 4;
+    const root = bar === 0 ? N.D2 : bar === 1 ? N.Bb2 : bar === 2 ? N.C3 : N.D2;
+    const fifth = bar === 0 ? N.A2 : bar === 1 ? N.F2 : bar === 2 ? N.G2 : N.A2;
+    const beatInBar = (t % 1.0);
+    const note = (beatInBar < 0.25 || beatInBar >= 0.75) ? root : fifth;
+
+    const bass = synthBassStaccato(note, 0.2, 0.36);
+    mixTrack(track, bass, Math.floor(t * SAMPLE_RATE));
   }
 
-  // 4. 64 秒長篇五聲音階古箏主旋律 (起承轉合)
-  const guzhengMelody = [
-    // 樂章一 (0~16s)
-    { note: N.D4, t: 0.5, d: 1.5 }, { note: N.F4, t: 2.0, d: 1.2 }, { note: N.A4, t: 3.2, d: 1.8 }, { note: N.D5, t: 4.5, d: 1.6 },
-    { note: N.A4, t: 6.0, d: 1.4 }, { note: N.F4, t: 7.2, d: 1.2 }, { note: N.E4, t: 8.5, d: 1.5 }, { note: N.D4, t: 10.0, d: 2.2 },
-    { note: N.F4, t: 12.5, d: 1.4 }, { note: N.A4, t: 14.0, d: 1.8 },
+  // 3. 戰役氛圍和弦鋪底 (Strings Pad)
+  for (let t = 0; t < duration; t += 4.0) {
+    const bar = Math.floor(t / 4.0) % 4;
+    const chord = bar === 0 ? [N.D3, N.F3, N.A3]
+                : bar === 1 ? [N.Bb2, N.D3, N.F3]
+                : bar === 2 ? [N.C3, N.E3, N.G3]
+                : [N.D3, N.F3, N.A3];
+    const pad = synthBattlePad(chord, 4.1, 0.3);
+    mixTrack(track, pad, Math.floor(t * SAMPLE_RATE));
+  }
 
-    // 樂章二 (16~32s)
-    { note: N.D5, t: 16.5, d: 1.4 }, { note: N.C5, t: 18.0, d: 1.2 }, { note: N.Bb4, t: 19.2, d: 1.6 }, { note: N.A4, t: 20.8, d: 1.4 },
-    { note: N.G4, t: 22.2, d: 1.2 }, { note: N.A4, t: 23.5, d: 1.5 }, { note: N.D5, t: 25.0, d: 2.0 }, { note: N.F5, t: 27.2, d: 1.6 },
-    { note: N.E5, t: 29.0, d: 1.4 }, { note: N.D5, t: 30.5, d: 1.8 },
+  // 4. 激昂熱血名將主旋律 (Heroic March Lead 48s)
+  const battleMelody = [
+    // 段落 1 (0~16s) 義勇出征
+    { note: N.D4, t: 0.0, d: 0.4 }, { note: N.D4, t: 0.5, d: 0.4 }, { note: N.F4, t: 1.0, d: 0.4 }, { note: N.G4, t: 1.5, d: 0.4 },
+    { note: N.A4, t: 2.0, d: 0.8 }, { note: N.F4, t: 3.0, d: 0.4 }, { note: N.G4, t: 3.5, d: 0.4 },
+    { note: N.A4, t: 4.0, d: 0.5 }, { note: N.Bb4, t: 4.5, d: 0.4 }, { note: N.A4, t: 5.0, d: 0.5 }, { note: N.F4, t: 5.5, d: 0.4 },
+    { note: N.G4, t: 6.0, d: 1.2 }, { note: N.D4, t: 7.5, d: 0.4 },
 
-    // 樂章三：高潮華彩 (32~48s)
-    { note: N.A4, t: 32.2, d: 1.0 }, { note: N.D5, t: 33.0, d: 1.2 }, { note: N.F5, t: 34.2, d: 1.5 }, { note: N.G5, t: 35.5, d: 1.8 },
-    { note: N.F5, t: 37.0, d: 1.2 }, { note: N.D5, t: 38.2, d: 1.4 }, { note: N.C5, t: 39.5, d: 1.2 }, { note: N.D5, t: 40.8, d: 2.0 },
-    { note: N.F5, t: 42.5, d: 1.5 }, { note: N.E5, t: 44.0, d: 1.4 }, { note: N.D5, t: 45.5, d: 2.2 },
+    { note: N.D4, t: 8.0, d: 0.4 }, { note: N.F4, t: 8.5, d: 0.4 }, { note: N.A4, t: 9.0, d: 0.5 }, { note: N.D5, t: 9.5, d: 0.4 },
+    { note: N.C5, t: 10.0, d: 0.8 }, { note: N.A4, t: 11.0, d: 0.5 }, { note: N.F4, t: 11.5, d: 0.4 },
+    { note: N.G4, t: 12.0, d: 0.8 }, { note: N.E4, t: 13.0, d: 0.8 }, { note: N.D4, t: 14.0, d: 1.8 },
 
-    // 樂章四：歸隱天下 (48~64s)
-    { note: N.A4, t: 48.5, d: 1.6 }, { note: N.F4, t: 50.2, d: 1.4 }, { note: N.G4, t: 52.0, d: 1.6 }, { note: N.E4, t: 54.0, d: 1.8 },
-    { note: N.D4, t: 56.5, d: 2.0 }, { note: N.F4, t: 58.5, d: 1.5 }, { note: N.E4, t: 60.0, d: 1.6 }, { note: N.D4, t: 61.8, d: 2.4 }
+    // 段落 2 (16~32s) 兵臨城下
+    { note: N.D5, t: 16.0, d: 0.5 }, { note: N.D5, t: 16.5, d: 0.4 }, { note: N.C5, t: 17.0, d: 0.5 }, { note: N.A4, t: 17.5, d: 0.4 },
+    { note: N.Bb4, t: 18.0, d: 0.8 }, { note: N.G4, t: 19.0, d: 0.5 }, { note: N.Bb4, t: 19.5, d: 0.4 },
+    { note: N.C5, t: 20.0, d: 0.8 }, { note: N.A4, t: 21.0, d: 0.5 }, { note: N.F4, t: 21.5, d: 0.4 },
+    { note: N.G4, t: 22.0, d: 1.5 },
+
+    { note: N.A4, t: 24.0, d: 0.4 }, { note: N.C5, t: 24.5, d: 0.4 }, { note: N.D5, t: 25.0, d: 0.8 }, { note: N.F5, t: 26.0, d: 0.8 },
+    { note: N.E5, t: 27.0, d: 0.8 }, { note: N.D5, t: 28.0, d: 0.5 }, { note: N.C5, t: 28.5, d: 0.4 }, { note: N.D5, t: 29.0, d: 2.2 },
+
+    // 段落 3 (32~48s) 決戰鏖兵與平滑回歸
+    { note: N.F5, t: 32.0, d: 0.5 }, { note: N.E5, t: 32.5, d: 0.4 }, { note: N.D5, t: 33.0, d: 0.5 }, { note: N.C5, t: 33.5, d: 0.4 },
+    { note: N.D5, t: 34.0, d: 0.8 }, { note: N.A4, t: 35.0, d: 0.8 },
+    { note: N.Bb4, t: 36.0, d: 0.5 }, { note: N.C5, t: 36.5, d: 0.4 }, { note: N.D5, t: 37.0, d: 0.8 }, { note: N.F5, t: 38.0, d: 0.8 },
+    { note: N.G5, t: 39.0, d: 1.2 },
+
+    { note: N.F5, t: 41.0, d: 0.4 }, { note: N.E5, t: 41.5, d: 0.4 }, { note: N.D5, t: 42.0, d: 0.8 }, { note: N.C5, t: 43.0, d: 0.5 }, { note: N.A4, t: 43.5, d: 0.4 },
+    { note: N.G4, t: 44.0, d: 0.8 }, { note: N.E4, t: 45.0, d: 0.8 }, { note: N.D4, t: 46.0, d: 1.8 }
   ];
 
-  guzhengMelody.forEach(({ note, t, d }) => {
-    const gz = synthGuzheng(note, d, 0.36);
-    mixTrack(track, gz, Math.floor(t * SAMPLE_RATE));
+  battleMelody.forEach(({ note, t, d }) => {
+    const lead = synthBattleLead(note, d, 0.4);
+    mixTrack(track, lead, Math.floor(t * SAMPLE_RATE));
   });
 
-  // 5. 加上柔和空間混響
-  const reverbedTrack = applySimpleReverb(track, 0.22, 0.32, 0.25);
-
-  // 6. 無縫循環淡入淡出 (Cross-fade 0.4s)
-  const fadeLen = Math.floor(SAMPLE_RATE * 0.4);
+  // 5. 無縫淡入淡出 (Cross-fade 0.25s)
+  const fadeLen = Math.floor(SAMPLE_RATE * 0.25);
   for (let i = 0; i < fadeLen; i++) {
     const fade = i / fadeLen;
-    reverbedTrack[i] *= fade;
-    reverbedTrack[totalSamples - 1 - i] *= fade;
+    track[i] *= fade;
+    track[totalSamples - 1 - i] *= fade;
   }
 
-  // 7. 響度正規化
+  // 6. 正規化
   let peak = 0;
   for (let i = 0; i < totalSamples; i++) {
-    if (Math.abs(reverbedTrack[i]) > peak) peak = Math.abs(reverbedTrack[i]);
+    if (Math.abs(track[i]) > peak) peak = Math.abs(track[i]);
   }
   if (peak > 0.85) {
     const factor = 0.85 / peak;
-    for (let i = 0; i < totalSamples; i++) reverbedTrack[i] *= factor;
+    for (let i = 0; i < totalSamples; i++) track[i] *= factor;
   }
 
-  const wavBuf = createWavBuffer(reverbedTrack);
+  const wavBuf = createWavBuffer(track);
   fs.writeFileSync(path.join(AUDIO_DIR, "bgm-main.wav"), wavBuf);
-  console.log("-> bgm-main.wav created (" + duration + "s, " + (wavBuf.length / 1024).toFixed(1) + " KB)");
+  console.log("-> bgm-main.wav created (Battle March " + duration + "s, " + (wavBuf.length / 1024).toFixed(1) + " KB)");
 }
 
 /* =========================================================================
-   打擊音效生成
+   打擊與技能音效生成
    ========================================================================= */
 
 function synthMetallic(freqs, duration = 0.35, gain = 0.45, decaySpeed = 12) {
@@ -384,7 +392,7 @@ function generateSfx() {
 }
 
 console.log("=========================================");
-console.log(" Generating 64s Lightweight Audio Assets ");
+console.log(" Generating Heroic Battle Audio Assets   ");
 console.log("=========================================");
 generateBgm();
 generateSfx();
