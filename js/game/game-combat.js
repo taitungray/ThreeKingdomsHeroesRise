@@ -1115,6 +1115,47 @@ function waveCleared() {
       return;
     }
 
+    if (runtime.mode === "trial") {
+      const trials = typeof HERO_FATE_TRIALS !== "undefined" ? HERO_FATE_TRIALS : (window.HERO_FATE_TRIALS || []);
+      const trial = trials.find((item) => item.id === runtime.trialId) || trials[0];
+      save.trials ||= { cleared: [] };
+      const isFirstClear = !save.trials.cleared.includes(trial.id);
+      if (isFirstClear) {
+        save.trials.cleared.push(trial.id);
+        if (trial.reward?.frame) save.equippedFrame = trial.reward.frame.id;
+        if (trial.reward?.title) save.equippedTitle = trial.reward.title.id;
+      }
+      const reward = {
+        gold: trial.reward?.gold || 5000,
+        jade: isFirstClear ? (trial.reward?.jade || 88) : Math.round((trial.reward?.jade || 88) * 0.2),
+        shards: isFirstClear ? (trial.reward?.shards || 30) : 5,
+        food: 200,
+        exp: 50
+      };
+      awardResources(reward);
+      recordStat("wins");
+      recordStat("bosses");
+      runtime.waveClears = 0;
+      runtime.bossActive = false;
+      runtime.nextStageAfterSettlement = save.stage;
+      runtime.battleResult = {
+        type: "win",
+        stage: save.stage,
+        boss: trial.name,
+        progressed: false,
+        newlyUnlocked: isFirstClear ? (trial.reward.frame.name + " · " + trial.reward.title.name) : "",
+        reward,
+        damage: damageSummary(),
+        mode: "trial"
+      };
+      addLog("名將傳奇試煉「" + trial.name + "」通關！");
+      runtime.mode = "campaign";
+      runtime.trialId = null;
+      persist();
+      if (typeof showSettlement === "function") showSettlement(runtime.battleResult);
+      return;
+    }
+
     const battleStage = activeStageNumber();
     const chapter = chapterForStage();
     const progressed = battleStage >= save.stage;
@@ -1187,6 +1228,10 @@ function partyDefeated() {
     addLog("問天樓第 " + (runtime.towerFloor || 1) + " 層整軍失敗，層數不變。");
     runtime.mode = "campaign";
     runtime.towerFloor = 0;
+  } else if (runtime.mode === "trial") {
+    addLog("名將試煉惜敗，調整陣容再試。");
+    runtime.mode = "campaign";
+    runtime.trialId = null;
   }
 
   recordStat("losses");

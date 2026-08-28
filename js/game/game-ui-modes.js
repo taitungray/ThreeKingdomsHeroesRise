@@ -153,3 +153,59 @@ function challengeTower() {
   persist();
   startStage(Math.min(save.stage, GAME_DATA.stages?.length || save.stage), "問天樓第 " + nextFloor + " 層");
 }
+
+function renderTrials() {
+  const stamina = staminaStatus();
+  const clearedList = save.trials?.cleared || [];
+  const trials = typeof HERO_FATE_TRIALS !== "undefined" ? HERO_FATE_TRIALS : (window.HERO_FATE_TRIALS || []);
+  const power = currentArmyPower();
+
+  const cards = trials.map((trial) => {
+    const isCleared = clearedList.includes(trial.id);
+    const hero = heroById(trial.heroId);
+    return '<article class="mode-card ' + (isCleared ? "cleared" : "") + '" style="background:linear-gradient(135deg, rgba(40,30,20,0.85), rgba(20,16,12,0.95));border:1.5px solid ' + (isCleared ? '#d4af37' : '#6a5232') + ';margin-bottom:8px;padding:10px;border-radius:6px;">' +
+      '<div style="display:flex;align-items:center;gap:10px;">' +
+        avatarHtml(hero, false) +
+        '<div style="flex:1;min-width:0;">' +
+          '<span class="eyebrow" style="color:#d4aa5d;font-size:11px;">' + trial.chapter + '</span>' +
+          '<h3 style="margin:2px 0 3px 0;color:' + (isCleared ? '#ffd700' : '#ffe6a1') + ';font-size:16px;">' + trial.name + '</h3>' +
+          '<p style="margin:0;color:#c9be9f;font-size:12px;line-height:1.4;">' + trial.desc + '</p>' +
+          '<div style="margin-top:4px;font-size:11px;color:#d4aa5d;">首通解鎖：' + trial.reward.frame.name + ' + ' + trial.reward.title.name + ' + 碎片×' + trial.reward.shards + '</div>' +
+        '</div>' +
+        '<div style="text-align:right;">' +
+          '<button class="' + (isCleared ? "stone-button" : "seal-button") + ' panel-action" type="button" data-action="trial-challenge" data-trial="' + trial.id + '"' + (stamina.current < trial.cost ? " disabled" : "") + '>' + (isCleared ? "重戰" : "挑戰") + '<br><small>' + trial.cost + ' 體力</small></button>' +
+        '</div>' +
+      '</div>' +
+    '</article>';
+  }).join("");
+
+  setPanel("名將列傳試煉",
+    '<section class="mode-banner">' +
+      '<span class="eyebrow">三國傳奇 · 宿命挑戰</span>' +
+      '<h3>名將列傳試煉</h3>' +
+      '<p>挑戰各陣營名將的經典傳奇戰役，首通解鎖專屬動態頭像框、稱號與大量名將碎片！</p>' +
+      '<div class="mode-stats">' +
+        '<span>我方戰力 <b>' + formatNumber(power) + '</b></span>' +
+        '<span>已通關 <b>' + clearedList.length + ' / ' + trials.length + '</b></span>' +
+        '<span>體力 <b>' + stamina.current + ' / ' + stamina.max + '</b></span>' +
+      '</div>' +
+    '</section>' +
+    '<div class="mode-list" style="margin-top:10px;">' + cards + '</div>');
+}
+
+function challengeTrial(trialId) {
+  ensureCycleState();
+  const trials = typeof HERO_FATE_TRIALS !== "undefined" ? HERO_FATE_TRIALS : (window.HERO_FATE_TRIALS || []);
+  const trial = trials.find((item) => item.id === trialId);
+  if (!trial) return;
+  if (!spendStamina(trial.cost || 3)) return toast("體力不足，等待回復");
+  runtime.mode = "trial";
+  runtime.trialId = trial.id;
+  runtime.bossActive = false;
+  runtime.waveClears = 0;
+  closePanel();
+  resetAllies();
+  spawnWave(false, true);
+  addLog("進入名將列傳試煉「" + trial.name + "」。");
+  toast("出征「" + trial.name + "」！");
+}

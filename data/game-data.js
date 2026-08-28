@@ -392,17 +392,29 @@ window.THREE_KINGDOMS_DATA.treasures = [
 window.THREE_KINGDOMS_DATA.titles = [
   { id: "volunteer", name: "\u7fa9\u52c7\u8ecd", desc: "\u521d\u5165\u6843\u5712", type: "stage", value: 1 },
   { id: "yellow-turban-breaker", name: "\u7834\u5dfe\u5148\u92d2", desc: "\u901a\u904e\u7b2c 10 \u95dc", type: "stage", value: 10 },
-  { id: "hundred-battles", name: "\u767e\u6230\u8001\u5c07", desc: "\u901a\u904e\u7b2c 25 \u95dc", type: "stage", value: 25 },
-  { id: "lord-of-heroes", name: "\u7fa4\u82f1\u4e4b\u4e3b", desc: "\u7d50\u8b58 20 \u540d\u6b66\u5c07", type: "heroes", value: 20 },
-  { id: "arena-star", name: "\u6f14\u6b66\u7121\u96d9", desc: "\u6f14\u6b66\u7372\u52dd 4 \u5834", type: "arena", value: 4 }
+  { id: "hundred-battles", name: "百戰老將", desc: "通過第 25 關", type: "stage", value: 25 },
+  { id: "lord-of-heroes", name: "群英之主", desc: "結識 20 名武將", type: "heroes", value: 20 },
+  { id: "arena-star", name: "演武無雙", desc: "演武獲勝 4 場", type: "arena", value: 4 },
+  { id: "title-guanyu-loyalty", name: "義絕千秋", desc: "通關關羽傳奇試煉「千里走單騎」", type: "trial", value: 1 },
+  { id: "title-zhaoyun-changsheng", name: "常勝將軍", desc: "通關趙雲傳奇試煉「長坂坡百人斬」", type: "trial", value: 1 },
+  { id: "title-zhugeliang-wisdom", name: "智絕乾坤", desc: "通關諸葛亮傳奇試煉「七星壇借東風」", type: "trial", value: 1 },
+  { id: "title-caocao-hero", name: "超世之傑", desc: "通關曹操傳奇試煉「官渡奇襲烏巢」", type: "trial", value: 1 },
+  { id: "title-lubu-unrivaled", name: "天下無雙", desc: "通關呂布傳奇試煉「虎牢關戰三英」", type: "trial", value: 1 },
+  { id: "title-zhouyu-wind", name: "江左風流", desc: "通關周瑜傳奇試煉「赤壁烈火燎原」", type: "trial", value: 1 }
 ];
-window.THREE_KINGDOMS_DATA.tower = { name: "\u554f\u5929\u6a13", basePower: 2700, powerStep: 260, stamina: 4 };
+window.THREE_KINGDOMS_DATA.tower = { name: "問天樓", basePower: 2700, powerStep: 260, stamina: 4 };
 
 window.THREE_KINGDOMS_DATA.avatarFrames = [
-  { id: "plain", name: "\u7fa9\u52c7\u7d20\u6846", desc: "\u6843\u5712\u7fa9\u8ecd\u7684\u672c\u8272", color: "#c6a654", unlockStage: 0 },
-  { id: "shu-banner", name: "\u8700\u6f22\u65cc\u65d7", desc: "\u901a\u904e\u7b2c 10 \u95dc\u89e3\u9396", color: "#65a66d", unlockStage: 10 },
-  { id: "star-ribbon", name: "\u540d\u5c07\u91d1\u5e36", desc: "\u901a\u904e\u7b2c 25 \u95dc\u89e3\u9396", color: "#d4a746", unlockStage: 25 },
-  { id: "red-cliff", name: "\u8d64\u58c1\u706b\u5370", desc: "\u901a\u904e\u7b2c 50 \u95dc\u89e3\u9396", color: "#bb5143", unlockStage: 50 }
+  { id: "plain", name: "義勇素框", desc: "桃園義軍的本色", color: "#c6a654", unlockStage: 0 },
+  { id: "shu-banner", name: "蜀漢旌旗", desc: "通過第 10 關解鎖", color: "#65a66d", unlockStage: 10 },
+  { id: "star-ribbon", name: "名將金帶", desc: "通過第 25 關解鎖", color: "#d4a746", unlockStage: 25 },
+  { id: "red-cliff", name: "赤壁火印", desc: "通過第 50 關解鎖", color: "#bb5143", unlockStage: 50 },
+  { id: "frame-guanyu-dragon", name: "武聖青龍", desc: "通關關羽傳奇試煉解鎖", color: "#4caf50", trialId: "trial-guanyu" },
+  { id: "frame-zhaoyun-courage", name: "一身是膽", desc: "通關趙雲傳奇試煉解鎖", color: "#29b6f6", trialId: "trial-zhaoyun" },
+  { id: "frame-zhugeliang-bagua", name: "天命八陣", desc: "通關諸葛亮傳奇試煉解鎖", color: "#26a69a", trialId: "trial-zhugeliang" },
+  { id: "frame-caocao-hegemony", name: "魏武霸業", desc: "通關曹操傳奇試煉解鎖", color: "#ab47bc", trialId: "trial-caocao" },
+  { id: "frame-lubu-shura", name: "修羅無雙", desc: "通關呂布傳奇試煉解鎖", color: "#e53935", trialId: "trial-lubu" },
+  { id: "frame-zhouyu-fire", name: "赤壁天火", desc: "通關周瑜傳奇試煉解鎖", color: "#ff7043", trialId: "trial-zhouyu" }
 ];
 window.THREE_KINGDOMS_DATA.announcements = [
   { id: "launch-notice", date: "2026-08-27", tag: "\u6025\u5831", title: "\u6843\u5712\u7fa9\u8ecd\u5df2\u96c6\u7d50", body: "\u65b0\u7248\u5df2\u958b\u653e\u554f\u5929\u6a13\u3001\u65e5\u5e38\u526f\u672c\u8207\u88dd\u5099\u7cbe\u7149\u3002" },

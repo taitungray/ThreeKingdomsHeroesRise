@@ -217,6 +217,7 @@ const FACTION_MILESTONES = {
 
 const HERO_BIOGRAPHIES = window.HERO_BIOGRAPHIES || {};
 const HERO_BATTLE_QUOTES = window.HERO_BATTLE_QUOTES || {};
+const HERO_FATE_TRIALS = window.HERO_FATE_TRIALS || [];
 
 function localDateKey(time = Date.now()) {
   const date = new Date(time);
@@ -317,6 +318,7 @@ const defaultSave = () => ({
   equippedFrame: "plain",
   collectionMilestones: {},
   troopMastery: { "步兵": 0, "騎兵": 0, "弓兵": 0, "謀士": 0 },
+  trials: { cleared: [] },
   eventState: { period: localWeekKey(), progress: Object.fromEntries(LOCAL_EVENTS.map((event) => [event.id, 0])), claimed: [] }
 });
 

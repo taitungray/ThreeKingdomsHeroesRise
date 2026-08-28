@@ -186,6 +186,7 @@ function openPanel(type) {
   else if (type === "collection") renderCollection();
   else if (type === "tower") renderTower();
   else if (type === "dungeon") renderDungeons();
+  else if (type === "trials") renderTrials();
   beep(330, 0.04, "square", 0.018);
 }
 
@@ -341,6 +342,7 @@ function handlePanelAction(button) {
   else if (action === "arena-open") renderArena();
   else if (action === "tower-challenge") challengeTower();
   else if (action === "dungeon-challenge") challengeDungeon(button.dataset.dungeon);
+  else if (action === "trial-challenge") challengeTrial(button.dataset.trial);
   else if (action === "title-equip") {
     const title = titleById(button.dataset.title);
     if (title && titleUnlocked(title)) {
