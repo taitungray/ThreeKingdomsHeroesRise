@@ -601,6 +601,12 @@ function applyDamage(attacker, target, multiplier = 1, criticalChanceBase = 0.12
   target.kickY = Math.sin(knockAngle) * knockForce;
   if (!context.status) {
     addNumber(target.x, target.y - 31, damage, critical);
+    if (critical) {
+      addNumber(target.x, target.y - 48, "暴擊!", true, false, { color: "#ffea75", size: 18, isTag: true });
+      window.TaoyuanAudio?.sfx?.("boss");
+    } else {
+      window.TaoyuanAudio?.sfx?.("hit");
+    }
     addEffect("spark", target.x, target.y - 13, critical ? "#ffe270" : "#f1d8bd", { radius: critical ? 25 : 14, life: 0.22 });
     addEffect("impact", target.x, target.y - 14, critical ? "#fff08b" : "#f7d8ad", { radius: critical ? 34 : 19, life: critical ? 0.3 : 0.18, angle: knockAngle });
     registerCombatHit(target, critical);
@@ -651,7 +657,7 @@ function killUnit(target, attacker) {
     if (attacker?.hero?.id === "weiyan" || attacker?.hero?.id === "guanxing") applyStatus(attacker, "haste", 3, .12, attacker);
     if (target.type === "boss") {
       applyLocalImpact(target, 10);
-      beep(135, 0.22, "square", 0.045);
+      window.TaoyuanAudio?.sfx?.("boss");
     }
   } else if (attacker && target.hero) {
     addLog(target.hero.name + "力竭，等待重新整軍。");
@@ -671,6 +677,7 @@ function useHeroSkill(unit, target) {
     life: 0.65,
     maxLife: 0.65
   };
+  window.TaoyuanAudio?.sfx?.("skill");
   const hero = unit.hero;
   const skillFactor = 1 + (heroSkillLevel(hero.id) - 1) * .12;
   const spec = SKILL_SPECS[hero.id] || { tone: hero.role === "\u8b00\u58eb" ? "thunder" : "slash", color: hero.accent };
