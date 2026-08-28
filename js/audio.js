@@ -5,12 +5,17 @@
     master: null,
     musicGain: null,
     sfxGain: null,
+    bgmSource: null,
+    bgmBuffer: null,
+    sfxBuffers: {},
     musicTimer: 0,
     musicStep: 0,
     unlocked: false,
     sound: true,
-    music: true
+    music: true,
+    assetsLoaded: false
   };
+
   const melody = [293.66, 349.23, 392, 440, 392, 349.23, 293.66, 261.63, 293.66, 392, 440, 523.25, 440, 392, 349.23, 293.66];
 
   function ensureContext() {
@@ -22,16 +27,50 @@
       state.master = state.context.createGain();
       state.musicGain = state.context.createGain();
       state.sfxGain = state.context.createGain();
-      state.master.gain.value = 0.58;
-      state.musicGain.gain.value = 0.17;
-      state.sfxGain.gain.value = 0.62;
+      state.master.gain.value = 0.75;
+      state.musicGain.gain.value = 0.45;
+      state.sfxGain.gain.value = 0.85;
       state.musicGain.connect(state.master);
       state.sfxGain.connect(state.master);
       state.master.connect(state.context.destination);
+      preloadAudioAssets();
     } catch {
       state.context = null;
     }
     return state.context;
+  }
+
+  async function loadBuffer(url) {
+    const ctx = ensureContext();
+    if (!ctx) return null;
+    try {
+      const resp = await fetch(url);
+      if (!resp.ok) return null;
+      const arrayBuf = await resp.arrayBuffer();
+      return await ctx.decodeAudioData(arrayBuf);
+    } catch {
+      return null;
+    }
+  }
+
+  async function preloadAudioAssets() {
+    if (state.assetsLoaded) return;
+    state.assetsLoaded = true;
+
+    const sfxList = ["click", "confirm", "cancel", "hit", "skill", "reward", "boss"];
+    sfxList.forEach(async (name) => {
+      const buf = await loadBuffer("assets/audio/sfx-" + name + ".wav");
+      if (buf) state.sfxBuffers[name] = buf;
+    });
+
+    const bgmBuf = await loadBuffer("assets/audio/bgm-main.wav");
+    if (bgmBuf) {
+      state.bgmBuffer = bgmBuf;
+      if (state.music && state.unlocked && !state.bgmSource) {
+        stopSynthMusic();
+        playRealBgm();
+      }
+    }
   }
 
   function tone(frequency = 280, duration = 0.045, type = "square", gain = 0.025, channel = "sfx", delay = 0) {
@@ -50,33 +89,78 @@
       oscillator.connect(volume).connect(channel === "music" ? state.musicGain : state.sfxGain);
       oscillator.start(startAt);
       oscillator.stop(startAt + duration + 0.02);
-    } catch { /* optional audio in restricted WebViews */ }
+    } catch { /* WebView compatibility fallback */ }
+  }
+
+  function playRealBgm() {
+    if (!state.music || !state.unlocked || !state.bgmBuffer) return;
+    const ctx = ensureContext();
+    if (!ctx) return;
+
+    try {
+      if (state.bgmSource) {
+        try { state.bgmSource.stop(); } catch {}
+        state.bgmSource.disconnect();
+      }
+      const source = ctx.createBufferSource();
+      source.buffer = state.bgmBuffer;
+      source.loop = true;
+      source.connect(state.musicGain);
+      source.start(0);
+      state.bgmSource = source;
+    } catch {
+      startSynthMusic();
+    }
+  }
+
+  function stopRealBgm() {
+    if (state.bgmSource) {
+      try { state.bgmSource.stop(); } catch {}
+      try { state.bgmSource.disconnect(); } catch {}
+      state.bgmSource = null;
+    }
   }
 
   function playMusicStep() {
-    if (!state.music || !state.unlocked) return;
+    if (!state.music || !state.unlocked || state.bgmSource) return;
     const index = state.musicStep % melody.length;
     state.musicStep += 1;
     tone(melody[index], .36, "triangle", .045, "music");
     if (index % 4 === 0) tone(melody[index] / 2, .5, "sine", .025, "music", .02);
   }
 
-  function startMusic() {
-    if (!state.music || state.musicTimer || !state.unlocked) return;
+  function startSynthMusic() {
+    if (!state.music || state.musicTimer || !state.unlocked || state.bgmSource) return;
     if (!ensureContext()) return;
     state.musicTimer = window.setInterval(playMusicStep, 520);
     playMusicStep();
   }
 
-  function stopMusic() {
+  function stopSynthMusic() {
     if (state.musicTimer) window.clearInterval(state.musicTimer);
     state.musicTimer = 0;
+  }
+
+  function startMusic() {
+    if (!state.music || !state.unlocked) return;
+    ensureContext();
+    if (state.bgmBuffer) {
+      playRealBgm();
+    } else {
+      startSynthMusic();
+    }
+  }
+
+  function stopMusic() {
+    stopRealBgm();
+    stopSynthMusic();
   }
 
   function unlock() {
     const context = ensureContext();
     state.unlocked = true;
     if (context?.resume) context.resume().catch(() => {});
+    preloadAudioAssets();
     startMusic();
   }
 
@@ -88,6 +172,22 @@
   }
 
   function sfx(kind) {
+    if (!state.sound) return;
+    const ctx = ensureContext();
+    if (!ctx) return;
+
+    const buffer = state.sfxBuffers[kind];
+    if (buffer) {
+      try {
+        const source = ctx.createBufferSource();
+        source.buffer = buffer;
+        source.connect(state.sfxGain);
+        source.start(0);
+        return;
+      } catch {}
+    }
+
+    // 優雅回退
     const patterns = {
       click: [[240, .035, "square", .018]],
       confirm: [[440, .07, "triangle", .025], [660, .11, "triangle", .02, 0.06]],

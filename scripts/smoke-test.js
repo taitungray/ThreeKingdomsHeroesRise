@@ -117,6 +117,7 @@ assert.ok(authSource.includes("TaoyuanAuth") && authSource.includes("googleLogin
 const cloudSource = fs.readFileSync(path.join(root, "js", "cloud-save.js"), "utf8");
 assert.ok(cloudSource.includes("taoyuan_qunying_saves") && cloudSource.includes("uploadToCloud") && cloudSource.includes("syncOnStartup"), "cloud save module must expose UID-scoped Firestore sync");
 assert.ok(audioSource.includes("startMusic") && audioSource.includes("sfx"), "audio module must expose music and sound effects");
+assert.ok(["bgm-main.wav", "sfx-click.wav", "sfx-confirm.wav", "sfx-cancel.wav", "sfx-hit.wav", "sfx-skill.wav", "sfx-reward.wav", "sfx-boss.wav"].every((file) => fs.existsSync(path.join(root, "assets", "audio", file))), "real audio assets must exist in assets/audio/");
 assert.ok(fs.existsSync(path.join(root, "assets", "icon.webp")), "app icon source missing");
 assert.ok(fs.existsSync(path.join(root, "assets", "icons", "icon-192.webp")) && fs.existsSync(path.join(root, "assets", "icons", "icon-512.webp")), "PWA icon variants missing");
 const styleSource = fs.readFileSync(path.join(root, "styles.css"), "utf8");
@@ -134,7 +135,7 @@ assert.ok(gameSource.includes("function accountDisplayName") && gameSource.inclu
 assert.ok(gameSource.includes("formation-slot-swap") && gameSource.includes("function swapFormationSlots"), "formation UI must expose an explicit slot-swap action");
 assert.ok(gameSource.includes("ownedEquipment") && gameSource.includes("function cycleOwnedEquipment"), "equipment cycling must stay inside the owned inventory");
 assert.ok(gameSource.includes("兌換") && !gameSource.includes("ACTIVE ARMY PASSIVE"), "shop copy uses 兌換 and tactics must not leak internal English");
-assert.ok(!gameSource.includes("桃園初陳") && !gameSource.includes("玉璇") && !gameSource.includes("連環妁殺"), "known Traditional-Chinese typos must stay removed");
+assert.ok(!gameSource.includes("桃園初陳") && !gameSource.includes("玉璇") && !gameSource.includes("連環妁殺") && !gameSource.includes("\u6226") && !gameSource.includes("战"), "known Traditional-Chinese typos and simplified chars must stay removed");
 assert.ok(gameSource.includes("runtime.mode === \"tower\"") && gameSource.includes("hideUnavailableMode"), "tower reuses real combat; arena/dungeon stay hidden");
 assert.ok(gameSource.includes("function reducedMotionActive") && gameSource.includes("function applyLocalImpact"), "hit feedback must be local and honor reduced motion");
 assert.ok(!gameSource.includes("ctx.translate((Math.random() - 0.5) * runtime.shake"), "canvas must not apply a full-frame shake translate");

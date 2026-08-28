@@ -787,7 +787,7 @@ function achievementData() {
     ["bosses3", "\u7834\u95dc\u65ac\u5c07", "\u64ca\u6bba 3 \u540d\u9996\u9818", "bosses", 3, { jade: 5 }],
     ["bosses10", "\u9996\u9818\u514b\u661f", "\u64ca\u6bba 10 \u540d\u9996\u9818", "bosses", 10, { gold: 1600 }],
     ["bosses25", "\u5b9a\u4e2d\u539f", "\u64ca\u6bba 25 \u540d\u9996\u9818", "bosses", 25, { jade: 15 }],
-    ["kills100", "\u767e\u6226\u7cbe\u5175", "\u64ca\u6bba 100 \u540d\u6575\u4eba", "kills", 100, { gold: 500 }],
+    ["kills100", "\u767e\u6230\u7cbe\u5175", "\u64ca\u6bba 100 \u540d\u6575\u4eba", "kills", 100, { gold: 500 }],
     ["kills500", "\u842c\u592b\u4e4b\u52c7", "\u64ca\u6bba 500 \u540d\u6575\u4eba", "kills", 500, { jade: 8 }],
     ["combo20", "\u9023\u74b0\u65ac\u6bba", "\u9054\u6210 20 \u9023\u64ca", "combo", 20, { gold: 800 }],
     ["combo50", "\u7121\u96d9\u9023\u65a9", "\u9054\u6210 50 \u9023\u64ca", "combo", 50, { jade: 10 }],

@@ -53,7 +53,7 @@
 | GAMEPLAY-002 | 問天樓走正式戰鬥；演武／副本「尚未開放」 | 問天樓勝敗獎勵流程畫面 |
 | ECON-001 | `ownedEquipment`；商城「兌換」＋可重複項＋玄鐵鎧 | 兌換消耗循環畫面 |
 | CONTENT-001 | `CHAPTER1_STAGE_SPECS` 10 關專名 | 章卡與關卡列表對讀 |
-| CONTENT-002 | 成就改「桃園初陣／赤壁火計／連環斬殺」 | 全量繁中校對 |
+| CONTENT-002 | 成就改「桃園初陣／赤壁火計／連環斬殺／百戰精兵」，直向螢幕提示，smoke-test 增加簡體字防護 | 全量繁中人工走查 |
 | MOTION-001 | `applyLocalImpact` + `reducedMotionActive`；無全畫面 shake translate | reduced-motion 實測 |
 | QA-001 | `npm run test:combat-browser` source 通過：`drawStats.boss = 273`、panel 保持設定、Boss overlay 僅橫幅 | 完整勝敗／settlement／death 畫面包 |
 | PROCESS-001 | 文件分層與 `npm run test:docs` | 後續完成宣告持續附證據 |

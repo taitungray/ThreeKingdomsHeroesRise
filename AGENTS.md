@@ -24,6 +24,7 @@
 - 戰鬥生命週期、角色渲染、動畫、輸入、存檔、獎勵、廣告或建置屬高風險：除語法外，必須執行對應回歸測試與完整流程。
 - JS 改動至少執行 `node --check game.js`、所有 `js/game/*.js` 的 `node --check`、`npm test`。
 - 文件改動執行 `npm run test:docs`；戰鬥角色資產改動執行 `npm run test:combat-assets`。
+- **每次 commit 前，必須再次確認文件是否皆已同步更新**：在提交任何 commit 之前，務必檢查 `docs/`（包含 `docs/specs/`、`docs/issues/`、`docs/work/`、`docs/qa/` 等）中相關規格、已知問題狀態與待辦清單是否已與程式現況完全同步，並執行 `npm run test:docs` 通過檢查。
 - 需要同步 Web 產物時才執行 `node build.js`；一般修改不自動產生 Android APK/AAB。
 - **測試全部在背景執行，嚴禁主動開啟瀏覽器視窗**。所有單元測試、冒煙測試、語法與資產校驗均使用命令列（`npm test`、`node --check` 等）於背景完成；除非使用者明確要求開啟外部瀏覽器，否則絕對不得啟動瀏覽器或彈出視窗。
 - 測試結果必須區分自動化、命令列、實機與尚未執行；不得把程式字串或檔案存在誤報成玩法、視覺已通過。
