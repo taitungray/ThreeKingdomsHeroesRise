@@ -49,7 +49,7 @@ const WEAPON_ANCHORS = {
 };
 const LOCKED_COMBAT_BODY_PATH = "assets/characters/combat-body-locked-v1.webp";
 function enemyCombatBodyPath(unit) {
-  const identity = ENEMY_GENERAL_BODY_ALIASES[unit.enemyGeneralId] || ENEMY_BODY_BY_TYPE[unit.type] || "locked";
+  const identity = ENEMY_GENERAL_BODY_ALIASES[unit.enemyGeneralId] || ENEMY_BODY_BY_TYPE[unit.type] || ENEMY_BODY_BY_TYPE.bandit || "caoren";
   return "assets/characters/combat-body-" + identity + "-v1.webp";
 }
 function terrainTileAsset(chapterIndex) {

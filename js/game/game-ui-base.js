@@ -1,6 +1,18 @@
 /* UI Base: HUD, panel container, enemy preview, dialogues and action dispatcher */
 "use strict";
 
+let toastTimer = null;
+function toast(message) {
+  const element = $("toast");
+  if (!element || !message) return;
+  element.textContent = message;
+  element.classList.add("show");
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => {
+    element.classList.remove("show");
+  }, 1800);
+}
+
 function setHudText(id, value) {
   const text = String(value);
   const key = "text:" + id;
