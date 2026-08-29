@@ -34,6 +34,7 @@ docs/
 - [UI、文字與互動規範](standards/ui-display-rules.md)
 - [無障礙與行動裝置規範](standards/accessibility-wcag.md)
 - [遊戲美術規範](standards/game-art-bible.md)
+- [戰鬥人物圖片製作方式與規格](standards/combat-character-asset-production.md)
 - [戰鬥角色渲染契約](standards/combat-character-render-contract.md)
 
 ### 目前規格 `specs/`

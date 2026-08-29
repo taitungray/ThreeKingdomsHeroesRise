@@ -1,0 +1,112 @@
+{
+  "version": 3,
+  "type": "combat-move-sprite-strip",
+  "cellSize": 96,
+  "columns": 4,
+  "rows": 1,
+  "frames": [
+    "left-contact",
+    "left-pass",
+    "right-contact",
+    "right-pass"
+  ],
+  "anchor": "foot-center",
+  "rendering": {
+    "interpolation": "nearest",
+    "loop": true
+  },
+  "sources": {
+    "core": "assets/characters/core-heroes-move-master-v3.webp",
+    "support": "assets/characters/support-heroes-move-master-v3.webp",
+    "chapter1Enemies": "assets/characters/chapter1-enemies-move-master-v3.webp",
+    "pilotCore": "assets/characters/core-heroes-move-master-v4.webp"
+  },
+  "assets": [
+    {
+      "id": "liubei",
+      "kind": "hero",
+      "path": "assets/characters/move-liubei-v3.webp",
+      "ultraDetailPath": "assets/characters/move-liubei-v4.webp"
+    },
+    {
+      "id": "guanyu",
+      "kind": "hero",
+      "path": "assets/characters/move-guanyu-v3.webp",
+      "ultraDetailPath": "assets/characters/move-guanyu-v4.webp"
+    },
+    {
+      "id": "zhangfei",
+      "kind": "hero",
+      "path": "assets/characters/move-zhangfei-v3.webp",
+      "ultraDetailPath": "assets/characters/move-zhangfei-v4.webp"
+    },
+    {
+      "id": "zhaoyun",
+      "kind": "hero",
+      "path": "assets/characters/move-zhaoyun-v3.webp",
+      "ultraDetailPath": "assets/characters/move-zhaoyun-v4.webp"
+    },
+    {
+      "id": "huangzhong",
+      "kind": "hero",
+      "path": "assets/characters/move-huangzhong-v3.webp"
+    },
+    {
+      "id": "sunshang",
+      "kind": "hero",
+      "path": "assets/characters/move-sunshang-v3.webp"
+    },
+    {
+      "id": "caocao",
+      "kind": "hero",
+      "path": "assets/characters/move-caocao-v3.webp"
+    },
+    {
+      "id": "xiahoudun",
+      "kind": "hero",
+      "path": "assets/characters/move-xiahoudun-v3.webp"
+    },
+    {
+      "id": "bandit",
+      "kind": "enemy",
+      "path": "assets/characters/move-bandit-v3.webp"
+    },
+    {
+      "id": "brute",
+      "kind": "enemy",
+      "path": "assets/characters/move-brute-v3.webp"
+    },
+    {
+      "id": "cavalry",
+      "kind": "enemy",
+      "path": "assets/characters/move-cavalry-v3.webp"
+    },
+    {
+      "id": "boss-zhangjiao",
+      "kind": "boss",
+      "path": "assets/characters/move-boss-zhangjiao-v3.webp"
+    },
+    {
+      "id": "boss-dongzhuo",
+      "kind": "boss",
+      "path": "assets/characters/move-boss-dongzhuo-v3.webp"
+    },
+    {
+      "id": "archer",
+      "kind": "enemy",
+      "path": "assets/characters/move-archer-v3.webp"
+    },
+    {
+      "id": "strategist",
+      "kind": "enemy",
+      "path": "assets/characters/move-strategist-v3.webp"
+    }
+  ],
+  "ultraDetailCellSize": 128,
+  "ultraDetailHeroes": [
+    "liubei",
+    "guanyu",
+    "zhangfei",
+    "zhaoyun"
+  ]
+}

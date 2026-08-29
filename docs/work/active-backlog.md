@@ -22,10 +22,10 @@
 | ID | 工作 | 對應問題 | 狀態 | 完成條件 |
 |---|---|---|---|---|
 | WORK-000 | 鎖定垂直切片角色、敵人、武器、關卡與可見入口 | — | READY | 切片資產表、owner、依賴與驗收案例完整；範圍外入口隱藏或明確未開放 |
-| WORK-001 | 重製攻擊圖集，確保每格都有完整 body | COMBAT-004 | IN PROGRESS | `npm run test:combat-assets` 通過；五階段、八方向人工驗收通過 |
+| WORK-001 | 重製攻擊圖集，確保每格都有完整 body、可辨識細節、乾淨 alpha 與不同階段 | COMBAT-002、COMBAT-004、COMBAT-009 | IN PROGRESS | 15 張 96px `v3` 為基線；劉備／關羽／張飛／趙雲已建立 128px `v4` 試製並新增外緣髒色帶 gate；仍需固定尺寸五階段、八方向人工驗收與其餘武將唯一外觀 |
 | WORK-002 | 重製切片戰鬥兵器與逐角色／方向 socket | COMBAT-005 | IN PROGRESS | 比例、握點、尖端、方向、攻擊與死亡均無漂浮、斷裂或穿模 |
-| WORK-003 | 建立普通敵人、敵將與 Boss 的單一身分／資產映射 | COMBAT-003、DATA-001 | IN PROGRESS | 切片內每個身份有唯一或核准 alias；資料、預覽與實戰一致 |
-| WORK-004 | 修正攻擊、受擊、死亡與移除的單一渲染生命週期 | COMBAT-002、COMBAT-006 | IN PROGRESS | 我方／敵人／Boss 全狀態矩陣無黑框、雙身體、殘影或殘留兵器 |
+| WORK-003 | 建立普通敵人、敵將與 Boss 的單一身分／資產映射 | COMBAT-003、COMBAT-009、DATA-001 | IN PROGRESS | 五種普通敵人正常路徑已改全身 v3；切片內每個身份仍需唯一或核准 alias，資料、預覽與實戰一致 |
+| WORK-004 | 修正移動、攻擊、受擊、死亡與移除的單一渲染生命週期 | COMBAT-002、COMBAT-006、COMBAT-008、COMBAT-009 | IN PROGRESS | runtime 依身份抽取 96px v3 或首四將 128px v4 的四幀 move／五階段 attack，死亡清 action，正常路徑禁用肖像 bust；仍需我方／敵人／Boss 全狀態矩陣 |
 | WORK-005 | 重整戰鬥 HUD、技能喊話與 Boss／結算覆蓋層 | COMBAT-001、UI-004 | IN PROGRESS | 三秒內辨識敵我與波次；中央最多一層；資源、對話與 VFX 不遮戰鬥 |
 | WORK-006 | 移除全畫面 shake，建立 reduced-effects 行為 | MOTION-001 | IN PROGRESS | reduced motion 下無全畫面位移；結果與戰鬥時間不變 |
 | WORK-007 | 跑完完整戰鬥生命週期回歸 | QA-001 | IN PROGRESS | boot、三波、Boss、勝、敗、重試、存檔、背景恢復、death／removed 與 console 全通過 |

@@ -1,6 +1,6 @@
 # 三國：群英再起目前遊戲規格
 
-狀態：CURRENT。更新日期：2026-08-28。本文件只描述目前可由程式、資料、manifest 或測試核對的事實；規範、待辦、問題細節與歷史方案各自放在對應目錄。
+狀態：CURRENT。更新日期：2026-08-29。本文件只描述目前可由程式、資料、manifest 或測試核對的事實；規範、待辦、問題細節與歷史方案各自放在對應目錄。
 
 ## 產品與核心循環
 
@@ -23,11 +23,16 @@
 - `已確認`：載入順序為 audio → data（game-data, hero-biographies, battle-quotes, shop-data）→ core → combat → render → UI（base, heroes, modes, panels）→ cloud-save → main；`game.js` 只保留相容性標記。
 - `已確認`：CSS 採模組化拆分架構（`css/base.css`、`css/hud.css`、`css/avatars.css`、`css/panels.css`），由 `styles.css` 統一匯總，兼顧開發維護性與發布建置效能。
 - `已確認`：單位狀態包含移動、攻擊 action、受擊、死亡、技能、波次與結算資料。
-- `已確認`：角色 body、portrait、attack、mount、Boss、VFX、terrain 與 combat weapon 有 WebP／manifest 管理，Canvas 使用 nearest-neighbor。
+- `已確認`：角色 body、portrait、attack、mount、Boss、VFX、terrain 與 combat weapon 有 WebP／manifest 管理，Canvas 角色圖使用 nearest-neighbor。
 - `已確認`：Canvas transform 洩漏已修正，source 與同步後 `www` 的真實 Chrome transform gate 通過。
-- `已確認`：攻擊圖集目前未通過 body coverage gate，renderer 以 `ATTACK_SPRITES_APPROVED = false` 隔離，暫時使用 body、action transform 與外部兵器路徑。
+- `已確認`：`attack-manifest.json` 為 version 6；59 張 64px `v2` 圖集保留作舊資產追蹤，runtime 以 15 張 96px `v3` 高細節全身圖集為基線，並只對劉備、關羽、張飛、趙雲改用 128px `v4` 試製圖集。每張維持 8 欄方向契約與 anticipation／windup／contact／follow-through／recovery 五列階段，renderer 依 `attackFrame` 實際抽格。
+- `已確認`：`v3` 覆蓋第一章八名可用武將、bandit／brute／cavalry／archer／strategist 五種普通敵人與張角／董卓 Boss；舊肖像／半身 combat body 不再作正常戰鬥路徑。其餘武將依資料的 `visual` 或兵種映射到上述核准全身 archetype，故不可宣稱全 50 名武將已完成唯一外觀。
+- `已確認`：`move-manifest.json` version 3 管理同 15 個全身 archetype 的 4 幀 96px `v3` 移動條帶；首四將另用 128px `v4` 移動條帶（左腳接地／重心通過／右腳接地／回復通過）。只有 `unit.moving` 時抽格，攻擊會中斷移動循環，停下改回 idle。舊的整體上下彈跳與常駐速度線已移除。
+- `已確認`：`npm run generate:combat-actions` 先由六張 v3 母圖重建 15 張 96px 攻擊圖集與移動條帶，再由兩張 v4 首四將母圖重建 4 張 128px attack／move 試製資產；`npm run test:combat-assets` 驗證尺寸、alpha、cell coverage、外緣髒色帶、路徑及階段／步態指紋。
+- `已確認`：目前 ImageGen 提示、八張 master sheet 格位、背景去除、96px／128px 正規化、命名、alias、Canvas 消費與驗收流程已集中記錄於 [戰鬥人物圖片製作方式與規格](../standards/combat-character-asset-production.md)。
 - `已確認`：7 個 Boss 身分目前映射到 4 張 Boss sprite；普通敵人、敵將與 Boss 大量使用其他武將 body alias。
 - `已確認`：戰場兵器有 9 個基礎資產，額外武器 ID 大量 alias 到通用資產，握點主要依武器類型共用而非逐角色／方向定義。
+- `已確認`：核准的 `v3` 動作圖已內嵌手部相連兵器，renderer 不再疊加第二把外部兵器；程序 fallback 才使用獨立 combat weapon。
 - `已確認`：renderer 仍保留程序 body／mount fallback；依現行戰鬥渲染契約不可作為正式資產。
 - `不一致`：UI 動作規範禁止全畫面震動，但 runtime 仍保留 shake 路徑。
 
@@ -58,7 +63,7 @@
 
 目前判定：`FAIL／不可發布`。
 
-主要事實：攻擊圖集被隔離；兵器與敵人身分仍有視覺錯誤；編隊、戰法、裝備與副模式未形成足夠的玩家選擇；基準尺寸存在遮擋、面板被自動關閉、文字與表面錯誤；我方、普通敵人與 Boss 尚未完成 idle／move／attack／hit／death 的完整證據矩陣；正式平台帳號、政策與實機流程也未完成。
+主要事實：96px `v3` 基線與首四將 128px `v4` 戰鬥試製已接入 runtime；命令列資產 gate 會阻止外緣矩形髒色帶，390×720 source browser 畫面已確認四名試製角色無矩形髒底。但全 50 名唯一外觀、五階段、八方向、握點、其餘基準尺寸與完整生命週期仍缺完整瀏覽器逐狀態畫面證據；其餘 UI、流程、內容與正式平台條件仍依問題清單及 QA 矩陣驗收，不得以資產檔存在宣稱可發布。
 
 整體收斂方向見 [全遊戲調整計畫](../work/game-adjustment-plan.md)，詳細缺陷見 [已知問題](../issues/known-issues.md)，行動順序見 [目前工作清單](../work/active-backlog.md)，發布門檻見 [QA 測試矩陣](../qa/qa-test-matrix.md)。
 

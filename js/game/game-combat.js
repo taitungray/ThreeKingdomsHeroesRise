@@ -40,9 +40,11 @@ function buildTerrain() {
 }
 
 function formationPoint(slot) {
-  const columns = [95, 195, 295];
-  const rows = [355, 422, 488];
-  return { x: columns[slot % 3], y: rows[Math.floor(slot / 3)] };
+  // Portrait mobile layout: Allies arrayed in bottom combat zone
+  const lanes = [80, 138, 195, 252, 310];
+  const colX = lanes[slot % 5];
+  const rowY = slot < 3 ? 435 : 485;
+  return { x: colX, y: rowY };
 }
 
 function tacticBonus(id) {
@@ -258,6 +260,9 @@ function makeAlly(heroId, slot, index) {
   return {
     id: hero.id + "-" + index,
     hero,
+    // Resolve the visual identity once when the unit is spawned. Movement,
+    // attack and recovery must never re-resolve a different hero skin mid-loop.
+    combatSpriteId: hero.id,
     role: hero.role,
     team: "ally",
     x: position.x,
@@ -281,6 +286,8 @@ function makeAlly(heroId, slot, index) {
     hitFlash: 0,
     attackPose: 0,
     attackFrame: 0,
+    moveFrame: 0,
+    movePhase: Math.random() * 4,
     direction: 4,
     attackDirection: 4,
     attackAngle: Math.PI,
@@ -295,7 +302,7 @@ function makeAlly(heroId, slot, index) {
     squashY: 0,
     weaponSwing: 0,
     moving: 0,
-    facing: -1,
+    facing: 1,
     stepTimer: Math.random() * 0.2,
     deathTime: 0,
     deathSpin: 0,
@@ -382,11 +389,10 @@ function makeEnemy(index, boss = false) {
   };
   const profile = enemyProfiles[enemyType] || enemyProfiles.bandit;
   const maxHp = Math.round((boss ? (config?.bossHp || 680) : profile.hp + Math.random() * 18) * stagePower * modePowerScale);
-  const lanes = [78, 132, 190, 248, 309];
-  const spawnX = lanes[index % lanes.length] + (Math.random() - 0.5) * 24;
-  const targetY = (boss ? BOSS_SPAWN_Y : ENEMY_SPAWN_Y) + Math.floor(index / lanes.length) * 44 + Math.random() * 16;
-  const entryFromTop = runtime.entryUnits;
-  const spawnY = entryFromTop ? -28 - index * 8 : targetY;
+  const lanes = [80, 138, 195, 252, 310];
+  const spawnX = lanes[index % lanes.length] + (Math.random() - 0.5) * 16;
+  const targetY = (boss ? BOSS_SPAWN_Y : ENEMY_SPAWN_Y) + Math.floor(index / lanes.length) * 46 + (Math.random() - 0.5) * 12;
+  const spawnY = targetY;
   return {
     id: "enemy-" + Date.now() + "-" + index,
     team: "enemy",
@@ -395,7 +401,7 @@ function makeEnemy(index, boss = false) {
     x: spawnX,
     y: spawnY,
     targetY,
-    entryY: entryFromTop ? spawnY : targetY,
+    entryY: spawnY,
     renderX: spawnX,
     renderY: spawnY,
     hp: maxHp,
@@ -412,10 +418,12 @@ function makeEnemy(index, boss = false) {
     hitFlash: 0,
     attackPose: 0,
     attackFrame: 0,
-    direction: 0,
-    attackDirection: 0,
-    attackAngle: 0,
-    hitAngle: 0,
+    moveFrame: 0,
+    movePhase: Math.random() * 4,
+    direction: 2,
+    attackDirection: 2,
+    attackAngle: Math.PI / 2,
+    hitAngle: Math.PI / 2,
     action: null,
     hitStun: 0,
     kickX: 0,
@@ -512,20 +520,21 @@ function nearestTarget(unit, targets) {
 }
 
 function addNumber(x, y, value, critical = false, heal = false, options = {}) {
-  const spreadX = options.isTag ? 0 : (Math.random() - 0.5) * 24;
-  const spreadY = options.isTag ? -6 : (Math.random() - 0.5) * 8;
+  if (runtime.numbers.length >= 8) runtime.numbers.shift();
+  const spreadX = options.isTag ? 0 : (Math.random() - 0.5) * 16;
+  const spreadY = options.isTag ? -4 : (Math.random() - 0.5) * 6;
   const isText = typeof value === "string" && isNaN(Number(value));
   const displayText = isText ? value : ((heal ? "+" : "") + Math.round(Number(value)));
   runtime.numbers.push({
     x: x + spreadX,
-    y: y - 8 + spreadY,
+    y: y - 10 + spreadY,
     value: displayText,
-    life: critical ? 0.9 : 0.75,
-    maxLife: critical ? 0.9 : 0.75,
+    life: critical ? 0.65 : 0.55,
+    maxLife: critical ? 0.65 : 0.55,
     color: options.color || (heal ? "#88e899" : critical ? "#ffd84d" : "#fff1da"),
-    size: options.size || (isText ? 20 : critical ? 28 : 17),
-    angle: isText ? 0 : critical ? (Math.random() - 0.5) * 0.22 : (Math.random() - 0.5) * 0.1,
-    pop: critical ? 1.25 : 1,
+    size: options.size || (isText ? 15 : critical ? 16 : 13),
+    angle: isText ? 0 : critical ? (Math.random() - 0.5) * 0.12 : (Math.random() - 0.5) * 0.06,
+    pop: critical ? 1.15 : 1,
     isTag: isText || options.isTag
   });
 }
@@ -670,13 +679,17 @@ function applyDamage(attacker, target, multiplier = 1, criticalChanceBase = 0.12
 function killUnit(target, attacker) {
   if (target.dead) return;
   target.dead = true;
+  target.action = null;
+  target.attackFrame = 0;
+  target.attackPose = 0;
+  target.weaponSwing = 0;
   target.hp = 0;
   target.deathTime = target.type === "boss" ? 0.9 : 0.58;
   target.deathSpin = chance(0.5) ? -1 : 1;
   target.kickX *= 1.6;
   target.kickY -= 5;
   const isBossOrElite = target.type === "boss" || target.isBoss || target.enemyGeneralId;
-  addNumber(target.x, target.y - 36, isBossOrElite ? "破敵!" : "斬!", true, false, { color: isBossOrElite ? "#f5d05a" : "#ff6b6b", size: isBossOrElite ? 22 : 16, isTag: true });
+  addNumber(target.x, target.y - 28, isBossOrElite ? "破敵!" : "斬!", true, false, { color: isBossOrElite ? "#f5d05a" : "#ff6b6b", size: isBossOrElite ? 16 : 14, isTag: true });
   addEffect("burst", target.x, target.y - 12, target.team === "enemy" ? "#b94934" : "#75a7ca", { radius: 42, life: 0.55 });
   addEffect("dust", target.x, target.y + 2, "#b7a77d", { radius: target.type === "boss" ? 42 : 25, life: 0.55 });
   addEffect("soul", target.x, target.y - 25, target.team === "enemy" ? "#f0c66b" : "#86c8db", { radius: 20, life: 0.72 });
@@ -828,8 +841,8 @@ function attack(unit, target) {
     direction: directionIndex(angle),
     phase: "anticipation",
     elapsed: 0,
-    impactAt: skill ? .2 : ranged ? .145 : .095,
-    total: skill ? .52 : ranged ? .32 : .255,
+    impactAt: skill ? .28 : ranged ? .22 : .16,
+    total: skill ? .72 : ranged ? .50 : .42,
     resolved: false
   };
   unit.attackDirection = directionIndex(angle);
@@ -890,11 +903,11 @@ function updateAction(unit, delta) {
   const directionX = Math.cos(action.angle);
   const directionY = Math.sin(action.angle);
   unit.direction = action.direction;
-  unit.attackFrame = Math.min(4, Math.floor((action.elapsed / action.total) * 5));
 
   if (action.elapsed < action.impactAt) {
-    action.phase = "anticipation";
     const anticipation = Math.sin(windup * Math.PI * 0.5);
+    action.phase = windup < 0.52 ? "anticipation" : "windup";
+    unit.attackFrame = windup < 0.52 ? 0 : 1;
     unit.attackPose = anticipation;
     const pullback = action.skill ? 7 : 4;
     unit.motionX = -directionX * pullback * anticipation;
@@ -903,12 +916,13 @@ function updateAction(unit, delta) {
     unit.squashY = 0.09 * anticipation;
     unit.weaponSwing = -0.75 * anticipation;
   } else {
-    action.phase = "strike";
     if (!action.resolved) {
       action.resolved = true;
       resolveAttack(unit, action);
     }
     const recovery = clamp((action.elapsed - action.impactAt) / (action.total - action.impactAt), 0, 1);
+    action.phase = recovery < 0.22 ? "contact" : recovery < 0.68 ? "follow-through" : "recovery";
+    unit.attackFrame = recovery < 0.22 ? 2 : recovery < 0.68 ? 3 : 4;
     unit.attackPose = Math.pow(1 - recovery, 1.45);
     const snap = Math.pow(1 - recovery, 2);
     const lunge = action.ranged ? -4 : action.skill ? 20 : 11;
@@ -970,19 +984,46 @@ function updateUnit(unit, targets, delta) {
   if (!Number.isFinite(target.x) || !Number.isFinite(target.y)) return;
   const targetAngle = Math.atan2(target.y - unit.y, target.x - unit.x);
   setUnitDirection(unit, targetAngle);
+  if (Math.abs(target.x - unit.x) > 8) {
+    unit.facing = target.x >= unit.x ? 1 : -1;
+  }
+
   if (distance > unit.range) {
-    const angle = targetAngle;
-    const spacing = unit.team === "ally" ? 1 : .82;
-    unit.x += Math.cos(angle) * unit.speed * spacing * delta;
-    unit.y += Math.sin(angle) * unit.speed * spacing * delta;
+    let moveAngle = targetAngle;
+
+    // Soft crowd separation: nudge away from overlapping nearby allies
+    const allies = unit.team === "ally" ? runtime.allies : runtime.enemies;
+    let pushX = 0;
+    let pushY = 0;
+    for (const friend of allies) {
+      if (friend === unit || friend.dead) continue;
+      const fdx = unit.x - friend.x;
+      const fdy = unit.y - friend.y;
+      const fdist = Math.hypot(fdx, fdy);
+      if (fdist > 0 && fdist < 26) {
+        const force = (26 - fdist) / 26;
+        pushX += (fdx / fdist) * force * 16;
+        pushY += (fdy / fdist) * force * 16;
+      }
+    }
+
+    const marchSpeed = unit.speed * 1.35;
+    const moveX = Math.cos(moveAngle) * marchSpeed + pushX;
+    const moveY = Math.sin(moveAngle) * marchSpeed + pushY;
+
+    unit.x += moveX * delta;
+    unit.y += moveY * delta;
     unit.moving = 1;
+    const gaitRate = unit.type === "boss" ? 3.8 : unit.role === "騎兵" || unit.type === "cavalry" ? 7.2 : 6.2;
+    unit.movePhase = ((Number(unit.movePhase) || 0) + delta * gaitRate) % 4;
+    unit.moveFrame = Math.floor(unit.movePhase);
     unit.stepTimer -= delta;
     if (unit.stepTimer <= 0) {
-      unit.stepTimer = .2 + Math.random() * .1;
-      addEffect("dust", unit.x, unit.y + 2, "#978b6c", { radius: 9, life: .3 });
+      unit.stepTimer = 0.18 + Math.random() * 0.08;
+      addEffect("dust", unit.x, unit.y + 2, "#978b6c", { radius: 8, life: 0.25 });
     }
-    unit.x = clamp(unit.x, 35, 350);
-    unit.y = clamp(unit.y, 112, 575);
+    unit.x = clamp(unit.x, 30, 360);
+    unit.y = clamp(unit.y, 115, 560);
   } else if (unit.cooldown <= 0) {
     attack(unit, target);
   }

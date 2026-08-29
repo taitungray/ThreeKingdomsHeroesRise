@@ -1,7 +1,7 @@
 {
   "name": "三國：群英再起",
   "short_name": "三國：群英再起",
-  "description": "直式像素三國放置 RPG，培養武將、配置紙娃娃裝備並沿歷史戰役推進。",
+  "description": "直式寫實三國放置 RPG，培養武將、配置紙娃娃裝備並沿歷史戰役推進。",
   "start_url": "./index.html",
   "scope": "./",
   "display": "fullscreen",

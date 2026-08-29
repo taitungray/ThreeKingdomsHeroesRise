@@ -187,6 +187,13 @@ function closePanel() {
   beep(260, 0.04, "square", 0.02);
 }
 
+function closeRailDrawer() {
+  const drawer = $("rightRailDrawer");
+  if (!drawer || drawer.hidden) return;
+  drawer.hidden = true;
+  $("railMoreButton")?.setAttribute("aria-expanded", "false");
+}
+
 function toggleRailDrawer() {
   const drawer = $("rightRailDrawer");
   if (!drawer) return;
@@ -215,6 +222,9 @@ function openPanel(type) {
   else if (type === "tower") renderTower();
   else if (type === "dungeon") renderDungeons();
   else if (type === "trials") renderTrials();
+  else if (type === "mail") renderMail();
+  else if (type === "achievement") renderAchievements();
+  else if (type === "settings") renderSettings();
   beep(330, 0.04, "square", 0.018);
 }
 

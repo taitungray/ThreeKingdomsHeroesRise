@@ -26,72 +26,112 @@
 .lord-card, .lord-card.compact {
   position: relative;
   display: flex;
-  width: 156px;
-  height: 46px;
-  padding: 3px 8px 3px 50px;
-  border: 2px solid #c4a056;
-  background: linear-gradient(180deg, #4a3a26, #1c1810);
-  box-shadow: inset 0 0 0 1px #f0d48a44, 0 2px 0 #090b08;
+  width: 172px;
+  height: 48px;
+  padding: 4px 8px 4px 52px;
+  border-radius: 4px;
+  border: 1.5px solid #6b6352;
+  background: linear-gradient(135deg, rgba(30, 32, 28, 0.95), rgba(16, 18, 14, 0.95));
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.6);
 }
-.lord-card::before { content: ""; position: absolute; inset: 2px; border: 1.5px solid #e2c57a55; pointer-events: none; }
 .lord-card > .pixel-avatar, .lord-card.compact > .pixel-avatar {
   position: absolute;
   z-index: 2;
   left: 4px;
-  top: 3px;
+  top: 4px;
   width: 40px;
   height: 40px;
-  border-radius: 2px;
-  border-color: #e2c57a;
+  border-radius: 50%;
+  border: 2px solid #5ab85a;
+  background: #2b5e35;
+  box-shadow: 0 0 0 1px #111a12;
 }
-.lord-info { position: relative; z-index: 2; display: block; width: auto; }
-.lord-info > strong { display: block; margin-bottom: 2px; color: #ffe9b0; font-family: "DFKai-SB", "KaiTi", serif; font-size: 16px; line-height: 18px; letter-spacing: .04em; }
-.level-line { display: flex; align-items: center; gap: 3px; font-size: 9px; }
-.level-line b { color: #f0d27a; font-size: 14px; font-weight: 800; }
-.level-line small { width: 34px; color: #c9c0a4; font-size: 8px; }
-.exp-track { width: 62px; height: 6px; padding: 1px; border: 1px solid #11150f; background: #0d110d; }
-.exp-track i { display: block; width: 0; height: 100%; background: linear-gradient(90deg, #9d342b, #edbd53); }
-.lord-info em { display: block; margin-top: 2px; color: #8fd1a8; font-size: 10px; font-style: normal; }
-.lord-card.compact .lord-exp-detail { display: none; }
-.lord-card.compact.expanded { width: 210px; height: 52px; padding-left: 54px; z-index: 12; }
-.lord-card.compact.expanded .lord-exp-detail { display: inline; }
-.lord-card.compact.expanded .exp-track { display: block; }
-.lord-card.compact.expanded em.lord-exp-detail { display: block; }
+.lord-info { position: relative; z-index: 2; display: flex; flex-direction: column; justify-content: center; }
+.lord-info > strong { display: block; color: #f2ede2; font-family: "DFKai-SB", "KaiTi", serif; font-size: 15px; line-height: 16px; font-weight: 700; letter-spacing: .02em; }
+.level-line { display: flex; align-items: center; gap: 4px; font-size: 9.5px; margin-top: 2px; }
+.level-line b { color: #55d855; font-size: 12px; font-weight: 800; }
+.level-line small { color: #b8b2a0; font-size: 8.5px; }
+.exp-track { width: 68px; height: 5px; border-radius: 2px; border: 1px solid #141712; background: #1a1e18; overflow: hidden; }
+.exp-track i { display: block; width: 33%; height: 100%; background: linear-gradient(90deg, #32a832, #60e660); }
+.lord-info em { display: block; color: #d4cfbe; font-size: 9.5px; font-style: normal; font-family: "DFKai-SB", "KaiTi", serif; margin-top: 1px; }
 
 .battle-meta {
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  justify-content: center;
-  gap: 3px;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
   min-width: 0;
   width: auto;
+}
+.vfx-toggle-button {
+  height: 24px;
+  padding: 0 6px;
+  border-radius: 3px;
+  border: 1.5px solid #6b6352;
+  background: linear-gradient(180deg, #2f302a, #181914);
+  color: #ded7c4;
+  font-family: "DFKai-SB", "KaiTi", serif;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: inset 0 1px 0 #ffffff22;
+}
+.vfx-toggle-button:active { transform: scale(0.95); }
+.field-view-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+}
+.field-view-box span {
+  font-size: 8px;
+  color: #a8a292;
+  font-family: "DFKai-SB", "KaiTi", serif;
+}
+.field-view-box input {
+  width: 48px;
+  height: 4px;
+  accent-color: #8fb578;
+}
+.speed-button {
+  width: 28px;
+  height: 24px;
+  border-radius: 3px;
+  border: 1.5px solid #8b7548;
+  background: linear-gradient(180deg, #3f3624, #1c1810);
+  color: #ffd875;
+  font-weight: 800;
+  font-size: 11px;
+  cursor: pointer;
 }
 .battle-meta p.stage-meta {
   display: flex;
   flex-wrap: nowrap;
-  justify-content: flex-end;
-  gap: 6px;
-  width: 100%;
+  align-items: center;
+  gap: 4px;
   margin: 0;
   padding: 0;
-  border: 0;
-  background: none;
   overflow: hidden;
 }
-.battle-meta p.stage-meta strong { color: #fff1c4; font-family: "DFKai-SB", "KaiTi", serif; font-size: 15px; line-height: 18px; font-weight: 700; letter-spacing: .06em; white-space: nowrap; }
-.wave-chip { padding: 1px 8px; border: 1px solid #c49b4f; color: #ffe08a; background: #1a140c; font-size: 14px; line-height: 18px; font-weight: 800; white-space: nowrap; }
-.speed-button {
-  width: 46px;
-  height: 46px;
-  min-height: 46px;
-  padding: 0;
-  border: 2px solid #d4b05a;
-  color: #ffe7ac;
-  background: linear-gradient(180deg, #5a4a30, #1e1c14);
-  font-size: 16px;
-  font-weight: 800;
-  box-shadow: inset 0 0 0 1px #f0d48a33, 0 3px 0 #090b08;
+.battle-meta p.stage-meta strong {
+  color: #fff1c4;
+  font-family: "DFKai-SB", "KaiTi", serif;
+  font-size: 11px;
+  line-height: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.wave-chip {
+  padding: 1px 4px;
+  border: 1px solid #7d6537;
+  border-radius: 2px;
+  color: #f0cb69;
+  background: #171510;
+  font-size: 8.5px;
+  line-height: 10px;
+  font-weight: 700;
+  white-space: nowrap;
 }
 
 /* 主線目標追蹤 */
@@ -125,47 +165,44 @@
 .quest-text { max-width: 220px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .quest-arrow { display: inline-block; width: 0; height: 0; border-top: 4px solid transparent; border-bottom: 4px solid transparent; border-left: 5px solid #d7b84f; margin-left: 2px; }
 
-/* 右側工具欄與抽屜 */
+/* 右側工具欄 - 實機經典深黑金屬圓鈕 */
 .right-rail {
   position: absolute;
   z-index: 9;
-  top: calc(66px + var(--safe-top));
-  right: 8px;
-  width: 52px;
-  gap: 6px;
+  top: calc(72px + var(--safe-top));
+  right: 10px;
+  width: 44px;
+  gap: 10px;
   max-height: calc(100% - 196px - var(--safe-top) - var(--safe-bottom));
-  padding: 6px 4px;
-  border: 2px solid #8a6a38;
-  background: linear-gradient(180deg, #2c2418f2, #12140ef6);
-  box-shadow: 0 6px 0 #090b08, inset 0 0 0 1px #e2c57a22;
+  padding: 0;
+  border: none;
+  background: transparent;
+  box-shadow: none;
   display: flex;
   flex-direction: column;
+  align-items: center;
 }
 .right-rail button {
   position: relative;
-  width: 44px;
-  min-width: 44px;
-  min-height: 44px;
-  padding: 4px 2px 5px;
-  border: 2px solid #6a5530;
-  color: #f3e2b0;
-  background: linear-gradient(180deg, #3d3424, #1a1810);
-  box-shadow: inset 0 0 0 1px #c9a24a33, 0 2px 0 #090b08;
+  width: 38px;
+  height: 38px;
+  min-width: 38px;
+  min-height: 38px;
+  border-radius: 50%;
+  border: 2px solid #5a5448;
+  color: #ede5d5;
+  background: radial-gradient(circle at 35% 35%, #3d3b35, #161512);
+  box-shadow: inset 0 1px 0 #ffffff33, 0 3px 6px rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  cursor: pointer;
+  transition: transform 0.1s ease, filter 0.1s ease;
 }
-.right-rail button:active { transform: translateY(2px); filter: brightness(.85); }
-.right-rail i, .rail-drawer-list i {
-  position: relative;
-  display: block;
-  width: 22px;
-  height: 22px;
-  margin: 0 auto 1px;
-  background-size: contain;
-  background-position: center;
-  background-repeat: no-repeat;
-  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.8));
-}
-.right-rail span { font-size: 13px; line-height: 14px; font-family: "DFKai-SB", "KaiTi", serif; font-weight: 700; }
-.right-rail .alert-dot { position: absolute; top: 1px; right: 1px; width: 10px; height: 10px; border: 1.5px solid #ffe9aa; border-radius: 50%; background: #c84737; box-shadow: 0 0 0 2px #182018; }
+.right-rail button:active { transform: scale(0.92); filter: brightness(0.85); }
+.right-rail span { font-size: 11.5px; line-height: 12px; font-family: "DFKai-SB", "KaiTi", serif; font-weight: 700; color: #ded6c5; text-shadow: 0 1px 2px #000; }
+.right-rail .alert-dot { position: absolute; top: 0px; right: 0px; width: 9px; height: 9px; border: 1.5px solid #ffe9aa; border-radius: 50%; background: #c84737; }
 
 .icon-gear { background-image: url("../assets/icons/icon-settings.webp"); }
 .icon-mail { background-image: url("../assets/icons/icon-mail.webp"); }

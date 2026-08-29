@@ -4,11 +4,11 @@
 
 稽核日期：2026-08-28。
 
-## 1. 閱讀範圍
+## 1. 閱讀與參考範圍
 
-`已確認`：完整讀取本專案 29 份 Markdown（根目錄與 `docs/`）以及參考專案 64 份 Markdown，共 93 份。
-
-AGENTS 原先記載的 `D:/Rayon/IncenseAshes/` 在本機不存在；實際可讀參考位於 `C:/IncenseAshes/`。這次只讀取 Markdown 並比較流程，沒有搬移參考案程式或生產識別資料。
+`已確認`：
+1. **核心玩法與美術對標**：**《桃園結義：放置三國RPG》（Three Kingdoms: Idle RPG，YouTube 實機：https://www.youtube.com/watch?v=ASJ868tKH3A）**。確立正統 16-bit 點陣像素武將、兩軍橫向對衝戰鬥、乾淨清爽戰場與放置成長體系為唯一視覺對標。
+2. **工程與架構參考**：完整讀取本專案 29 份 Markdown（根目錄與 `docs/`）以及 `C:/IncenseAshes/` 64 份 Markdown，共 93 份。只讀取 Markdown 並借鑑架構流程，沒有搬移參考案程式或生產識別資料。
 
 ## 2. 直接採用
 

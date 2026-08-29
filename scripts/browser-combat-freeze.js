@@ -57,6 +57,8 @@ async function main() {
       }));
       window.__combatDrawStats = {
         body: 0,
+        action: 0,
+        move: 0,
         weapon: 0,
         boss: 0,
         samples: [],
@@ -65,7 +67,17 @@ async function main() {
       const originalDrawImage = CanvasRenderingContext2D.prototype.drawImage;
       CanvasRenderingContext2D.prototype.drawImage = function patchedDrawImage(image, ...args) {
         const src = String(image?.currentSrc || image?.src || "");
-        const kind = src.includes("combat-body-") ? "body" : src.includes("combat-weapon-") ? "weapon" : /\/boss-[^/]+-v1\.webp/.test(src) ? "boss" : null;
+        const kind = /\/attack-boss-[^/]+-v(?:3|4)\.webp/.test(src) || /\/boss-[^/]+-v1\.webp/.test(src)
+          ? "boss"
+          : /\/attack-[^/]+-v(?:3|4)\.webp/.test(src)
+            ? "action"
+            : /\/move-[^/]+-v(?:3|4)\.webp/.test(src)
+              ? "move"
+              : src.includes("combat-body-")
+                ? "body"
+                : src.includes("combat-weapon-")
+                  ? "weapon"
+                  : null;
         if (kind && window.__combatDrawStats) {
           window.__combatDrawStats[kind] += 1;
           const transform = this.getTransform();
@@ -183,8 +195,9 @@ async function main() {
     })));
     const assetState = await page.evaluate(() => {
       const heroes = (window.THREE_KINGDOMS_DATA?.heroes || []).slice(0, 4).map((hero) => {
-        const image = window.TaoyuanAssets?.cache?.get(hero.combatSprite);
-        return { id: hero.id, path: hero.combatSprite, loaded: Boolean(image?.complete && image?.naturalWidth), width: image?.naturalWidth || 0, height: image?.naturalHeight || 0 };
+        const path = "assets/characters/attack-" + hero.id + "-v4.webp";
+        const image = window.TaoyuanAssets?.cache?.get(path);
+        return { id: hero.id, path, loaded: Boolean(image?.complete && image?.naturalWidth), width: image?.naturalWidth || 0, height: image?.naturalHeight || 0 };
       });
       const images = [...(window.TaoyuanAssets?.cache?.entries?.() || [])];
       return { declared: images.length, loaded: images.filter(([, image]) => image.complete && image.naturalWidth).length, heroes };
@@ -202,7 +215,13 @@ async function main() {
 
     if (!moved) throw new Error("units/elapsed did not change — AI freeze confirmed in browser");
     if (third.spawning && third.enemies === 0) throw new Error("spawning remained stuck with no enemies beyond the allowed transition window");
-    if (!drawStats || drawStats.body < 1) throw new Error("combat body assets loaded but were never drawn to the Canvas");
+    if (!drawStats) throw new Error("combat draw instrumentation was unavailable");
+    if ((drawStats.body || 0) > 0) throw new Error("legacy portrait/body art entered the approved high-detail Canvas path");
+    if ((drawStats.move || 0) < 1) throw new Error("four-frame movement strips loaded but were never drawn to the Canvas");
+    if ((drawStats.action || 0) < 1) throw new Error("five-phase action sheets loaded but were never drawn to the Canvas");
+    if (!assetState.heroes.every((hero) => hero.loaded && hero.width === 1024 && hero.height === 640)) {
+      throw new Error("starting high-detail hero sheets were not fully loaded: " + JSON.stringify(assetState.heroes));
+    }
     if (!panelBefore || panelBefore.hidden) throw new Error("QA could not open a command panel before stage transition");
     if (panelAfter.hidden || panelAfter.panel !== "settings") throw new Error("auto stage transition closed or reset the open panel: " + JSON.stringify(panelAfter));
     if (!bossPeek?.bossActive) throw new Error("forced Boss spawn did not activate the boss wave");

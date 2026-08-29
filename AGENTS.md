@@ -4,7 +4,7 @@
 
 本專案是直式 Web/H5 三國放置 RPG。可編輯的 Web 原始碼以根目錄 `index.html`、`styles.css`、`data/`、`js/`、`assets/` 為準；`game.js` 只保留相容性標記。`www/` 是 `build.js` 的同步產物，不直接修改。
 
-全部文字檔使用 UTF-8，保留繁體中文與三國像素美術方向。不得覆蓋或提交 `google-services.json`、簽名金鑰、上傳憑證、正式 AdMob ID 或其他祕密；不得使用破壞性 git 指令，先保留使用者現有修改。
+全部文字檔使用 UTF-8，確立以 **《桃園結義：放置三國RPG》（Three Kingdoms: Idle RPG，參考影片：https://www.youtube.com/watch?v=ASJ868tKH3A）** 為最高戰鬥與美術對標，採用正統 16-bit / 32-bit 精緻點陣像素（Pixel Art）武將與戰場風格。不得覆蓋或提交 `google-services.json`、簽名金鑰、上傳憑證、正式 AdMob ID 或其他祕密；不得使用破壞性 git 指令，先保留使用者現有修改。
 
 ## 文件權威順序
 
@@ -31,9 +31,10 @@
 
 ## 戰鬥與 UI 強制底線
 
-- 角色、敵人、Boss、兵器不得以方塊、卡片底色、黑框、debug hitbox 或不透明矩形冒充完成資產。
-- 我方、普通敵人與 Boss 都要覆蓋 idle／move／attack／hit／death；兵器必須通過手部 anchor、比例、朝向與不穿模檢查。
-- 敵將預告、首領橫幅、對話與結算不得同時堆疊遮住主要戰鬥區；同一時刻只允許一個中央敘事覆蓋層。
+- 角色、敵人、Boss、兵器必須是完整的全身 16-bit 點陣像素武將，嚴禁以粗糙幾何方塊、半身大頭貼、黑框、debug hitbox 或不透明矩形冒充完成資產。
+- 兵器必須自然融入角色手部，嚴禁以靜態小圖生硬貼於脖子或面部；揮砍時應由渲染引擎動態呈現流暢刀光劍影。
+- 我方、普通敵人與 Boss 都要覆蓋 idle／move／attack／hit／death；動作節奏需清晰流暢。
+- 敵將預告、首領橫幅、對話與結算不得同時堆疊遮住主要戰鬥區；傷害跳字與血條需精緻清爽。
 - UI、存檔、獎勵、數值或文字有改動時，同步所有顯示、tooltip、ARIA、文件與測試資料，避免平行來源。
 - 未通過 `docs/qa/qa-test-matrix.md` 的硬門檻，不得宣稱完成或可發布。
 
@@ -43,4 +44,5 @@
 
 ## 參考專案
 
-實際可讀參考位於 `C:/IncenseAshes/`；若日後另有 `D:/Rayon/IncenseAshes/`，也只能作工程結構與規範比較。可採用流程、證據分級、QA 與文件治理方法；不得直接複製其題材、美術、Firebase、AdMob、生產簽名、商店素材、帳號或專案識別資料。整合紀錄見 `docs/reference/reference-integration-audit.md`。
+1. **核心美術與戰鬥對標**：YouTube 實機參考 [《桃園結義：放置三國RPG》](https://www.youtube.com/watch?v=ASJ868tKH3A)（Three Kingdoms: Idle RPG），規範正統 16-bit 點陣像素名將、清爽戰場與兩軍橫向對衝戰鬥。
+2. **工程與架構參考**：位於 `C:/IncenseAshes/`，作放置手遊資訊架構、文件治理與 QA 矩陣方法借鑑。整合紀錄見 `docs/reference/reference-integration-audit.md`。

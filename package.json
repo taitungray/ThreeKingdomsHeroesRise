@@ -2,7 +2,7 @@
   "name": "taoyuan-qunying",
   "version": "0.1.0",
   "private": true,
-  "description": "三國：群英再起 - 直式像素三國放置 RPG",
+  "description": "三國：群英再起 - 直式寫實三國放置 RPG",
   "main": "index.html",
   "scripts": {
     "start": "node serve-local.js 8788",
@@ -13,6 +13,9 @@
     "check:syntax": "node --check data/hero-biographies.js && node --check data/battle-quotes.js && node --check data/fate-trials.js && node --check js/game/game-core.js && node --check js/game/game-combat.js && node --check js/game/game-render.js && node --check js/game/game-ui-base.js && node --check js/game/game-ui-heroes.js && node --check js/game/game-ui-modes.js && node --check js/game/game-ui-panels.js && node --check js/game/game-main.js",
     "test:economy": "node scripts/simulate-economy.js",
     "test:docs": "node scripts/check-docs.js",
+    "generate:combat-actions": "node scripts/generate-combat-actions-v3.js && node scripts/generate-combat-actions-v4-pilot.js",
+    "generate:combat-actions:base": "node scripts/generate-combat-actions-v3.js",
+    "generate:combat-actions:pilot": "node scripts/generate-combat-actions-v4-pilot.js",
     "test:combat-assets": "node scripts/check-combat-assets.js",
     "test:combat-browser": "node scripts/browser-combat-freeze.js",
     "test:combat-browser:www": "node scripts/browser-combat-freeze.js --www",

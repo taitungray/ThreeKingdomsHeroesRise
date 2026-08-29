@@ -1,6 +1,6 @@
-# 三國：群英再起 — 像素三國放置 RPG 原型
+# 三國：群英再起 — 寫實三國放置 RPG 原型
 
-這是一個直式手機 Web/H5 可玩版本，核心是像素武將自動群戰、歷史關卡推進、無抽卡武將養成、編隊、兵種與戰法配置。
+這是一個直式手機 Web/H5 可玩版本，核心是寫實武將自動群戰、歷史關卡推進、無抽卡武將養成、編隊、兵種與戰法配置。
 
 ## 啟動
 
@@ -18,23 +18,6 @@ py -3 -m http.server 4173 --bind 127.0.0.1
 npm install
 npm run dev
 ```
-
-`npm run build` 會把根目錄 Web 原始碼同步到 Capacitor 的 `www/`；不會建立 Android APK/AAB。
-
-`npm test` 會檢查資料表、關卡波次、紙娃娃槽位、核心循環入口、文件連結與建置載入順序。`npm run test:combat-assets` 另檢查戰鬥圖集的尺寸、alpha、每格有效像素與兵器 manifest；它是戰鬥資產發布 gate，不以檔案存在冒充畫面正確。需要真實瀏覽器戰鬥回歸時執行 `npm run test:combat-browser`；同步 `www/` 後再執行 `npm run test:combat-browser:www` 驗證打包產物。
-
-也可以直接雙擊 START_APP.bat，它會同步 Web 產物、啟動本機伺服器並開啟瀏覽器。
-
-## 操作
-
-- 戰鬥會自動進行；可切換 `AUTO` 與 `×1 / ×2`。
-- 武將以專屬輪廓、頭冠、甲冑、兵器、待機動作與攻擊特效區分，不只依靠換色。
-- 底部可進入武將、編隊與戰法頁。
-- 武將頁可升級角色；編隊頁可替換出戰成員；戰法頁可強化全隊效果。
-- 武將詳情內有紙娃娃配置：可輪換兵器、戰甲、坐騎與信物；外觀及對應數值加成會即時同步至隊伍。
-- 高階坐騎有獨立物種輪廓、馬鎧、鬃毛、裝飾與輕量像素 VFX，不只換色。
-- 訪客進度會儲存在瀏覽器 `localStorage`；Google 登入後會以 Firebase UID 分隔本機快取並同步到 Cloud Firestore。
-- 戰役頁可進入目前關卡或重打已通關章節；重打只給部分戰功，不會倒退最高進度。
 - `data/game-data.js` 集中 50 名武將、66 件紙娃娃裝備、軍令、20 個章節與 100 個關卡的可調整資料。
 - 執行邏輯已拆成 js/game/ 的 core、combat、render、ui、main 五個模組；模組邊界與載入順序見 `docs/specs/architecture.md`。
 

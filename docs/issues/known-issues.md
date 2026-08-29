@@ -13,11 +13,13 @@
 | ID | 等級 | 問題與證據 | 狀態 | 關閉條件 | 工作 |
 |---|---:|---|---|---|---|
 | COMBAT-001 | P0 | Boss 生成曾同時顯示敵將預告、Boss 橫幅與角色對話，遮住戰鬥 | VERIFY | Boss 出場實際截圖／影片確認最多一個中央覆蓋層 | WORK-005 |
-| COMBAT-002 | P0 | 角色周圍曾出現黑框、方形 Sprite cell 或不透明 fallback | VERIFY | alpha 自動檢查及全狀態畫面均無框 | WORK-004 |
+| COMBAT-002 | P0 | 角色周圍曾出現黑框、方形 Sprite cell、不透明 fallback；2026-08-29 實戰截圖再確認攻擊／idle 圖有灰綠與褐色矩形髒色塊 | VERIFY | alpha、cell 外緣色帶自動檢查及全狀態畫面均無框、棋盤島或矩形底塊 | WORK-001、WORK-004 |
 | COMBAT-003 | P0 | 普通敵人、敵將與 Boss 身分曾映射到錯誤或通用圖 | VERIFY | 完成身分／資產表，抽樣關卡與資料一致 | WORK-003 |
-| COMBAT-004 | P0 | 攻擊圖集 body 嵌入失敗；資產 gate 找出 1,787 個過度稀疏影格，runtime 已暫時隔離攻擊圖集 | VERIFY | 重製後 asset gate 與五階段視覺驗收通過 | WORK-001 |
+| COMBAT-004 | P0 | 舊攻擊圖集曾有 1,787 個過度稀疏影格，之後版本又以重複站姿填滿五列；`v2` 已重製並由 runtime 抽格 | VERIFY | asset gate 與五階段視覺驗收通過，確認非重複站姿 | WORK-001 |
 | COMBAT-005 | P0 | 程序產生兵器只有共用 anchor，實際畫面有漂浮、比例錯誤與穿模 | VERIFY | 九類兵器逐一通過握點、方向、攻擊與死亡檢查 | WORK-002 |
 | COMBAT-006 | P0 | action、body transform、weapon、VFX 與 death transform 曾疊加，攻擊及死亡畫面錯亂 | VERIFY | attack→hit→death→removed 連續證據通過 | WORK-004 |
+| COMBAT-008 | P0 | move 曾只用整張 body 上下彈跳與速度線，腿部不換步，角色看起來滑行 | VERIFY | 第一章我方、普通敵人與 Boss 的四幀步態及進入／停下銜接畫面通過 | WORK-004 |
+| COMBAT-009 | P0 | 2026-08-29 實戰截圖顯示 64px 圖格細節流失，archer／strategist 與未精修武將會把舊肖像半身圖帶入戰場 | VERIFY | 96px 全身路徑通過 asset/browser gate，固定尺寸截圖無肖像 bust 且臉、甲、武器可辨識 | WORK-001、WORK-003、WORK-004 |
 | UI-001 | P0 | 對角線／菱形裝飾不只出現在結算，也穿透每日、商城、活動與副本等命令面板 | VERIFY | 所有基準尺寸的主要面板與勝敗結算均無跨區裝飾線 | WORK-008 |
 | UI-002 | P0 | 自動推關進入下一關時，`startStage()` 呼叫 `closePanel()`，會關閉玩家正在閱讀的武將、編隊、設定等面板 | VERIFY | stage transition 不關閉、不搶焦點、不重設使用者面板狀態 | WORK-008 |
 | UI-003 | P1 | 訪客設定頁以 `activeUser.username` 顯示帳號，但訪客資料使用 `displayName`，畫面出現 `undefined` | VERIFY | 訪客與登入帳號均顯示正確名稱，缺值有核准 fallback | WORK-008 |
@@ -33,17 +35,18 @@
 | QA-001 | P0 | 現有 browser smoke 約數秒即可通過，實測 `drawStats.boss = 0` 仍為 PASS，未涵蓋完整攻擊、死亡、Boss、勝敗與結算畫面 | VERIFY | 自動流程對完整勝敗、Boss draw、death／removed、settlement 與 panel persistence 建立硬斷言及畫面證據 | WORK-007、WORK-013 |
 | PROCESS-001 | P1 | 舊 roadmap／completion 的勾選曾被當成目前完成證明 | VERIFY | 文件分層、內部連結與維護規則通過檢查，後續完成宣告均附證據 | 本次文件整理 |
 
-## 本輪修正與證據（2026-08-28）
+## 本輪修正與證據（2026-08-29）
 
 程式與資料已改；關閉條件要的畫面／實機證據多數尚未取得。故全部仍為 `VERIFY`，不得當成可發布。
 
 | ID | 已確認的自動／程式證據 | 仍缺 |
 |---|---|---|
 | COMBAT-001 | `spawnWave(true)` 先 `hideEnemyPreview()`、清對話、只留橫幅；browser QA 斷言中央 overlay ≤ 1 | Boss 出場截圖／影片 |
-| COMBAT-002／004 | `npm run test:combat-assets`；攻擊圖集 `ATTACK_SPRITES_APPROVED = true` | 五階段、八方向、無黑框畫面 |
+| COMBAT-002／004／009 | `attack-manifest` v6；15 張 96px `v3` 基線覆蓋八將、五種普通敵人與二 Boss，劉備／關羽／張飛／趙雲另有 128px `v4` 戰鬥試製。v3／v4 去背均清除封閉棋盤島與小型跨格碎片，unit 生成時固定 `combatSpriteId`，move／attack／idle 共用同一身份；asset gate 新增 cell 外緣不透明色帶門檻；source browser QA 載入四張 1024×640 v4 圖集，記錄 `body=0`、`action=1899`、`move=3511`、`boss=142`，且 [390×720 畫面](../../artifacts/combat-detail-v4-identity-lock.png) 無角色矩形髒底或跨角色衣武碎片 | 仍缺五階段、八方向與完整生命週期固定尺寸畫面包 |
 | COMBAT-003／DATA-001 | `huangzhong` 入敵將表；`enemyIdentityMap`；smoke 查關卡 ID 與對應 body 檔 | 抽樣關卡預覽＝實戰畫面 |
-| COMBAT-005 | 九類兵器各有 `anchor`；runtime `WEAPON_ANCHORS` | 攻擊／死亡穿模畫面 |
-| COMBAT-006 | `applyCombatBodyMotion(..., { outerDeath, outerAction })` | attack→hit→death→removed 影片 |
+| COMBAT-005 | 九類兵器各有 `anchor`；核准 `v3` action 內嵌手部相連兵器，renderer 不重複疊外部兵器 | 攻擊／死亡穿模畫面 |
+| COMBAT-006 | 五階段由單一 `action` 驅動；死亡立即清除 action／attackFrame／weaponSwing；核准 action sheet 不再疊 body／weapon transform | attack→hit→death→removed 影片 |
+| COMBAT-008 | 15 個第一章全身 archetype 使用 96px 四幀 `v3` move strip；runtime 僅在 `unit.moving` 推進 frame；移除整體上下彈跳與常駐速度線；資產 gate 驗證四格皆不同 | 移動→停下→攻擊銜接影片與腳底接地畫面 |
 | UI-001 | `.header-ornament { display: none; }`；命令卡改 180deg | 各面板基準尺寸截圖 |
 | UI-002 | `startStage(..., { keepPanel })`；自動推關帶 `keepPanel: true` | 開著設定面板推關的畫面 |
 | UI-003 | `accountDisplayName()`；訪客補 `username` | 訪客設定頁畫面 |

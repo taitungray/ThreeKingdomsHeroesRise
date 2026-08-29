@@ -40,8 +40,8 @@
 
 | 狀態 | 功能斷言 | 視覺斷言 |
 |---|---|---|
-| idle | action 為 null、座標穩定 | 無黑框／方塊／雙身體；兵器握點正確 |
-| move／entry | 到達 target lane 前不攻擊 | 腳底不漂、朝向正確、無拉伸 |
+| idle | action 為 null、座標穩定 | 完整全身；無 portrait／半身 bust、黑框、灰綠／褐色矩形底塊、棋盤島或雙身體；臉、甲片與兵器在 390×720 可辨識 |
+| move／entry | 到達 target lane 前不攻擊；只有實際位移才推進 move frame | 左右腳交替、接地幀清楚、停下不滑行，朝向正確、無整體彈跳或拉伸 |
 | anticipation | action 單一且 frame 合法 | 身體與兵器只畫一次，蓄力方向正確 |
 | contact | 傷害只 resolve 一次 | 命中點、兵器尖端與目標關係合理 |
 | recovery | action 按時結束 | 不殘留第二把兵器、手臂或 trail |
@@ -49,7 +49,7 @@
 | death | 停止攻擊與選目標 | 兵器跟隨／隱藏，無跳格或復活一 frame |
 | removed | 從 runtime 移除 | 屍體、影子、血條、VFX、兵器完全消失 |
 
-資產自動檢查至少涵蓋：尺寸、WebP、alpha、每個 cell 的有效像素範圍、manifest 路徑、重複 ID、foot／hand anchor。自動檢查通過後仍需視覺證據。
+資產自動檢查至少涵蓋：96px v3 基線與 128px v4 試製尺寸、WebP、alpha、每個 cell 的有效像素範圍與外緣不透明色帶、move 每格單一 alpha component、manifest 路徑、重複 ID、五階段攻擊與四幀步態像素指紋差異、foot／hand anchor，以及正常 runtime 路徑不得引用 portrait／半身 combat body。指紋、component 與外緣門檻只能防止重複站姿、跨角色碎片及大面積髒底回歸，不能代替細節可讀性、動作品質、腳底接地與握點視覺證據。
 
 ## 4. UI、輸入與響應式
 

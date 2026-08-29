@@ -29,13 +29,21 @@ window.TaoyuanAssets = ASSETS;
 
 const TERRAIN_TILE_BY_CHAPTER = [0, 1, 2, 3, 4, 6, 7, 2, 8, 14, 9, 10, 6, 13, 11, 12, 15, 14, 13, 10];
 const VFX_ASSET_BY_TYPE = { afterimage: 2, dust: 12, impact: 15, shockwave: 14, charge: 1, slash: 0, ring: 10, bolt: 4, status: 5, combo: 14, rally: 10, guard: 9, stun: 8, volley: 3, rune: 11, petal: 6, soul: 13, meteor: 7 };
-// Attack sheets passed the combat-asset alpha gate (generate-attack-sprites.js
-// composites body via sharp). Visual five-phase / eight-direction review is
-// still VERIFY; keep the runtime flag so a failed remake can be quarantined.
+// V3 sheets remain the 96 px baseline. The first four playable battle units use
+// a 128 px v4 pilot so facial, armor, cloth and hand/weapon detail survives the
+// final Canvas scale. Eight columns keep the directional contract stable while
+// the runtime facing transform mirrors the authored full-body silhouette.
 const ATTACK_SPRITES_APPROVED = true;
-const BOSS_SPRITE_BY_GENERAL = { zhangjiao: "zhangjiao", simayi: "zhangjiao", dongzhuo: "dongzhuo", yuanshao: "dongzhuo", lvbu: "lvbu", menghuo: "menghuo", zhurong: "menghuo" };
-const ENEMY_BODY_BY_TYPE = { ...(GAME_DATA.enemyIdentityMap?.types || { bandit: "caoren", brute: "dianwei", cavalry: "xiahoudun", archer: "huangzhong", strategist: "simayi" }) };
-const ENEMY_GENERAL_BODY_ALIASES = { ...(GAME_DATA.enemyIdentityMap?.generals || { zhangjiao: "zhangliang", dongzhuo: "yuanshao", lvbu: "lubu", yuanshao: "yuanshao", yanliang: "zhangfei", wenchou: "xiahoudun", taishici: "taishici", huangzhong: "huangzhong", menghuo: "menghuo", zhurong: "zhurong", simayi: "simayi" }) };
+const DETAIL_ACTION_SPRITE_CELL_SIZE = 96;
+const ULTRA_DETAIL_ACTION_SPRITE_CELL_SIZE = 128;
+const AUTHORED_ACTION_SPRITES = new Set([
+  "liubei", "guanyu", "zhangfei", "zhaoyun", "huangzhong", "sunshang", "caocao", "xiahoudun",
+  "bandit", "brute", "cavalry", "archer", "strategist", "boss-zhangjiao", "boss-dongzhuo"
+]);
+const ULTRA_DETAIL_ACTION_SPRITES = new Set(["liubei", "guanyu", "zhangfei", "zhaoyun"]);
+const HERO_ROLE_ACTION_FALLBACK = Object.freeze({ "弓兵": "huangzhong", "謀士": "caocao", "騎兵": "zhaoyun", "步兵": "guanyu" });
+const ENEMY_BODY_BY_TYPE = { bandit: "bandit", brute: "brute", cavalry: "cavalry", archer: "archer", strategist: "strategist" };
+const ENEMY_GENERAL_BODY_ALIASES = { zhangjiao: "zhangjiao", dongzhuo: "dongzhuo", lvbu: "lvbu", yuanshao: "yuanshao", yanliang: "yanliang", wenchou: "wenchou", taishici: "taishici", huangzhong: "huangzhong", menghuo: "menghuo", zhurong: "zhurong", simayi: "simayi" };
 const WEAPON_ANCHORS = {
   sword: [32, 54],
   twin: [30, 52],
@@ -49,8 +57,42 @@ const WEAPON_ANCHORS = {
 };
 const LOCKED_COMBAT_BODY_PATH = "assets/characters/combat-body-locked-v1.webp";
 function enemyCombatBodyPath(unit) {
-  const identity = ENEMY_GENERAL_BODY_ALIASES[unit.enemyGeneralId] || ENEMY_BODY_BY_TYPE[unit.type] || ENEMY_BODY_BY_TYPE.bandit || "caoren";
+  const identity = ENEMY_GENERAL_BODY_ALIASES[unit.enemyGeneralId] || ENEMY_BODY_BY_TYPE[unit.type] || "bandit";
   return "assets/characters/combat-body-" + identity + "-v1.webp";
+}
+function attackCombatSpriteId(unit) {
+  if (unit.team === "ally") {
+    const identity = unit.combatSpriteId || unit.hero?.id || "liubei";
+    if (AUTHORED_ACTION_SPRITES.has(identity)) return identity;
+    const visual = unit.hero?.visual;
+    if (AUTHORED_ACTION_SPRITES.has(visual)) return visual;
+    return HERO_ROLE_ACTION_FALLBACK[unit.hero?.role] || "liubei";
+  }
+  if (unit.type === "boss") {
+    const identity = "boss-" + (unit.enemyGeneralId || "zhangjiao");
+    return AUTHORED_ACTION_SPRITES.has(identity) ? identity : "boss-dongzhuo";
+  }
+  return AUTHORED_ACTION_SPRITES.has(unit.type) ? unit.type : "bandit";
+}
+function attackCombatSpritePath(unit) {
+  return attackCombatSpritePathForId(attackCombatSpriteId(unit));
+}
+function attackCombatSpritePathForId(id) {
+  return "assets/characters/attack-" + id + (ULTRA_DETAIL_ACTION_SPRITES.has(id) ? "-v4.webp" : "-v3.webp");
+}
+function moveCombatSpritePath(unit) {
+  return moveCombatSpritePathForId(attackCombatSpriteId(unit));
+}
+function moveCombatSpritePathForId(id) {
+  return "assets/characters/move-" + id + (ULTRA_DETAIL_ACTION_SPRITES.has(id) ? "-v4.webp" : "-v3.webp");
+}
+function combatSpriteCellSize(unit) {
+  return ULTRA_DETAIL_ACTION_SPRITES.has(attackCombatSpriteId(unit))
+    ? ULTRA_DETAIL_ACTION_SPRITE_CELL_SIZE
+    : DETAIL_ACTION_SPRITE_CELL_SIZE;
+}
+function combatSpriteRenderSize(unit) {
+  return ULTRA_DETAIL_ACTION_SPRITES.has(attackCombatSpriteId(unit)) ? 80 : 72;
 }
 function terrainTileAsset(chapterIndex) {
   const tileId = TERRAIN_TILE_BY_CHAPTER[chapterIndex % TERRAIN_TILE_BY_CHAPTER.length] ?? 0;
@@ -374,50 +416,92 @@ function weaponHandOffset(weaponId) {
 }
 
 function drawWeapon(unit) {
-  const weaponAssetId = resolveCombatWeaponId(unit);
-  const weaponImage = ASSETS.get("assets/characters/combat-weapon-" + weaponAssetId + "-v2.webp");
-  if (!weaponImage) return;
   const pose = attackPoseProgress(unit);
-  const hand = weaponHandOffset(weaponAssetId);
-  let angle;
-  if (unit.action) {
-    const swing = unit.action.phase === "anticipation" ? -0.55 * pose : 0.88 * pose;
-    // Upright asset → rotate so tip follows facing/attack direction.
-    angle = directionLocalAngle(unit, true) + Math.PI / 2 + swing;
-  } else {
-    const idleSway = Math.sin((runtime.elapsed || 0) * 3.2 + (unit.x || 0) * 0.04) * 0.04;
-    angle = weaponRestLean(weaponAssetId) + idleSway + (Number(unit.weaponSwing) || 0) * 0.12;
-  }
-
-  // Keep weapon proportional to the 32×38 combat body (not a 64px tower over the head).
-  const weaponScale = unit.type === "boss" ? 0.78 : unit.team === "ally" ? 0.58 : 0.52;
-  const weaponSize = 64 * weaponScale;
-  ctx.save();
-  ctx.translate(hand.x, hand.y);
-  ctx.rotate(angle);
-  ctx.imageSmoothingEnabled = false;
-  const [anchorX, anchorY] = WEAPON_ANCHORS[weaponAssetId] || [32, 54];
-  ctx.drawImage(weaponImage, -anchorX * weaponScale, -anchorY * weaponScale, weaponSize, weaponSize);
-
-  if (unit.action && pose > 0.22 && unit.action.phase !== "anticipation") {
-    const arcAlpha = Math.min(0.75, (1 - Math.abs(pose - 0.55) * 1.8) * 0.9);
+  // Prominent brilliant crescent blade arc trail on attack swing
+  if (unit.action && pose > 0.15 && unit.action.phase !== "anticipation") {
+    const arcAlpha = Math.min(1, (1 - Math.abs(pose - 0.5) * 1.8) * 1.2);
     if (arcAlpha > 0.05) {
       ctx.save();
       ctx.globalCompositeOperation = "screen";
       ctx.globalAlpha = arcAlpha;
-      const trailGrad = ctx.createLinearGradient(0, -10 * weaponScale, 0, -56 * weaponScale);
-      trailGrad.addColorStop(0, "rgba(255, 255, 255, 0)");
-      trailGrad.addColorStop(0.5, unit.accent || "#ffd868");
-      trailGrad.addColorStop(1, "#ffffff");
-      ctx.strokeStyle = trailGrad;
-      ctx.lineWidth = 3.5 * weaponScale;
-      ctx.beginPath();
-      ctx.arc(0, 0, 48 * weaponScale, -Math.PI / 2 - 0.75, -Math.PI / 2 + 0.35);
-      ctx.stroke();
+      const angle = directionLocalAngle(unit, true);
+      ctx.rotate(angle);
+
+      const isZhaoYun = unit.hero?.id === "zhaoyun" || unit.action?.skill && unit.role === "騎兵";
+      const isLuBu = unit.hero?.id === "lubu" || unit.enemyGeneralId === "lvbu";
+
+      if (isZhaoYun) {
+        // Zhao Yun Signature: 140px Piercing Cyan-White Dragon Lance Beam (as in Screenshot 2)
+        const beamGrad = ctx.createLinearGradient(0, -10, 0, -140);
+        beamGrad.addColorStop(0, "rgba(255, 255, 255, 0.95)");
+        beamGrad.addColorStop(0.3, "#42d9ff");
+        beamGrad.addColorStop(0.8, "rgba(30, 140, 255, 0.6)");
+        beamGrad.addColorStop(1, "rgba(0, 0, 0, 0)");
+
+        ctx.fillStyle = beamGrad;
+        ctx.beginPath();
+        ctx.moveTo(-14, -15);
+        ctx.lineTo(0, -140);
+        ctx.lineTo(14, -15);
+        ctx.closePath();
+        ctx.fill();
+
+        // Whirling wind base
+        ctx.strokeStyle = "#ffffff";
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.ellipse(0, -25, 22, 9, 0, 0, Math.PI * 2);
+        ctx.stroke();
+      } else if (isLuBu) {
+        // Lu Bu Signature: Dual Red Hurricane Crescent Slashes + Purple Lightning (as in Screenshot 1)
+        const rot = runtime.elapsed * 18;
+        ctx.strokeStyle = "#ff3820";
+        ctx.lineWidth = 5;
+        ctx.beginPath();
+        ctx.arc(0, -12, 48, rot, rot + Math.PI * 1.2);
+        ctx.stroke();
+
+        ctx.strokeStyle = "#ff7040";
+        ctx.lineWidth = 3.5;
+        ctx.beginPath();
+        ctx.arc(0, -12, 40, rot + Math.PI, rot + Math.PI * 2.2);
+        ctx.stroke();
+
+        // Purple Lightning Crackles
+        ctx.strokeStyle = "#e860ff";
+        ctx.lineWidth = 1.8;
+        for (let i = 0; i < 4; i++) {
+          const la = rot + i * 1.57;
+          ctx.beginPath();
+          ctx.moveTo(Math.cos(la) * 35, -12 + Math.sin(la) * 35);
+          ctx.lineTo(Math.cos(la) * 52 + (Math.random() - 0.5) * 8, -12 + Math.sin(la) * 52);
+          ctx.stroke();
+        }
+      } else {
+        // Radiant crescent energy trail
+        const trailGrad = ctx.createRadialGradient(0, -18, 5, 0, -18, 48);
+        trailGrad.addColorStop(0, "#ffffff");
+        trailGrad.addColorStop(0.35, unit.accent || "#ffd868");
+        trailGrad.addColorStop(0.85, "rgba(255, 140, 40, 0.6)");
+        trailGrad.addColorStop(1, "rgba(255, 255, 255, 0)");
+        ctx.fillStyle = trailGrad;
+        ctx.beginPath();
+        ctx.arc(0, -4, 46, -Math.PI / 2 - 1.1, -Math.PI / 2 + 0.85);
+        ctx.arc(0, -4, 24, -Math.PI / 2 + 0.85, -Math.PI / 2 - 1.1, true);
+        ctx.closePath();
+        ctx.fill();
+
+        // Sharp white core blade edge
+        ctx.strokeStyle = "#ffffff";
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.arc(0, -4, 44, -Math.PI / 2 - 0.95, -Math.PI / 2 + 0.7);
+        ctx.stroke();
+      }
+
       ctx.restore();
     }
   }
-  ctx.restore();
 }
 
 function mountVisualDefinition(unit, heroId, mountId) {
@@ -588,13 +672,9 @@ function drawDetailedMount(mount, unit, heroId, walkCycle) {
 
 function drawMountOrFeet(unit, heroId, walkCycle, mountId = "") {
   const isCavalry = unit.role === "騎兵" || unit.type === "boss";
-  const resolvedMountId = (mountId && mountId !== "foot") ? mountId : (isCavalry ? "grey" : (unit.team === "ally" ? "grey" : "foot"));
+  const resolvedMountId = (mountId && mountId !== "foot") ? mountId : (isCavalry ? "grey" : "foot");
   const mounted = resolvedMountId !== "foot";
   if (!mounted) {
-    const footImage = ASSETS.get("assets/characters/mount-foot-v1.webp");
-    if (footImage) {
-      ctx.drawImage(footImage, -16, -14, 32, 14);
-    }
     return;
   }
   const lift = unit.moving ? -Math.abs(walkCycle) * 0.8 : 0;
@@ -603,7 +683,7 @@ function drawMountOrFeet(unit, heroId, walkCycle, mountId = "") {
   const mountScale = unit.type === "boss" ? 1.25 : 1.12;
   const mountImage = ASSETS.get("assets/characters/mount-" + resolvedMountId + "-v1.webp");
   if (mountImage) {
-    ctx.imageSmoothingEnabled = false;
+    ctx.imageSmoothingEnabled = true;
     ctx.drawImage(mountImage, -26 * mountScale, -33 * mountScale, 52 * mountScale, 34 * mountScale);
   } else {
     // Canvas procedural mount fallback
@@ -1295,79 +1375,62 @@ function drawEnemyBody(unit, body, accent, idleCycle) {
 }
 
 function drawHealthBar(unit, x, visualY) {
-  const isBoss = unit.type === "boss";
   const isAlly = unit.team === "ally";
-  if (!isAlly && !isBoss && !(unit.hitFlash > 0 || (unit.hp < unit.maxHp * 0.98))) return;
-  const barW = isBoss ? 46 : isAlly ? 34 : 22;
-  const barH = isBoss ? 4 : 3;
-  // Positioned cleanly at the unit's base / feet so the head and face are completely unobstructed
-  const y = Math.round(visualY + (isBoss ? 8 : 4));
-  const ratio = clamp(unit.hp / Math.max(1, unit.maxHp), 0, 1);
-  const lagRatio = clamp((Number.isFinite(unit.hpLag) ? unit.hpLag : unit.hp) / Math.max(1, unit.maxHp), 0, 1);
+  const isBoss = unit.type === "boss";
+  const max = Math.max(1, unit.maxHp || 1);
+  const cur = clamp(unit.hp, 0, max);
+  const ratio = cur / max;
+  const barW = isBoss ? 42 : isAlly ? 34 : 26;
+  const barH = isBoss ? 5 : 4;
+
+  // Positioned neatly directly under the unit feet (as seen in screenshots)
+  const y = Math.round(visualY + (isBoss ? 7 : 4));
+
+  // Blue energy charge ratio (allies charge attack count, enemies / bosses have constant mini blue bar)
+  const ready = (unit.attackCount || 0) >= 5 && (unit.skillCooldown || 0) <= 0;
+  const energyRatio = isAlly ? (ready ? 1 : clamp((unit.attackCount || 0) / 5, 0.2, 1)) : 0.6;
+  const hpW = Math.round(barW * 0.65);
+  const energyW = barW - hpW;
+
   ctx.save();
-  ctx.fillStyle = isBoss ? "#4d0e0a" : isAlly ? "#1f1c16" : "#2f1414";
+  // Outer black border
+  ctx.fillStyle = "#0c0a08";
   ctx.fillRect(x - barW / 2 - 1, y - 1, barW + 2, barH + 2);
-  ctx.fillStyle = "#181510";
-  ctx.fillRect(x - barW / 2, y, barW, barH);
-  ctx.fillStyle = "#733324";
-  ctx.fillRect(x - barW / 2, y, barW * lagRatio, barH);
-  ctx.fillStyle = isAlly ? "#4cb858" : isBoss ? "#dc3828" : "#c64235";
-  ctx.fillRect(x - barW / 2, y, barW * ratio, barH);
-  ctx.fillStyle = "#ffffff44";
-  ctx.fillRect(x - barW / 2, y, barW * ratio, 1);
+
+  // HP background & Red fill (left 65% of bar)
+  ctx.fillStyle = "#2c0b08";
+  ctx.fillRect(x - barW / 2, y, hpW, barH);
+  ctx.fillStyle = isAlly ? "#df3626" : "#dc2828";
+  ctx.fillRect(x - barW / 2, y, Math.round(hpW * ratio), barH);
+
+  // Energy background & Blue fill (right 35% of bar)
+  ctx.fillStyle = "#091c34";
+  ctx.fillRect(x - barW / 2 + hpW, y, energyW, barH);
+  ctx.fillStyle = ready ? "#42a4ff" : "#1f6ec4";
+  ctx.fillRect(x - barW / 2 + hpW, y, Math.round(energyW * energyRatio), barH);
+
   ctx.restore();
 }
 
 function drawUnitNameTag(unit, x, visualY) {
-  if (!unit || unit.dead) return;
+  // Clean minimal nametag only for boss units
+  if (!unit || unit.dead || unit.type !== "boss") return;
+  const y = Math.round(visualY - 66);
   ctx.save();
-  if (unit.type === "boss") {
-    // Boss name displayed neatly under the feet / base
-    const y = Math.round(visualY + 20);
-    const general = ENEMY_GENERALS.find(g => g.id === unit.enemyGeneralId);
-    const name = general?.name || "敵首領";
-    ctx.font = "bold 9px 'DFKai-SB', 'KaiTi', sans-serif";
-    ctx.textAlign = "center";
-    ctx.strokeStyle = "#380907";
-    ctx.lineWidth = 2.5;
-    ctx.strokeText("★ " + name + " ★", x, y);
-    ctx.fillStyle = "#ff5544";
-    ctx.fillText("★ " + name + " ★", x, y);
-  } else if (unit.team === "ally" && unit.hero) {
-    const y = Math.round(visualY + 16);
-    ctx.font = "bold 8px 'DFKai-SB', 'KaiTi', sans-serif";
-    ctx.textAlign = "center";
-    ctx.strokeStyle = "#1a1612";
-    ctx.lineWidth = 2;
-    ctx.strokeText(unit.hero.name, x, y);
-    ctx.fillStyle = unit.hero.rarity >= 5 ? "#ffe88a" : "#f0ede6";
-    ctx.fillText(unit.hero.name, x, y);
-  }
+  const general = ENEMY_GENERALS.find(g => g.id === unit.enemyGeneralId);
+  const name = general?.name || "敵首領";
+  ctx.font = "bold 9.5px 'DFKai-SB', 'KaiTi', sans-serif";
+  ctx.textAlign = "center";
+  ctx.strokeStyle = "#240604";
+  ctx.lineWidth = 2.5;
+  ctx.strokeText("★ " + name + " ★", x, y);
+  ctx.fillStyle = "#ff6b5a";
+  ctx.fillText("★ " + name + " ★", x, y);
   ctx.restore();
 }
 
 function drawSkillEnergyBar(unit, x, visualY) {
-  if (unit.team !== "ally" || !unit.hero) return;
-  const barW = 34;
-  const barH = 2.5;
-  // Placed right below the health bar at feet
-  const y = Math.round(visualY + 8);
-  const ready = unit.attackCount >= 5 && unit.skillCooldown <= 0 && !hasStatus(unit, "silence");
-  const charge = ready ? 1 : clamp(unit.attackCount / 5, 0, 1);
-  const pulse = ready ? 0.55 + Math.sin(runtime.elapsed * 14) * 0.45 : 1;
-  ctx.save();
-  ctx.fillStyle = "#0e0f0c";
-  ctx.fillRect(x - barW / 2 - 1, y - 1, barW + 2, barH + 2);
-  ctx.fillStyle = "#1a1812";
-  ctx.fillRect(x - barW / 2, y, barW, barH);
-  ctx.fillStyle = ready ? "#f0c653" : "#8a7340";
-  ctx.globalAlpha = pulse;
-  ctx.fillRect(x - barW / 2, y, barW * charge, barH);
-  if (ready) {
-    ctx.fillStyle = "#fff6c8";
-    ctx.fillRect(x - barW / 2, y, barW * charge, 1);
-  }
-  ctx.restore();
+  // Energy bar is now integrated directly into the red/blue dual bar at feet
 }
 
 function drawStatusBadges(unit, x, y) {
@@ -1410,51 +1473,32 @@ function applyCombatBodyMotion(unit, state, walkCycle, idleCycle, deathProgress,
     }
   }
   if (state === "idle") {
-    const breathe = idleCycle * 0.5;
-    ctx.translate(0, breathe * 0.6);
-    ctx.scale(1 + breathe * 0.014, 1 - breathe * 0.022);
+    // Subtle natural breathing bounce (16-bit pixel RPG standard)
+    const breathe = Math.sin((runtime.elapsed || 0) * 3.6 + (unit.x || 0) * 0.04);
+    ctx.translate(0, -Math.abs(breathe) * 1.5);
   } else if (state === "walk") {
-    // Pure vertical step cadence with zero horizontal sway or tilt
-    const lift = Math.abs(walkCycle);
-    ctx.translate(0, -lift * 0.85);
-    ctx.scale(1, 1 - lift * 0.035);
+    // Fallback bodies keep their feet grounded. Authored move strips provide
+    // the real leg cycle; this tiny weight transfer is only for legacy units.
+    const stridePhase = Math.sin((runtime.elapsed || 0) * 10 + (unit.x || 0) * 0.08);
+    ctx.translate(stridePhase * 0.45, 0);
+    ctx.rotate(stridePhase * 0.008);
   } else if (state === "hit") {
-    const recoil = clamp((Number(unit.hitFlash) || 0) / 0.2, 0, 1);
-    ctx.translate(-Math.cos(unit.hitAngle || 0) * recoil * 1.8, -recoil * 0.8);
-    ctx.rotate(Math.sin(unit.hitAngle || 0) * recoil * 0.06);
-    ctx.scale(1 - recoil * 0.07, 1 + recoil * 0.085);
+    // Sharp knockback stagger and recovery
+    const recoil = clamp((Number(unit.hitFlash) || 0) / 0.22, 0, 1);
+    ctx.translate(-Math.cos(unit.hitAngle || 0) * recoil * 5, -recoil * 2);
   } else if (state === "skill") {
     const pose = attackPoseProgress(unit);
-    const focus = Math.sin((unit.action?.elapsed || 0) * 18) * pose;
-    ctx.translate(0, -pose * 0.8);
-    ctx.scale(1 + pose * 0.035 + focus * 0.006, 1 - pose * 0.045);
+    ctx.translate(0, -pose * 3);
   } else if (state === "death") {
-    ctx.translate(0, deathProgress * 1.4);
-    ctx.scale(1 + deathProgress * 0.04, 1 - deathProgress * 0.12);
+    ctx.translate(0, deathProgress * 4);
+    ctx.scale(1, 1 - deathProgress * 0.2);
   }
 }
 
 function drawHeroDetailOverlay(unit, walkCycle, idleCycle) {
-  const heroId = unit.hero?.id || "liubei";
-  const accent = unit.hero?.accent || "#d29f3a";
   const ready = (unit.attackCount || 0) >= 5 && (unit.skillCooldown || 0) <= 0;
 
   ctx.save();
-  
-  // Dynamic flowing cape behind hero body
-  const capeSway = Math.sin(runtime.elapsed * 4.5 + unit.x * 0.1) * (unit.moving ? 3.5 : 1.2) + (unit.motionX ? -unit.motionX * 0.35 : 0);
-  const capeColor = heroId === "guanyu" ? "#164d30" : heroId === "caocao" ? "#412656" : heroId === "zhaoyun" ? "#264870" : heroId === "lubu" ? "#7d161d" : accent;
-  ctx.save();
-  ctx.fillStyle = capeColor;
-  ctx.globalAlpha = 0.85;
-  ctx.beginPath();
-  ctx.moveTo(-10, -28);
-  ctx.quadraticCurveTo(-14 + capeSway, -18, -12 + capeSway * 1.2, -8);
-  ctx.lineTo(-6, -14);
-  ctx.closePath();
-  ctx.fill();
-  ctx.restore();
-
   // Skill Ready Aura: Tactical Rotating Bagua / Formation Battle Halo at unit feet + ascending golden motes
   if (ready) {
     ctx.save();
@@ -1487,11 +1531,58 @@ function drawHeroDetailOverlay(unit, walkCycle, idleCycle) {
       ctx.fillRect(sx - 1.5, sy - 1.5, 3, 3);
     }
     
-    // Ascending golden qi motes around weapon / body
-    const moteY = -8 - ((runtime.elapsed * 32 + (unit.x % 17) * 4) % 34);
-    ctx.fillStyle = "#ffd55e";
-    ctx.fillRect(-6 + Math.sin(runtime.elapsed * 6) * 4, moteY, 2, 2);
-    ctx.fillRect(7 - Math.cos(runtime.elapsed * 6) * 4, moteY + 8, 2, 2);
+    // 1. Lightning Sphere Shield (as seen on Lu Meng in screenshot 3)
+    if (unit.hero?.role === "謀士" || unit.hero?.id === "zhugeliang" || unit.hero?.id === "lvmeng") {
+      const shieldRot = runtime.elapsed * 3;
+      ctx.strokeStyle = "rgba(180, 225, 255, 0.85)";
+      ctx.lineWidth = 1.8;
+      ctx.beginPath();
+      ctx.arc(0, -22, 28, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // Crackling lightning arcs inside sphere
+      ctx.strokeStyle = "#ffffff";
+      ctx.lineWidth = 1.2;
+      for (let i = 0; i < 3; i++) {
+        const la = shieldRot + i * 2.1;
+        const lx1 = Math.cos(la) * 26;
+        const ly1 = -22 + Math.sin(la) * 26;
+        const lx2 = Math.cos(la + 1.2) * 26;
+        const ly2 = -22 + Math.sin(la + 1.2) * 26;
+        ctx.beginPath();
+        ctx.moveTo(lx1, ly1);
+        ctx.lineTo((lx1 + lx2) / 2 + (Math.sin(runtime.elapsed * 20 + i) * 6), (ly1 + ly2) / 2 + (Math.cos(runtime.elapsed * 20 + i) * 6));
+        ctx.lineTo(lx2, ly2);
+        ctx.stroke();
+      }
+    }
+
+    // 2. Golden Swirling Blades (as seen in screenshot 3)
+    if (unit.hero?.id === "liubei" || unit.hero?.id === "sunce" || unit.hero?.role === "步兵") {
+      const bladeRot = runtime.elapsed * 6;
+      ctx.strokeStyle = "#ffd84a";
+      ctx.lineWidth = 2.4;
+      for (let i = 0; i < 3; i++) {
+        const ba = bladeRot + (i * Math.PI * 2) / 3;
+        ctx.beginPath();
+        ctx.arc(0, -18, 22, ba, ba + 0.9);
+        ctx.stroke();
+      }
+    }
+
+    // 3. Flaming Footprint Aura (as seen in screenshot 3)
+    if (unit.hero?.id === "zhangfei" || unit.hero?.id === "lubu" || unit.hero?.role === "騎兵") {
+      const flameP = (Math.sin(runtime.elapsed * 12) + 1) * 0.5;
+      const flameGrad = ctx.createRadialGradient(0, 0, 4, 0, 0, 24 + flameP * 4);
+      flameGrad.addColorStop(0, "#fff0a0");
+      flameGrad.addColorStop(0.4, "#ff7020");
+      flameGrad.addColorStop(0.85, "rgba(220, 30, 10, 0.6)");
+      flameGrad.addColorStop(1, "rgba(0, 0, 0, 0)");
+      ctx.fillStyle = flameGrad;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, 24 + flameP * 4, 9 + flameP * 2, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
     
     ctx.globalCompositeOperation = "source-over";
     ctx.restore();
@@ -1521,13 +1612,65 @@ function drawCombatBodySprite(unit, image, state, walkCycle, idleCycle, deathPro
   if (!image) return;
   ctx.save();
   applyCombatBodyMotion(unit, state, walkCycle, idleCycle, deathProgress, motionOptions);
+
   ctx.imageSmoothingEnabled = false;
-  ctx.drawImage(image, -16, -38, 32, 38);
+  if (unit.hitFlash > 0) ctx.filter = "brightness(2.5) saturate(0.3)";
+  const isBoss = unit.type === "boss";
+  const w = isBoss ? 48 : 36;
+  const h = isBoss ? 57 : 43;
+  ctx.drawImage(image, -w / 2, -h, w, h);
   if (unit.team === "ally") {
     drawHeroDetailOverlay(unit, walkCycle, idleCycle);
   } else {
     drawEnemyDetailOverlay(unit, walkCycle, idleCycle);
   }
+  ctx.restore();
+}
+
+function drawMoveSpriteFrame(unit, image) {
+  if (!image) return;
+  const frame = clamp(Math.floor(Number(unit.moveFrame) || 0), 0, 3);
+  const cellSize = combatSpriteCellSize(unit);
+  const renderSize = combatSpriteRenderSize(unit);
+  ctx.save();
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(
+    image,
+    frame * cellSize,
+    0,
+    cellSize,
+    cellSize,
+    -renderSize / 2,
+    2 - renderSize,
+    renderSize,
+    renderSize
+  );
+  ctx.restore();
+}
+
+function drawActionSpriteFrame(unit, image, state, walkCycle, idleCycle, deathProgress, motionOptions, idleFrame = false) {
+  if (!image) return;
+  const row = idleFrame ? 4 : clamp(Math.floor(Number(unit.attackFrame) || 0), 0, 4);
+  const column = clamp(Math.floor(Number(unit.attackDirection ?? unit.direction) || 0), 0, 7);
+  const cellSize = combatSpriteCellSize(unit);
+  const renderSize = combatSpriteRenderSize(unit);
+  const sourceX = column * cellSize;
+  const sourceY = row * cellSize;
+  ctx.save();
+  applyCombatBodyMotion(unit, state, walkCycle, idleCycle, deathProgress, motionOptions);
+  ctx.imageSmoothingEnabled = false;
+  if (unit.hitFlash > 0) ctx.filter = "brightness(2.7) saturate(0.25)";
+  ctx.drawImage(
+    image,
+    sourceX,
+    sourceY,
+    cellSize,
+    cellSize,
+    -renderSize / 2,
+    2 - renderSize,
+    renderSize,
+    renderSize
+  );
   ctx.restore();
 }
 
@@ -1562,9 +1705,8 @@ function drawUnit(unit) {
   const heroId = unit.team === "ally" ? unit.hero.id : "enemy";
   const visualId = unit.team === "ally" ? (unit.hero.visual || heroId) : "enemy";
   const loadout = unit.team === "ally" ? heroLoadout(heroId) : null;
-  const moveBounce = visualId === "zhangfei" ? 2.9 : visualId === "zhaoyun" ? 1.35 : 2;
   const idleBounce = visualId === "guanyu" ? 0.35 : visualId === "zhangfei" ? 0.55 : 0.8;
-  const bob = unit.moving ? -Math.abs(walkCycle) * moveBounce : idleCycle * idleBounce;
+  const bob = unit.moving ? 0 : idleCycle * idleBounce;
   const renderX = unit.x + unit.motionX + unit.kickX;
   const renderY = unit.y + unit.motionY + unit.kickY;
   const renderDelta = Number.isFinite(runtime.renderDelta) ? Math.max(0.001, runtime.renderDelta) : 1 / 60;
@@ -1620,71 +1762,82 @@ function drawUnit(unit) {
   const deathSquash = unit.dead ? 1 - deathProgress * 0.32 : 1;
   ctx.scale(unit.scale * unit.facing * (1 + unit.squashX), unit.scale * deathSquash * (1 + unit.squashY));
   const accent = unit.team === "ally" ? unit.hero.accent : unit.accent;
-  const spritePromise = unit.team === "ally" ? ASSETS.get(unit.hero.combatSprite) : null;
-  const enemyBodyPath = unit.team === "enemy" ? enemyCombatBodyPath(unit) : null;
-  const enemyBodySprite = unit.team === "enemy"
+  const spritePromise = !ATTACK_SPRITES_APPROVED && unit.team === "ally" ? ASSETS.get(unit.hero.combatSprite) : null;
+  const enemyBodyPath = !ATTACK_SPRITES_APPROVED && unit.team === "enemy" ? enemyCombatBodyPath(unit) : null;
+  const enemyBodySprite = !ATTACK_SPRITES_APPROVED && unit.team === "enemy"
     ? ASSETS.get(enemyBodyPath) || ASSETS.get(LOCKED_COMBAT_BODY_PATH)
     : null;
-  const attackSpriteId = unit.team === "ally" ? heroId : unit.type === "boss" ? "boss-" + (BOSS_SPRITE_BY_GENERAL[unit.enemyGeneralId] || "zhangjiao") : (unit.type || "bandit");
-  const attackSpritePath = "assets/characters/attack-" + attackSpriteId + "-v1.webp";
+  const attackSpriteId = attackCombatSpriteId(unit);
+  // Resolve one identity for this draw. Move, attack and idle all derive from
+  // the same ID, so a frame cannot borrow another character's clothes/weapon.
+  const attackSpritePath = attackCombatSpritePathForId(attackSpriteId);
   const attackSprite = ASSETS.get(attackSpritePath);
-  const bossSpriteId = unit.type === "boss" ? BOSS_SPRITE_BY_GENERAL[unit.enemyGeneralId] : null;
+  const moveSprite = unit.moving && AUTHORED_ACTION_SPRITES.has(attackSpriteId)
+    ? ASSETS.get(moveCombatSpritePathForId(attackSpriteId))
+    : null;
+  const bossSpriteId = !ATTACK_SPRITES_APPROVED && unit.type === "boss" ? unit.enemyGeneralId : null;
   const bossSprite = bossSpriteId ? ASSETS.get("assets/characters/boss-" + bossSpriteId + "-v1.webp") : null;
-  const spriteImage = spritePromise || enemyBodySprite || bossSprite;
-  const useAttackSprite = ATTACK_SPRITES_APPROVED && Boolean(unit.action && attackSprite);
+  const spriteImage = attackSprite || moveSprite || spritePromise || enemyBodySprite || bossSprite;
+  const useAttackSprite = ATTACK_SPRITES_APPROVED && Boolean(!unit.dead && unit.action && attackSprite);
+  const useMoveSprite = ATTACK_SPRITES_APPROVED && Boolean(!unit.dead && !unit.action && unit.moving && moveSprite);
+  const useAuthoredIdle = ATTACK_SPRITES_APPROVED && Boolean(!unit.dead && !unit.action && attackSprite && AUTHORED_ACTION_SPRITES.has(attackSpriteId));
   const actionTransform = Boolean(unit.action && !useAttackSprite);
   const motionOptions = { outerDeath: unit.dead, outerAction: actionTransform };
   if (actionTransform) {
     ctx.save();
     const pose = attackPoseProgress(unit);
     const angle = directionLocalAngle(unit, true);
-    const frameOffset = unit.action.phase === "anticipation" ? -pose * 3.5 : pose * (unit.action.ranged ? 2.5 : 5.5);
-    const frameJolt = unit.attackFrame === 2 ? -1.5 : unit.attackFrame === 3 ? 0.8 : 0;
+    // Deep anticipation pull back (-7px) -> Exploding forward lunge (+18px)
+    const frameOffset = unit.action.phase === "anticipation" ? -pose * 7.5 : pose * (unit.action.ranged ? 5 : 17.5);
+    const frameJolt = unit.attackFrame === 2 ? -3.5 : unit.attackFrame === 3 ? 1.5 : 0;
     ctx.translate(Math.cos(angle) * frameOffset, Math.sin(angle) * frameOffset + frameJolt);
-    ctx.rotate(-Math.sin(angle) * 0.08 * pose);
-    ctx.scale(1 + pose * 0.035, 1 - pose * 0.045);
+    ctx.rotate(unit.action.phase === "anticipation" ? -0.12 * pose : Math.sin(angle) * 0.14 * pose);
+    ctx.scale(1 + pose * 0.12, 1 - pose * 0.08);
   }
   const isCavalry = unit.role === "騎兵" || unit.type === "boss";
-  const resolvedMount = loadout?.mount || (isCavalry ? "grey" : (unit.team === "ally" ? "grey" : "foot"));
+  const resolvedMount = loadout?.mount && loadout.mount !== "foot" ? loadout.mount : (isCavalry ? "grey" : "foot");
   const isMounted = resolvedMount !== "foot";
-  const riderLift = isMounted && !(unit.type === "boss" && bossSprite) ? -9 : 0;
+  const riderLift = isMounted && !spriteImage ? -9 : 0;
 
-  if (!(unit.type === "boss" && bossSprite)) drawMountOrFeet(unit, visualId, walkCycle, resolvedMount);
+  if (!spriteImage && !ATTACK_SPRITES_APPROVED) drawMountOrFeet(unit, visualId, walkCycle, resolvedMount);
 
   ctx.save();
   ctx.translate(0, riderLift);
 
   if (useAttackSprite) {
-    const column = clamp(Number(unit.action?.direction ?? unit.direction) || 0, 0, 7);
-    const row = clamp(Number(unit.attackFrame) || 0, 0, 4);
-    ctx.imageSmoothingEnabled = false;
-    ctx.drawImage(attackSprite, column * 64, row * 64, 64, 64, -32, -64, 64, 64);
-  } else if (unit.team === "ally") {
+    drawActionSpriteFrame(unit, attackSprite, animationState, walkCycle, idleCycle, deathProgress, { ...motionOptions, outerAction: true }, false);
+  } else if (useMoveSprite) {
+    drawMoveSpriteFrame(unit, moveSprite);
+  } else if (useAuthoredIdle) {
+    drawActionSpriteFrame(unit, attackSprite, animationState, walkCycle, idleCycle, deathProgress, { ...motionOptions, outerAction: true }, useAuthoredIdle);
+  } else if (!ATTACK_SPRITES_APPROVED && unit.team === "ally") {
     if (spritePromise) drawCombatBodySprite(unit, spritePromise, animationState, walkCycle, idleCycle, deathProgress, motionOptions);
     else drawProceduralCombatBody(unit, visualId, accent, animationState, walkCycle, idleCycle, deathProgress, motionOptions);
-  } else if (bossSprite) {
+  } else if (!ATTACK_SPRITES_APPROVED && bossSprite) {
     ctx.save();
     applyCombatBodyMotion(unit, animationState, walkCycle, idleCycle, deathProgress, motionOptions);
-    ctx.drawImage(bossSprite, -32, -70, 64, 72);
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(bossSprite, -24, -58, 48, 58);
     drawEnemyDetailOverlay(unit, walkCycle, idleCycle);
     ctx.restore();
-  } else if (enemyBodySprite) {
+  } else if (!ATTACK_SPRITES_APPROVED && enemyBodySprite) {
     drawCombatBodySprite(unit, enemyBodySprite, animationState, walkCycle, idleCycle, deathProgress, motionOptions);
-  } else {
+  } else if (!ATTACK_SPRITES_APPROVED) {
     drawProceduralCombatBody(unit, visualId, accent, animationState, walkCycle, idleCycle, deathProgress, motionOptions);
   }
-  drawAttackPose(unit, accent, useAttackSprite || Boolean(spriteImage));
+
+  // Authored sprites already contain a hand-connected weapon. Only the
+  // procedural fallback receives a separate equipment layer.
+  if (!ATTACK_SPRITES_APPROVED && !spriteImage && !useAttackSprite && !useMoveSprite && !useAuthoredIdle) drawWeapon(unit);
+
   if (unit.hitFlash > 0) {
-    ctx.globalCompositeOperation = "screen";
-    ctx.globalAlpha = Math.min(0.82, unit.hitFlash * 5);
-    ctx.fillStyle = "#fff";
-    ctx.beginPath();
-    ctx.ellipse(0, unit.type === "boss" ? -34 : -22, unit.type === "boss" ? 24 : 12, unit.type === "boss" ? 32 : 18, 0, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.globalAlpha = Math.min(0.92, unit.hitFlash * 5);
+    ctx.fillStyle = "#fff6dc";
+    drawPixelRect(-10, unit.type === "boss" ? -42 : -30, 3, 3, ctx.fillStyle);
+    drawPixelRect(7, unit.type === "boss" ? -30 : -22, 4, 2, ctx.fillStyle);
+    drawPixelRect(-4, unit.type === "boss" ? -18 : -13, 2, 4, ctx.fillStyle);
     ctx.globalAlpha = 1;
-    ctx.globalCompositeOperation = "source-over";
   }
-  if (!useAttackSprite && !(unit.type === "boss" && bossSprite)) drawWeapon(unit);
   ctx.restore();
   if (actionTransform) ctx.restore();
   // Restore the unit-local translate/scale before drawing world-space bars.
@@ -1703,20 +1856,17 @@ function drawUnit(unit) {
 
 function preloadConfiguredAssets() {
   // Preload only the immediate starting combat assets; remaining 46 heroes and late stages lazy-load via ASSETS.get()
-  const attackIds = ["liubei", "guanyu", "zhangfei", "zhaoyun", "bandit", "boss-zhangjiao"];
-  const attackPaths = attackIds.map((id) => "assets/characters/attack-" + id + "-v1.webp");
+  const attackIds = [...AUTHORED_ACTION_SPRITES];
+  const attackPaths = attackIds.map((id) => "assets/characters/attack-" + id + (ULTRA_DETAIL_ACTION_SPRITES.has(id) ? "-v4.webp" : "-v3.webp"));
+  const movePaths = attackIds.map((id) => "assets/characters/move-" + id + (ULTRA_DETAIL_ACTION_SPRITES.has(id) ? "-v4.webp" : "-v3.webp"));
   const startPaths = [
     "assets/characters/portrait-liubei-v1.webp",
     "assets/characters/portrait-guanyu-v1.webp",
     "assets/characters/portrait-zhangfei-v1.webp",
     "assets/characters/portrait-zhaoyun-v1.webp",
-    "assets/characters/combat-body-liubei-v1.webp",
-    "assets/characters/combat-body-guanyu-v1.webp",
-    "assets/characters/combat-body-zhangfei-v1.webp",
-    "assets/characters/combat-body-zhaoyun-v1.webp",
-    "assets/characters/combat-body-locked-v1.webp",
     "assets/backgrounds/terrain-tile-0-v1.webp",
-    ...attackPaths
+    ...attackPaths,
+    ...movePaths
   ];
   ASSETS.preload(startPaths);
 }
@@ -2121,8 +2271,10 @@ function drawSkillCutIn() {
 }
 
 function drawUnitShouts() {
-  const units = [...runtime.allies, ...runtime.enemies].filter((unit) => unit.shout && unit.shout.life > 0);
-  if (!units.length) return;
+  const allUnits = [...runtime.allies, ...runtime.enemies].filter((unit) => unit.shout && unit.shout.life > 0);
+  if (!allUnits.length) return;
+  // Only display the single newest shout to avoid clutter
+  const units = [allUnits[allUnits.length - 1]];
 
   ctx.save();
   ctx.textAlign = "center";
@@ -2132,14 +2284,14 @@ function drawUnitShouts() {
   for (const unit of units) {
     const shout = unit.shout;
     const progress = 1 - (shout.life / (shout.maxLife || 2.0));
-    const alpha = Math.min(1, shout.life * 2.5);
-    const bubbleY = unit.y - 58 - progress * 10;
-    const bubbleX = clamp(unit.x, 70, canvas.width - 70);
+    const alpha = Math.min(1, shout.life * 2.2);
+    const bubbleY = unit.y - 72 - progress * 12;
+    const bubbleX = clamp(unit.x, 80, canvas.width - 80);
 
     const text = shout.text;
     const textWidth = ctx.measureText(text).width;
     const paddingX = 8;
-    const paddingY = 4;
+    const paddingY = 3;
     const bw = textWidth + paddingX * 2;
     const bh = 18;
     const bx = bubbleX - bw / 2;
@@ -2147,33 +2299,25 @@ function drawUnitShouts() {
 
     ctx.globalAlpha = alpha;
 
-    // 氣泡本體底色 (深色黑金像素風格)
-    ctx.fillStyle = "rgba(18, 14, 10, 0.88)";
+    // 氣泡本體底色 (半透明國風黑金)
+    ctx.fillStyle = "rgba(18, 14, 10, 0.85)";
     ctx.beginPath();
     ctx.roundRect(bx, by, bw, bh, 4);
     ctx.fill();
 
-    // 金色邊框
-    ctx.strokeStyle = unit.team === "ally" ? "rgba(235, 195, 85, 0.9)" : "rgba(220, 90, 70, 0.9)";
-    ctx.lineWidth = 1.2;
+    // 陣營流光邊框
+    ctx.strokeStyle = unit.team === "ally" ? "rgba(235, 195, 85, 0.85)" : "rgba(220, 90, 70, 0.85)";
+    ctx.lineWidth = 1;
     ctx.stroke();
 
-    // 氣泡指向箭頭
-    ctx.fillStyle = "rgba(18, 14, 10, 0.88)";
+    // 氣泡箭頭
+    ctx.fillStyle = "rgba(18, 14, 10, 0.85)";
     ctx.beginPath();
-    ctx.moveTo(bubbleX - 4, by + bh);
-    ctx.lineTo(bubbleX + 4, by + bh);
-    ctx.lineTo(bubbleX, by + bh + 4);
+    ctx.moveTo(bubbleX - 3, by + bh);
+    ctx.lineTo(bubbleX + 3, by + bh);
+    ctx.lineTo(bubbleX, by + bh + 3);
     ctx.closePath();
     ctx.fill();
-
-    // 箭頭線條
-    ctx.strokeStyle = unit.team === "ally" ? "rgba(235, 195, 85, 0.9)" : "rgba(220, 90, 70, 0.9)";
-    ctx.beginPath();
-    ctx.moveTo(bubbleX - 4, by + bh);
-    ctx.lineTo(bubbleX, by + bh + 4);
-    ctx.lineTo(bubbleX + 4, by + bh);
-    ctx.stroke();
 
     // 氣泡文字
     ctx.fillStyle = unit.team === "ally" ? "#fff2b3" : "#ffd2cc";
