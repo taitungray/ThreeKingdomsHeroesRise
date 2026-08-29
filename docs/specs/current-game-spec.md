@@ -25,10 +25,10 @@
 - `已確認`：單位狀態包含移動、攻擊 action、受擊、死亡、技能、波次與結算資料。
 - `已確認`：角色 body、portrait、attack、mount、Boss、VFX、terrain 與 combat weapon 有 WebP／manifest 管理，Canvas 角色圖使用 nearest-neighbor。
 - `已確認`：Canvas transform 洩漏已修正，source 與同步後 `www` 的真實 Chrome transform gate 通過。
-- `已確認`：`attack-manifest.json` 為 version 6；59 張 64px `v2` 圖集保留作舊資產追蹤，runtime 以 15 張 96px `v3` 高細節全身圖集為基線，並只對劉備、關羽、張飛、趙雲改用 128px `v4` 試製圖集。每張維持 8 欄方向契約與 anticipation／windup／contact／follow-through／recovery 五列階段，renderer 依 `attackFrame` 實際抽格。
-- `已確認`：`v3` 覆蓋第一章八名可用武將、bandit／brute／cavalry／archer／strategist 五種普通敵人與張角／董卓 Boss；舊肖像／半身 combat body 不再作正常戰鬥路徑。其餘武將依資料的 `visual` 或兵種映射到上述核准全身 archetype，故不可宣稱全 50 名武將已完成唯一外觀。
-- `已確認`：`move-manifest.json` version 3 管理同 15 個全身 archetype 的 4 幀 96px `v3` 移動條帶；首四將另用 128px `v4` 移動條帶（左腳接地／重心通過／右腳接地／回復通過）。只有 `unit.moving` 時抽格，攻擊會中斷移動循環，停下改回 idle。舊的整體上下彈跳與常駐速度線已移除。
-- `已確認`：`npm run generate:combat-actions` 先由六張 v3 母圖重建 15 張 96px 攻擊圖集與移動條帶，再由兩張 v4 首四將母圖重建 4 張 128px attack／move 試製資產；`npm run test:combat-assets` 驗證尺寸、alpha、cell coverage、外緣髒色帶、路徑及階段／步態指紋。
+- `已確認`：`attack-manifest.json` 為 version 6；59 張 64px `v2` 圖集保留作舊資產追蹤，runtime 以 59 張 96px `v3` 高細節全身圖集為基線（覆蓋全 50 名武將、5 類敵人士兵與 4 名首領 Boss），並對首四將（劉備、關羽、張飛、趙雲）改用 128px `v4` 試製圖集。每張維持 8 欄方向契約與 anticipation／windup／contact／follow-through／recovery 五列階段，renderer 依 `attackFrame` 實際抽格。
+- `已確認`：`v3` 動作圖以 8 名名將、3 種普通敵軍與 2 名 Boss 獨立母圖為基礎，全 50 名武將與其餘敵首依 `visual` 或兵種（步→關羽、騎→趙雲、弓→黃忠、謀→曹操）及董卓身分全面映射產出獨立 96px attack 與 move 實體檔案，身分 alias 契約持久化於 manifests，舊肖像／半身 combat body 不再作正常戰鬥路徑；因共用全身 archetype 來源，不可宣稱全 50 名武將已完成唯一專屬外觀。
+- `已確認`：`move-manifest.json` version 3 管理全 59 個戰鬥單位的 4 幀 96px `v3` 移動條帶；首四將另用 128px `v4` 移動條帶（左腳接地／重心通過／右腳接地／回復通過）。只有 `unit.moving` 時抽格，攻擊會中斷移動循環，停下改回 idle；死亡狀態（`unit.dead`）由動作圖接續播放後仰、旋轉與 squash 淡出，消除死亡瞬間憑空消失缺陷。
+- `已確認`：`npm run generate:combat-actions` 先由六張 v3 母圖依規範建立 59 張 96px 攻擊圖集與移動條帶，再由兩張 v4 首四將母圖重建 4 張 128px attack／move 試製資產；`npm run test:combat-assets` 驗證全量 59 張動作圖與移動條帶的尺寸、alpha、cell coverage、外緣髒色帶、路徑及階段／步態指紋。
 - `已確認`：目前 ImageGen 提示、八張 master sheet 格位、背景去除、96px／128px 正規化、命名、alias、Canvas 消費與驗收流程已集中記錄於 [戰鬥人物圖片製作方式與規格](../standards/combat-character-asset-production.md)。
 - `已確認`：7 個 Boss 身分目前映射到 4 張 Boss sprite；普通敵人、敵將與 Boss 大量使用其他武將 body alias。
 - `已確認`：戰場兵器有 9 個基礎資產，額外武器 ID 大量 alias 到通用資產，握點主要依武器類型共用而非逐角色／方向定義。

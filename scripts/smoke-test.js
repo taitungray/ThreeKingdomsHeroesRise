@@ -104,7 +104,7 @@ assert.equal(attackManifest.assets.length, requiredAttackIds.length, "every comb
 assert.ok(requiredAttackIds.every((id) => attackManifest.assets.some((asset) => asset.id === id)), "attack sprite manifest must cover heroes, enemy types and bosses");
 assert.ok(attackManifest.assets.every((asset) => fs.existsSync(path.join(root, asset.path))), "declared attack sprite assets must exist");
 const detailedAttackAssets = attackManifest.assets.filter((asset) => asset.detailPath);
-assert.equal(detailedAttackAssets.length, 15, "high-detail combat roster must cover the complete first-chapter enemy vocabulary");
+assert.equal(detailedAttackAssets.length, requiredAttackIds.length, "high-detail combat roster must cover all heroes, enemy types and bosses");
 assert.ok(detailedAttackAssets.every((asset) => fs.existsSync(path.join(root, asset.detailPath))), "declared high-detail attack assets must exist");
 const ultraDetailAttackAssets = attackManifest.assets.filter((asset) => asset.ultraDetailPath);
 assert.deepEqual(ultraDetailAttackAssets.map((asset) => asset.id), ["liubei", "guanyu", "zhangfei", "zhaoyun"], "v4 battle pilot must remain limited to the first four heroes");

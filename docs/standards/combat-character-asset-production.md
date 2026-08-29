@@ -241,7 +241,7 @@ npm run test:combat-browser
 
 `npm run test:combat-assets` 至少驗證：
 
-- 15 張高細節 attack 與 15 張 move 存在。
+- 59 張高細節 attack 與 59 張 move 存在（涵蓋全 50 名武將、5 類敵軍與 4 名 Boss）。
 - attack 為 768×480、move 為 384×96、cell 為 96px。
 - 首四將 v4 attack 為 1024×640、move 為 512×128、cell 為 128px。
 - 最終 WebP 有 alpha，coverage 不過疏也不是不透明矩形。

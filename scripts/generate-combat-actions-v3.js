@@ -347,8 +347,124 @@ async function main() {
   ]);
   authoredMoves.set("archer", authoredMoves.get("huangzhong"));
   authoredMoves.set("strategist", authoredMoves.get("boss-zhangjiao"));
+
+  // Load game data to resolve full roster: 50 heroes, 5 enemies, 7 bosses (62 units)
+  const vm = require("node:vm");
+  const dataContext = { window: {} };
+  vm.runInNewContext(fs.readFileSync(path.join(root, "data", "game-data.js"), "utf8"), dataContext, { filename: "game-data.js" });
+  const gameData = dataContext.window.THREE_KINGDOMS_DATA;
+
+  const AUTHORED_HERO_ARCHETYPES = new Set([...coreRows.keys(), ...supportRows.keys()]);
+  const ROLE_ARCHETYPE_FALLBACK = { "步兵": "guanyu", "騎兵": "zhaoyun", "弓兵": "huangzhong", "謀士": "caocao" };
+
+  const allUnits = [];
+
+  // 1. All 50 Heroes
+  for (const hero of gameData.heroes) {
+    let archetype = "liubei";
+    if (AUTHORED_HERO_ARCHETYPES.has(hero.id)) {
+      archetype = hero.id;
+    } else if (hero.visual && AUTHORED_HERO_ARCHETYPES.has(hero.visual)) {
+      archetype = hero.visual;
+    } else if (hero.role && ROLE_ARCHETYPE_FALLBACK[hero.role]) {
+      archetype = ROLE_ARCHETYPE_FALLBACK[hero.role];
+    }
+    allUnits.push({ id: hero.id, kind: "hero", archetype });
+  }
+
+  // 2. 5 Enemy Types
+  const enemyTypes = [
+    { id: "bandit", archetype: "bandit" },
+    { id: "brute", archetype: "brute" },
+    { id: "cavalry", archetype: "cavalry" },
+    { id: "archer", archetype: "huangzhong" },
+    { id: "strategist", archetype: "boss-zhangjiao" }
+  ];
+  for (const enemy of enemyTypes) {
+    allUnits.push({ id: enemy.id, kind: "enemy", archetype: enemy.archetype });
+  }
+
+  // 3. 4 Bosses matching requiredAttackIds in manifests
+  const bossIds = ["zhangjiao", "dongzhuo", "lvbu", "menghuo"];
+  for (const generalId of bossIds) {
+    const bossId = "boss-" + generalId;
+    let archetype = "boss-dongzhuo";
+    if (bossId === "boss-zhangjiao") archetype = "boss-zhangjiao";
+    else if (bossId === "boss-dongzhuo") archetype = "boss-dongzhuo";
+    allUnits.push({ id: bossId, kind: "boss", archetype });
+  }
+
+  // Pre-generate normalized frames for each distinct archetype
+  const normalizedActionFramesByArchetype = new Map();
+  const normalizedMoveFramesByArchetype = new Map();
+
+  for (const [archetypeId, frames] of authored) {
+    normalizedActionFramesByArchetype.set(archetypeId, await normalizedCoreFrames(frames));
+  }
+  for (const [archetypeId, frames] of authoredMoves) {
+    normalizedMoveFramesByArchetype.set(archetypeId, await normalizedCoreFrames(frames));
+  }
+
+  // Ensure legacy v2 attack sheets exist for all 62 units
+  for (const unit of allUnits) {
+    const legacyPath = path.join(characterDir, `attack-${unit.id}-v2.webp`);
+    if (!fs.existsSync(legacyPath)) {
+      const sourceLegacy = unit.kind === "boss"
+        ? path.join(characterDir, "attack-boss-dongzhuo-v2.webp")
+        : path.join(characterDir, `attack-${unit.archetype}-v2.webp`);
+      assert.ok(fs.existsSync(sourceLegacy), `missing legacy template ${sourceLegacy}`);
+      fs.copyFileSync(sourceLegacy, legacyPath);
+    }
+  }
+
+  const updatedAttackAssets = [];
+  const updatedMoveAssets = [];
+
+  for (const unit of allUnits) {
+    const actionFrames = normalizedActionFramesByArchetype.get(unit.archetype);
+    assert.ok(actionFrames, `missing normalized action frames for archetype ${unit.archetype}`);
+    const detailPath = await writeSheet(unit, actionFrames);
+
+    const moveFrames = normalizedMoveFramesByArchetype.get(unit.archetype);
+    assert.ok(moveFrames, `missing normalized move frames for archetype ${unit.archetype}`);
+    const movePath = await writeMoveSheet(unit, moveFrames);
+
+    updatedAttackAssets.push({
+      id: unit.id,
+      kind: unit.kind,
+      archetype: unit.archetype,
+      path: `assets/characters/attack-${unit.id}-v2.webp`,
+      detailPath
+    });
+
+    updatedMoveAssets.push({
+      id: unit.id,
+      kind: unit.kind,
+      archetype: unit.archetype,
+      path: movePath
+    });
+
+    process.stdout.write(`generated ${detailPath} and ${movePath} (archetype: ${unit.archetype})\n`);
+  }
+
+  manifest.version = 6;
+  manifest.detailCellSize = cellSize;
+  manifest.source = {
+    core: "assets/characters/core-heroes-action-master-v3.webp",
+    support: "assets/characters/support-heroes-action-master-v3.webp",
+    chapter1Enemies: "assets/characters/chapter1-enemies-action-master-v3.webp",
+    authoredHeroes: [...coreRows.keys(), ...supportRows.keys()],
+    authoredEnemies: [...enemyRows.keys(), "archer", "strategist"],
+    allHeroesCount: gameData.heroes.length,
+    allUnitsCount: allUnits.length,
+    archetypeMappingRule: "hero.visual -> hero.role fallback (infantry: guanyu, cavalry: zhaoyun, archer: huangzhong, strategist: caocao); unapproved bosses: boss-dongzhuo"
+  };
+  manifest.frames = ["anticipation", "windup", "contact", "follow-through", "recovery"];
+  manifest.assets = updatedAttackAssets;
+  fs.writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`, "utf8");
+
   const moveManifest = {
-    version: 2,
+    version: 3,
     type: "combat-move-sprite-strip",
     cellSize,
     columns: 4,
@@ -361,16 +477,10 @@ async function main() {
       support: "assets/characters/support-heroes-move-master-v3.webp",
       chapter1Enemies: "assets/characters/chapter1-enemies-move-master-v3.webp"
     },
-    assets: []
+    assets: updatedMoveAssets
   };
-  for (const [id, frames] of authoredMoves) {
-    const asset = manifest.assets.find((entry) => entry.id === id);
-    assert.ok(asset, `missing attack manifest identity for move sprite ${id}`);
-    const normalized = await normalizedCoreFrames(frames);
-    moveManifest.assets.push({ id, kind: asset.kind, path: await writeMoveSheet(asset, normalized) });
-  }
   fs.writeFileSync(moveManifestPath, `${JSON.stringify(moveManifest, null, 2)}\n`, "utf8");
-  console.log(`Generated ${authored.size} high-detail v3 action sheets and ${moveManifest.assets.length} move strips.`);
+  console.log(`Generated ${updatedAttackAssets.length} high-detail v3 action sheets and ${updatedMoveAssets.length} move strips.`);
 }
 
 main().catch((error) => {

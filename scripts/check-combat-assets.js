@@ -142,7 +142,7 @@ async function runCombatAssetChecks() {
   assert.equal(sparseCells.length, 0, `attack cells are too sparse; body layer may be missing (${sparseCells.length} cells). Sample:\n${sparseCells.slice(0, 20).join("\n")}`);
 
   const detailAssets = attackManifest.assets.filter((asset) => asset.detailPath);
-  assert.equal(detailAssets.length, 15, "high-detail roster must cover eight heroes, five enemy types and two bosses");
+  assert.equal(detailAssets.length, 59, "high-detail roster must cover 50 heroes, five enemy types and four bosses");
   for (const asset of detailAssets) {
     assert.match(asset.detailPath, /-v3\.webp$/, `${asset.id} must use a v3 high-detail action sheet`);
     const file = path.join(root, asset.detailPath);
@@ -179,7 +179,7 @@ async function runCombatAssetChecks() {
   assert.equal(moveManifest.cellSize, 96, "high-detail move cells must remain 96px");
   assert.equal(moveManifest.ultraDetailCellSize, 128, "v4 pilot move cells must use 128px");
   assert.equal(moveManifest.columns, 4, "move strips must contain four grounded gait frames");
-  assert.equal(moveManifest.assets.length, 15, "high-detail move roster changed");
+  assert.equal(moveManifest.assets.length, 59, "high-detail move roster must cover 50 heroes, five enemy types and four bosses");
   assert.equal(new Set(moveManifest.assets.map((asset) => asset.id)).size, moveManifest.assets.length, "move asset ids must be unique");
   for (const asset of moveManifest.assets) {
     assert.match(asset.path, /-v3\.webp$/, `${asset.id} must use a v3 move strip`);

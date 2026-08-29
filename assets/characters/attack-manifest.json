@@ -31,6 +31,7 @@
     {
       "id": "liubei",
       "kind": "hero",
+      "archetype": "liubei",
       "path": "assets/characters/attack-liubei-v2.webp",
       "detailPath": "assets/characters/attack-liubei-v3.webp",
       "ultraDetailPath": "assets/characters/attack-liubei-v4.webp"
@@ -38,6 +39,7 @@
     {
       "id": "guanyu",
       "kind": "hero",
+      "archetype": "guanyu",
       "path": "assets/characters/attack-guanyu-v2.webp",
       "detailPath": "assets/characters/attack-guanyu-v3.webp",
       "ultraDetailPath": "assets/characters/attack-guanyu-v4.webp"
@@ -45,6 +47,7 @@
     {
       "id": "zhangfei",
       "kind": "hero",
+      "archetype": "zhangfei",
       "path": "assets/characters/attack-zhangfei-v2.webp",
       "detailPath": "assets/characters/attack-zhangfei-v3.webp",
       "ultraDetailPath": "assets/characters/attack-zhangfei-v4.webp"
@@ -52,6 +55,7 @@
     {
       "id": "zhaoyun",
       "kind": "hero",
+      "archetype": "zhaoyun",
       "path": "assets/characters/attack-zhaoyun-v2.webp",
       "detailPath": "assets/characters/attack-zhaoyun-v3.webp",
       "ultraDetailPath": "assets/characters/attack-zhaoyun-v4.webp"
@@ -59,288 +63,387 @@
     {
       "id": "huangzhong",
       "kind": "hero",
+      "archetype": "huangzhong",
       "path": "assets/characters/attack-huangzhong-v2.webp",
       "detailPath": "assets/characters/attack-huangzhong-v3.webp"
     },
     {
       "id": "sunshang",
       "kind": "hero",
+      "archetype": "sunshang",
       "path": "assets/characters/attack-sunshang-v2.webp",
       "detailPath": "assets/characters/attack-sunshang-v3.webp"
     },
     {
       "id": "caocao",
       "kind": "hero",
+      "archetype": "caocao",
       "path": "assets/characters/attack-caocao-v2.webp",
       "detailPath": "assets/characters/attack-caocao-v3.webp"
     },
     {
       "id": "xiahoudun",
       "kind": "hero",
+      "archetype": "xiahoudun",
       "path": "assets/characters/attack-xiahoudun-v2.webp",
       "detailPath": "assets/characters/attack-xiahoudun-v3.webp"
     },
     {
       "id": "zhugeliang",
       "kind": "hero",
-      "path": "assets/characters/attack-zhugeliang-v2.webp"
+      "archetype": "caocao",
+      "path": "assets/characters/attack-zhugeliang-v2.webp",
+      "detailPath": "assets/characters/attack-zhugeliang-v3.webp"
     },
     {
       "id": "diaochan",
       "kind": "hero",
-      "path": "assets/characters/attack-diaochan-v2.webp"
+      "archetype": "caocao",
+      "path": "assets/characters/attack-diaochan-v2.webp",
+      "detailPath": "assets/characters/attack-diaochan-v3.webp"
     },
     {
       "id": "lubu",
       "kind": "hero",
-      "path": "assets/characters/attack-lubu-v2.webp"
+      "archetype": "zhaoyun",
+      "path": "assets/characters/attack-lubu-v2.webp",
+      "detailPath": "assets/characters/attack-lubu-v3.webp"
     },
     {
       "id": "machao",
       "kind": "hero",
-      "path": "assets/characters/attack-machao-v2.webp"
+      "archetype": "zhaoyun",
+      "path": "assets/characters/attack-machao-v2.webp",
+      "detailPath": "assets/characters/attack-machao-v3.webp"
     },
     {
       "id": "dianwei",
       "kind": "hero",
-      "path": "assets/characters/attack-dianwei-v2.webp"
+      "archetype": "zhangfei",
+      "path": "assets/characters/attack-dianwei-v2.webp",
+      "detailPath": "assets/characters/attack-dianwei-v3.webp"
     },
     {
       "id": "pangtong",
       "kind": "hero",
-      "path": "assets/characters/attack-pangtong-v2.webp"
+      "archetype": "caocao",
+      "path": "assets/characters/attack-pangtong-v2.webp",
+      "detailPath": "assets/characters/attack-pangtong-v3.webp"
     },
     {
       "id": "zhouyu",
       "kind": "hero",
-      "path": "assets/characters/attack-zhouyu-v2.webp"
+      "archetype": "caocao",
+      "path": "assets/characters/attack-zhouyu-v2.webp",
+      "detailPath": "assets/characters/attack-zhouyu-v3.webp"
     },
     {
       "id": "lusu",
       "kind": "hero",
-      "path": "assets/characters/attack-lusu-v2.webp"
+      "archetype": "caocao",
+      "path": "assets/characters/attack-lusu-v2.webp",
+      "detailPath": "assets/characters/attack-lusu-v3.webp"
     },
     {
       "id": "luxun",
       "kind": "hero",
-      "path": "assets/characters/attack-luxun-v2.webp"
+      "archetype": "caocao",
+      "path": "assets/characters/attack-luxun-v2.webp",
+      "detailPath": "assets/characters/attack-luxun-v3.webp"
     },
     {
       "id": "xuhuang",
       "kind": "hero",
-      "path": "assets/characters/attack-xuhuang-v2.webp"
+      "archetype": "liubei",
+      "path": "assets/characters/attack-xuhuang-v2.webp",
+      "detailPath": "assets/characters/attack-xuhuang-v3.webp"
     },
     {
       "id": "weiyan",
       "kind": "hero",
-      "path": "assets/characters/attack-weiyan-v2.webp"
+      "archetype": "zhangfei",
+      "path": "assets/characters/attack-weiyan-v2.webp",
+      "detailPath": "assets/characters/attack-weiyan-v3.webp"
     },
     {
       "id": "ganning",
       "kind": "hero",
-      "path": "assets/characters/attack-ganning-v2.webp"
+      "archetype": "guanyu",
+      "path": "assets/characters/attack-ganning-v2.webp",
+      "detailPath": "assets/characters/attack-ganning-v3.webp"
     },
     {
       "id": "taishici",
       "kind": "hero",
-      "path": "assets/characters/attack-taishici-v2.webp"
+      "archetype": "huangzhong",
+      "path": "assets/characters/attack-taishici-v2.webp",
+      "detailPath": "assets/characters/attack-taishici-v3.webp"
     },
     {
       "id": "zhangliao",
       "kind": "hero",
-      "path": "assets/characters/attack-zhangliao-v2.webp"
+      "archetype": "guanyu",
+      "path": "assets/characters/attack-zhangliao-v2.webp",
+      "detailPath": "assets/characters/attack-zhangliao-v3.webp"
     },
     {
       "id": "zhanghe",
       "kind": "hero",
-      "path": "assets/characters/attack-zhanghe-v2.webp"
+      "archetype": "zhaoyun",
+      "path": "assets/characters/attack-zhanghe-v2.webp",
+      "detailPath": "assets/characters/attack-zhanghe-v3.webp"
     },
     {
       "id": "jiangwei",
       "kind": "hero",
-      "path": "assets/characters/attack-jiangwei-v2.webp"
+      "archetype": "caocao",
+      "path": "assets/characters/attack-jiangwei-v2.webp",
+      "detailPath": "assets/characters/attack-jiangwei-v3.webp"
     },
     {
       "id": "simayi",
       "kind": "hero",
-      "path": "assets/characters/attack-simayi-v2.webp"
+      "archetype": "caocao",
+      "path": "assets/characters/attack-simayi-v2.webp",
+      "detailPath": "assets/characters/attack-simayi-v3.webp"
     },
     {
       "id": "yuanshao",
       "kind": "hero",
-      "path": "assets/characters/attack-yuanshao-v2.webp"
+      "archetype": "caocao",
+      "path": "assets/characters/attack-yuanshao-v2.webp",
+      "detailPath": "assets/characters/attack-yuanshao-v3.webp"
     },
     {
       "id": "gongsunzan",
       "kind": "hero",
-      "path": "assets/characters/attack-gongsunzan-v2.webp"
+      "archetype": "zhaoyun",
+      "path": "assets/characters/attack-gongsunzan-v2.webp",
+      "detailPath": "assets/characters/attack-gongsunzan-v3.webp"
     },
     {
       "id": "xunyu",
       "kind": "hero",
-      "path": "assets/characters/attack-xunyu-v2.webp"
+      "archetype": "caocao",
+      "path": "assets/characters/attack-xunyu-v2.webp",
+      "detailPath": "assets/characters/attack-xunyu-v3.webp"
     },
     {
       "id": "zhenji",
       "kind": "hero",
-      "path": "assets/characters/attack-zhenji-v2.webp"
+      "archetype": "caocao",
+      "path": "assets/characters/attack-zhenji-v2.webp",
+      "detailPath": "assets/characters/attack-zhenji-v3.webp"
     },
     {
       "id": "guojia",
       "kind": "hero",
-      "path": "assets/characters/attack-guojia-v2.webp"
+      "archetype": "caocao",
+      "path": "assets/characters/attack-guojia-v2.webp",
+      "detailPath": "assets/characters/attack-guojia-v3.webp"
     },
     {
       "id": "yujin",
       "kind": "hero",
-      "path": "assets/characters/attack-yujin-v2.webp"
+      "archetype": "xiahoudun",
+      "path": "assets/characters/attack-yujin-v2.webp",
+      "detailPath": "assets/characters/attack-yujin-v3.webp"
     },
     {
       "id": "lejin",
       "kind": "hero",
-      "path": "assets/characters/attack-lejin-v2.webp"
+      "archetype": "guanyu",
+      "path": "assets/characters/attack-lejin-v2.webp",
+      "detailPath": "assets/characters/attack-lejin-v3.webp"
     },
     {
       "id": "caoren",
       "kind": "hero",
-      "path": "assets/characters/attack-caoren-v2.webp"
+      "archetype": "zhangfei",
+      "path": "assets/characters/attack-caoren-v2.webp",
+      "detailPath": "assets/characters/attack-caoren-v3.webp"
     },
     {
       "id": "xiahouyuan",
       "kind": "hero",
-      "path": "assets/characters/attack-xiahouyuan-v2.webp"
+      "archetype": "huangzhong",
+      "path": "assets/characters/attack-xiahouyuan-v2.webp",
+      "detailPath": "assets/characters/attack-xiahouyuan-v3.webp"
     },
     {
       "id": "guanping",
       "kind": "hero",
-      "path": "assets/characters/attack-guanping-v2.webp"
+      "archetype": "guanyu",
+      "path": "assets/characters/attack-guanping-v2.webp",
+      "detailPath": "assets/characters/attack-guanping-v3.webp"
     },
     {
       "id": "guanxing",
       "kind": "hero",
-      "path": "assets/characters/attack-guanxing-v2.webp"
+      "archetype": "zhaoyun",
+      "path": "assets/characters/attack-guanxing-v2.webp",
+      "detailPath": "assets/characters/attack-guanxing-v3.webp"
     },
     {
       "id": "zhangbao",
       "kind": "hero",
-      "path": "assets/characters/attack-zhangbao-v2.webp"
+      "archetype": "zhangfei",
+      "path": "assets/characters/attack-zhangbao-v2.webp",
+      "detailPath": "assets/characters/attack-zhangbao-v3.webp"
     },
     {
       "id": "zhangliang",
       "kind": "hero",
-      "path": "assets/characters/attack-zhangliang-v2.webp"
+      "archetype": "caocao",
+      "path": "assets/characters/attack-zhangliang-v2.webp",
+      "detailPath": "assets/characters/attack-zhangliang-v3.webp"
     },
     {
       "id": "huanggai",
       "kind": "hero",
-      "path": "assets/characters/attack-huanggai-v2.webp"
+      "archetype": "liubei",
+      "path": "assets/characters/attack-huanggai-v2.webp",
+      "detailPath": "assets/characters/attack-huanggai-v3.webp"
     },
     {
       "id": "handang",
       "kind": "hero",
-      "path": "assets/characters/attack-handang-v2.webp"
+      "archetype": "huangzhong",
+      "path": "assets/characters/attack-handang-v2.webp",
+      "detailPath": "assets/characters/attack-handang-v3.webp"
     },
     {
       "id": "chengpu",
       "kind": "hero",
-      "path": "assets/characters/attack-chengpu-v2.webp"
+      "archetype": "liubei",
+      "path": "assets/characters/attack-chengpu-v2.webp",
+      "detailPath": "assets/characters/attack-chengpu-v3.webp"
     },
     {
       "id": "zhuran",
       "kind": "hero",
-      "path": "assets/characters/attack-zhuran-v2.webp"
+      "archetype": "caocao",
+      "path": "assets/characters/attack-zhuran-v2.webp",
+      "detailPath": "assets/characters/attack-zhuran-v3.webp"
     },
     {
       "id": "panzhang",
       "kind": "hero",
-      "path": "assets/characters/attack-panzhang-v2.webp"
+      "archetype": "guanyu",
+      "path": "assets/characters/attack-panzhang-v2.webp",
+      "detailPath": "assets/characters/attack-panzhang-v3.webp"
     },
     {
       "id": "madai",
       "kind": "hero",
-      "path": "assets/characters/attack-madai-v2.webp"
+      "archetype": "zhaoyun",
+      "path": "assets/characters/attack-madai-v2.webp",
+      "detailPath": "assets/characters/attack-madai-v3.webp"
     },
     {
       "id": "fazheng",
       "kind": "hero",
-      "path": "assets/characters/attack-fazheng-v2.webp"
+      "archetype": "caocao",
+      "path": "assets/characters/attack-fazheng-v2.webp",
+      "detailPath": "assets/characters/attack-fazheng-v3.webp"
     },
     {
       "id": "menghuo",
       "kind": "hero",
-      "path": "assets/characters/attack-menghuo-v2.webp"
+      "archetype": "zhangfei",
+      "path": "assets/characters/attack-menghuo-v2.webp",
+      "detailPath": "assets/characters/attack-menghuo-v3.webp"
     },
     {
       "id": "zhurong",
       "kind": "hero",
-      "path": "assets/characters/attack-zhurong-v2.webp"
+      "archetype": "huangzhong",
+      "path": "assets/characters/attack-zhurong-v2.webp",
+      "detailPath": "assets/characters/attack-zhurong-v3.webp"
     },
     {
       "id": "daqiao",
       "kind": "hero",
-      "path": "assets/characters/attack-daqiao-v2.webp"
+      "archetype": "caocao",
+      "path": "assets/characters/attack-daqiao-v2.webp",
+      "detailPath": "assets/characters/attack-daqiao-v3.webp"
     },
     {
       "id": "xiaoqiao",
       "kind": "hero",
-      "path": "assets/characters/attack-xiaoqiao-v2.webp"
+      "archetype": "caocao",
+      "path": "assets/characters/attack-xiaoqiao-v2.webp",
+      "detailPath": "assets/characters/attack-xiaoqiao-v3.webp"
     },
     {
       "id": "locked",
       "kind": "hero",
-      "path": "assets/characters/attack-locked-v2.webp"
+      "archetype": "liubei",
+      "path": "assets/characters/attack-locked-v2.webp",
+      "detailPath": "assets/characters/attack-locked-v3.webp"
     },
     {
       "id": "bandit",
       "kind": "enemy",
+      "archetype": "bandit",
       "path": "assets/characters/attack-bandit-v2.webp",
       "detailPath": "assets/characters/attack-bandit-v3.webp"
     },
     {
       "id": "brute",
       "kind": "enemy",
+      "archetype": "brute",
       "path": "assets/characters/attack-brute-v2.webp",
       "detailPath": "assets/characters/attack-brute-v3.webp"
     },
     {
       "id": "cavalry",
       "kind": "enemy",
+      "archetype": "cavalry",
       "path": "assets/characters/attack-cavalry-v2.webp",
       "detailPath": "assets/characters/attack-cavalry-v3.webp"
     },
     {
       "id": "archer",
       "kind": "enemy",
+      "archetype": "huangzhong",
       "path": "assets/characters/attack-archer-v2.webp",
       "detailPath": "assets/characters/attack-archer-v3.webp"
     },
     {
       "id": "strategist",
       "kind": "enemy",
+      "archetype": "boss-zhangjiao",
       "path": "assets/characters/attack-strategist-v2.webp",
       "detailPath": "assets/characters/attack-strategist-v3.webp"
     },
     {
       "id": "boss-zhangjiao",
       "kind": "boss",
+      "archetype": "boss-zhangjiao",
       "path": "assets/characters/attack-boss-zhangjiao-v2.webp",
       "detailPath": "assets/characters/attack-boss-zhangjiao-v3.webp"
     },
     {
       "id": "boss-dongzhuo",
       "kind": "boss",
+      "archetype": "boss-dongzhuo",
       "path": "assets/characters/attack-boss-dongzhuo-v2.webp",
       "detailPath": "assets/characters/attack-boss-dongzhuo-v3.webp"
     },
     {
       "id": "boss-lvbu",
       "kind": "boss",
-      "path": "assets/characters/attack-boss-lvbu-v2.webp"
+      "archetype": "boss-dongzhuo",
+      "path": "assets/characters/attack-boss-lvbu-v2.webp",
+      "detailPath": "assets/characters/attack-boss-lvbu-v3.webp"
     },
     {
       "id": "boss-menghuo",
       "kind": "boss",
-      "path": "assets/characters/attack-boss-menghuo-v2.webp"
+      "archetype": "boss-dongzhuo",
+      "path": "assets/characters/attack-boss-menghuo-v2.webp",
+      "detailPath": "assets/characters/attack-boss-menghuo-v3.webp"
     }
   ],
   "source": {
@@ -366,7 +469,9 @@
       "archer",
       "strategist"
     ],
-    "fallback": "full-body authored visual archetype; portrait-card combat art is forbidden",
+    "allHeroesCount": 50,
+    "allUnitsCount": 59,
+    "archetypeMappingRule": "hero.visual -> hero.role fallback (infantry: guanyu, cavalry: zhaoyun, archer: huangzhong, strategist: caocao); unapproved bosses: boss-dongzhuo",
     "pilotCore": "assets/characters/core-heroes-action-master-v4.webp",
     "ultraDetailHeroes": [
       "liubei",

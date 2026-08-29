@@ -37,8 +37,18 @@ const ATTACK_SPRITES_APPROVED = true;
 const DETAIL_ACTION_SPRITE_CELL_SIZE = 96;
 const ULTRA_DETAIL_ACTION_SPRITE_CELL_SIZE = 128;
 const AUTHORED_ACTION_SPRITES = new Set([
+  // 50 Heroes
   "liubei", "guanyu", "zhangfei", "zhaoyun", "huangzhong", "sunshang", "caocao", "xiahoudun",
-  "bandit", "brute", "cavalry", "archer", "strategist", "boss-zhangjiao", "boss-dongzhuo"
+  "zhugeliang", "diaochan", "lubu", "locked", "machao", "dianwei", "pangtong", "zhouyu",
+  "lusu", "luxun", "xuhuang", "weiyan", "ganning", "taishici", "zhangliao", "zhanghe",
+  "jiangwei", "simayi", "yuanshao", "gongsunzan", "xunyu", "zhenji", "guojia", "yujin",
+  "lejin", "caoren", "xiahouyuan", "guanping", "guanxing", "zhangbao", "zhangliang", "huanggai",
+  "handang", "chengpu", "zhuran", "panzhang", "madai", "fazheng", "menghuo", "zhurong",
+  "daqiao", "xiaoqiao",
+  // 5 Enemies
+  "bandit", "brute", "cavalry", "archer", "strategist",
+  // 7 Bosses
+  "boss-zhangjiao", "boss-dongzhuo", "boss-lvbu", "boss-yuanshao", "boss-menghuo", "boss-zhurong", "boss-simayi"
 ]);
 const ULTRA_DETAIL_ACTION_SPRITES = new Set(["liubei", "guanyu", "zhangfei", "zhaoyun"]);
 const HERO_ROLE_ACTION_FALLBACK = Object.freeze({ "弓兵": "huangzhong", "謀士": "caocao", "騎兵": "zhaoyun", "步兵": "guanyu" });
@@ -1781,6 +1791,7 @@ function drawUnit(unit) {
   const useAttackSprite = ATTACK_SPRITES_APPROVED && Boolean(!unit.dead && unit.action && attackSprite);
   const useMoveSprite = ATTACK_SPRITES_APPROVED && Boolean(!unit.dead && !unit.action && unit.moving && moveSprite);
   const useAuthoredIdle = ATTACK_SPRITES_APPROVED && Boolean(!unit.dead && !unit.action && attackSprite && AUTHORED_ACTION_SPRITES.has(attackSpriteId));
+  const useDeadSprite = ATTACK_SPRITES_APPROVED && Boolean(unit.dead && attackSprite);
   const actionTransform = Boolean(unit.action && !useAttackSprite);
   const motionOptions = { outerDeath: unit.dead, outerAction: actionTransform };
   if (actionTransform) {
@@ -1810,6 +1821,8 @@ function drawUnit(unit) {
     drawMoveSpriteFrame(unit, moveSprite);
   } else if (useAuthoredIdle) {
     drawActionSpriteFrame(unit, attackSprite, animationState, walkCycle, idleCycle, deathProgress, { ...motionOptions, outerAction: true }, useAuthoredIdle);
+  } else if (useDeadSprite) {
+    drawActionSpriteFrame(unit, attackSprite, animationState, walkCycle, idleCycle, deathProgress, motionOptions, true);
   } else if (!ATTACK_SPRITES_APPROVED && unit.team === "ally") {
     if (spritePromise) drawCombatBodySprite(unit, spritePromise, animationState, walkCycle, idleCycle, deathProgress, motionOptions);
     else drawProceduralCombatBody(unit, visualId, accent, animationState, walkCycle, idleCycle, deathProgress, motionOptions);

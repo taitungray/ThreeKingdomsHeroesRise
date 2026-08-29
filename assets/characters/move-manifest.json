@@ -25,81 +25,360 @@
     {
       "id": "liubei",
       "kind": "hero",
+      "archetype": "liubei",
       "path": "assets/characters/move-liubei-v3.webp",
       "ultraDetailPath": "assets/characters/move-liubei-v4.webp"
     },
     {
       "id": "guanyu",
       "kind": "hero",
+      "archetype": "guanyu",
       "path": "assets/characters/move-guanyu-v3.webp",
       "ultraDetailPath": "assets/characters/move-guanyu-v4.webp"
     },
     {
       "id": "zhangfei",
       "kind": "hero",
+      "archetype": "zhangfei",
       "path": "assets/characters/move-zhangfei-v3.webp",
       "ultraDetailPath": "assets/characters/move-zhangfei-v4.webp"
     },
     {
       "id": "zhaoyun",
       "kind": "hero",
+      "archetype": "zhaoyun",
       "path": "assets/characters/move-zhaoyun-v3.webp",
       "ultraDetailPath": "assets/characters/move-zhaoyun-v4.webp"
     },
     {
       "id": "huangzhong",
       "kind": "hero",
+      "archetype": "huangzhong",
       "path": "assets/characters/move-huangzhong-v3.webp"
     },
     {
       "id": "sunshang",
       "kind": "hero",
+      "archetype": "sunshang",
       "path": "assets/characters/move-sunshang-v3.webp"
     },
     {
       "id": "caocao",
       "kind": "hero",
+      "archetype": "caocao",
       "path": "assets/characters/move-caocao-v3.webp"
     },
     {
       "id": "xiahoudun",
       "kind": "hero",
+      "archetype": "xiahoudun",
       "path": "assets/characters/move-xiahoudun-v3.webp"
+    },
+    {
+      "id": "zhugeliang",
+      "kind": "hero",
+      "archetype": "caocao",
+      "path": "assets/characters/move-zhugeliang-v3.webp"
+    },
+    {
+      "id": "diaochan",
+      "kind": "hero",
+      "archetype": "caocao",
+      "path": "assets/characters/move-diaochan-v3.webp"
+    },
+    {
+      "id": "lubu",
+      "kind": "hero",
+      "archetype": "zhaoyun",
+      "path": "assets/characters/move-lubu-v3.webp"
+    },
+    {
+      "id": "machao",
+      "kind": "hero",
+      "archetype": "zhaoyun",
+      "path": "assets/characters/move-machao-v3.webp"
+    },
+    {
+      "id": "dianwei",
+      "kind": "hero",
+      "archetype": "zhangfei",
+      "path": "assets/characters/move-dianwei-v3.webp"
+    },
+    {
+      "id": "pangtong",
+      "kind": "hero",
+      "archetype": "caocao",
+      "path": "assets/characters/move-pangtong-v3.webp"
+    },
+    {
+      "id": "zhouyu",
+      "kind": "hero",
+      "archetype": "caocao",
+      "path": "assets/characters/move-zhouyu-v3.webp"
+    },
+    {
+      "id": "lusu",
+      "kind": "hero",
+      "archetype": "caocao",
+      "path": "assets/characters/move-lusu-v3.webp"
+    },
+    {
+      "id": "luxun",
+      "kind": "hero",
+      "archetype": "caocao",
+      "path": "assets/characters/move-luxun-v3.webp"
+    },
+    {
+      "id": "xuhuang",
+      "kind": "hero",
+      "archetype": "liubei",
+      "path": "assets/characters/move-xuhuang-v3.webp"
+    },
+    {
+      "id": "weiyan",
+      "kind": "hero",
+      "archetype": "zhangfei",
+      "path": "assets/characters/move-weiyan-v3.webp"
+    },
+    {
+      "id": "ganning",
+      "kind": "hero",
+      "archetype": "guanyu",
+      "path": "assets/characters/move-ganning-v3.webp"
+    },
+    {
+      "id": "taishici",
+      "kind": "hero",
+      "archetype": "huangzhong",
+      "path": "assets/characters/move-taishici-v3.webp"
+    },
+    {
+      "id": "zhangliao",
+      "kind": "hero",
+      "archetype": "guanyu",
+      "path": "assets/characters/move-zhangliao-v3.webp"
+    },
+    {
+      "id": "zhanghe",
+      "kind": "hero",
+      "archetype": "zhaoyun",
+      "path": "assets/characters/move-zhanghe-v3.webp"
+    },
+    {
+      "id": "jiangwei",
+      "kind": "hero",
+      "archetype": "caocao",
+      "path": "assets/characters/move-jiangwei-v3.webp"
+    },
+    {
+      "id": "simayi",
+      "kind": "hero",
+      "archetype": "caocao",
+      "path": "assets/characters/move-simayi-v3.webp"
+    },
+    {
+      "id": "yuanshao",
+      "kind": "hero",
+      "archetype": "caocao",
+      "path": "assets/characters/move-yuanshao-v3.webp"
+    },
+    {
+      "id": "gongsunzan",
+      "kind": "hero",
+      "archetype": "zhaoyun",
+      "path": "assets/characters/move-gongsunzan-v3.webp"
+    },
+    {
+      "id": "xunyu",
+      "kind": "hero",
+      "archetype": "caocao",
+      "path": "assets/characters/move-xunyu-v3.webp"
+    },
+    {
+      "id": "zhenji",
+      "kind": "hero",
+      "archetype": "caocao",
+      "path": "assets/characters/move-zhenji-v3.webp"
+    },
+    {
+      "id": "guojia",
+      "kind": "hero",
+      "archetype": "caocao",
+      "path": "assets/characters/move-guojia-v3.webp"
+    },
+    {
+      "id": "yujin",
+      "kind": "hero",
+      "archetype": "xiahoudun",
+      "path": "assets/characters/move-yujin-v3.webp"
+    },
+    {
+      "id": "lejin",
+      "kind": "hero",
+      "archetype": "guanyu",
+      "path": "assets/characters/move-lejin-v3.webp"
+    },
+    {
+      "id": "caoren",
+      "kind": "hero",
+      "archetype": "zhangfei",
+      "path": "assets/characters/move-caoren-v3.webp"
+    },
+    {
+      "id": "xiahouyuan",
+      "kind": "hero",
+      "archetype": "huangzhong",
+      "path": "assets/characters/move-xiahouyuan-v3.webp"
+    },
+    {
+      "id": "guanping",
+      "kind": "hero",
+      "archetype": "guanyu",
+      "path": "assets/characters/move-guanping-v3.webp"
+    },
+    {
+      "id": "guanxing",
+      "kind": "hero",
+      "archetype": "zhaoyun",
+      "path": "assets/characters/move-guanxing-v3.webp"
+    },
+    {
+      "id": "zhangbao",
+      "kind": "hero",
+      "archetype": "zhangfei",
+      "path": "assets/characters/move-zhangbao-v3.webp"
+    },
+    {
+      "id": "zhangliang",
+      "kind": "hero",
+      "archetype": "caocao",
+      "path": "assets/characters/move-zhangliang-v3.webp"
+    },
+    {
+      "id": "huanggai",
+      "kind": "hero",
+      "archetype": "liubei",
+      "path": "assets/characters/move-huanggai-v3.webp"
+    },
+    {
+      "id": "handang",
+      "kind": "hero",
+      "archetype": "huangzhong",
+      "path": "assets/characters/move-handang-v3.webp"
+    },
+    {
+      "id": "chengpu",
+      "kind": "hero",
+      "archetype": "liubei",
+      "path": "assets/characters/move-chengpu-v3.webp"
+    },
+    {
+      "id": "zhuran",
+      "kind": "hero",
+      "archetype": "caocao",
+      "path": "assets/characters/move-zhuran-v3.webp"
+    },
+    {
+      "id": "panzhang",
+      "kind": "hero",
+      "archetype": "guanyu",
+      "path": "assets/characters/move-panzhang-v3.webp"
+    },
+    {
+      "id": "madai",
+      "kind": "hero",
+      "archetype": "zhaoyun",
+      "path": "assets/characters/move-madai-v3.webp"
+    },
+    {
+      "id": "fazheng",
+      "kind": "hero",
+      "archetype": "caocao",
+      "path": "assets/characters/move-fazheng-v3.webp"
+    },
+    {
+      "id": "menghuo",
+      "kind": "hero",
+      "archetype": "zhangfei",
+      "path": "assets/characters/move-menghuo-v3.webp"
+    },
+    {
+      "id": "zhurong",
+      "kind": "hero",
+      "archetype": "huangzhong",
+      "path": "assets/characters/move-zhurong-v3.webp"
+    },
+    {
+      "id": "daqiao",
+      "kind": "hero",
+      "archetype": "caocao",
+      "path": "assets/characters/move-daqiao-v3.webp"
+    },
+    {
+      "id": "xiaoqiao",
+      "kind": "hero",
+      "archetype": "caocao",
+      "path": "assets/characters/move-xiaoqiao-v3.webp"
+    },
+    {
+      "id": "locked",
+      "kind": "hero",
+      "archetype": "liubei",
+      "path": "assets/characters/move-locked-v3.webp"
     },
     {
       "id": "bandit",
       "kind": "enemy",
+      "archetype": "bandit",
       "path": "assets/characters/move-bandit-v3.webp"
     },
     {
       "id": "brute",
       "kind": "enemy",
+      "archetype": "brute",
       "path": "assets/characters/move-brute-v3.webp"
     },
     {
       "id": "cavalry",
       "kind": "enemy",
+      "archetype": "cavalry",
       "path": "assets/characters/move-cavalry-v3.webp"
-    },
-    {
-      "id": "boss-zhangjiao",
-      "kind": "boss",
-      "path": "assets/characters/move-boss-zhangjiao-v3.webp"
-    },
-    {
-      "id": "boss-dongzhuo",
-      "kind": "boss",
-      "path": "assets/characters/move-boss-dongzhuo-v3.webp"
     },
     {
       "id": "archer",
       "kind": "enemy",
+      "archetype": "huangzhong",
       "path": "assets/characters/move-archer-v3.webp"
     },
     {
       "id": "strategist",
       "kind": "enemy",
+      "archetype": "boss-zhangjiao",
       "path": "assets/characters/move-strategist-v3.webp"
+    },
+    {
+      "id": "boss-zhangjiao",
+      "kind": "boss",
+      "archetype": "boss-zhangjiao",
+      "path": "assets/characters/move-boss-zhangjiao-v3.webp"
+    },
+    {
+      "id": "boss-dongzhuo",
+      "kind": "boss",
+      "archetype": "boss-dongzhuo",
+      "path": "assets/characters/move-boss-dongzhuo-v3.webp"
+    },
+    {
+      "id": "boss-lvbu",
+      "kind": "boss",
+      "archetype": "boss-dongzhuo",
+      "path": "assets/characters/move-boss-lvbu-v3.webp"
+    },
+    {
+      "id": "boss-menghuo",
+      "kind": "boss",
+      "archetype": "boss-dongzhuo",
+      "path": "assets/characters/move-boss-menghuo-v3.webp"
     }
   ],
   "ultraDetailCellSize": 128,

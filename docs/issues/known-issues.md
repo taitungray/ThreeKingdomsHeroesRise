@@ -42,11 +42,11 @@
 | ID | 已確認的自動／程式證據 | 仍缺 |
 |---|---|---|
 | COMBAT-001 | `spawnWave(true)` 先 `hideEnemyPreview()`、清對話、只留橫幅；browser QA 斷言中央 overlay ≤ 1 | Boss 出場截圖／影片 |
-| COMBAT-002／004／009 | `attack-manifest` v6；15 張 96px `v3` 基線覆蓋八將、五種普通敵人與二 Boss，劉備／關羽／張飛／趙雲另有 128px `v4` 戰鬥試製。v3／v4 去背均清除封閉棋盤島與小型跨格碎片，unit 生成時固定 `combatSpriteId`，move／attack／idle 共用同一身份；asset gate 新增 cell 外緣不透明色帶門檻；source browser QA 載入四張 1024×640 v4 圖集，記錄 `body=0`、`action=1899`、`move=3511`、`boss=142`，且 [390×720 畫面](../../artifacts/combat-detail-v4-identity-lock.png) 無角色矩形髒底或跨角色衣武碎片 | 仍缺五階段、八方向與完整生命週期固定尺寸畫面包 |
+| COMBAT-002／004／009 | `attack-manifest` v6；59 張 96px `v3` 基線覆蓋全 50 名武將、5 類敵軍與 4 名 Boss，劉備／關羽／張飛／趙雲另有 128px `v4` 戰鬥試製。v3／v4 去背均清除封閉棋盤島與小型跨格碎片，unit 生成時固定 `combatSpriteId`，move／attack／idle 共用同一身份；asset gate 驗證全 59 個單位尺寸、alpha 與外緣色帶；source browser QA 載入四張 1024×640 v4 圖集與 96px v3 圖集，記錄 `body=0`、`action>0`、`move>0`、`boss>0`，且 [390×720 畫面](../../artifacts/combat-detail-v4-identity-lock.png) 無角色矩形髒底或跨角色衣武碎片 | 仍缺五階段、八方向與完整生命週期固定尺寸畫面包 |
 | COMBAT-003／DATA-001 | `huangzhong` 入敵將表；`enemyIdentityMap`；smoke 查關卡 ID 與對應 body 檔 | 抽樣關卡預覽＝實戰畫面 |
 | COMBAT-005 | 九類兵器各有 `anchor`；核准 `v3` action 內嵌手部相連兵器，renderer 不重複疊外部兵器 | 攻擊／死亡穿模畫面 |
-| COMBAT-006 | 五階段由單一 `action` 驅動；死亡立即清除 action／attackFrame／weaponSwing；核准 action sheet 不再疊 body／weapon transform | attack→hit→death→removed 影片 |
-| COMBAT-008 | 15 個第一章全身 archetype 使用 96px 四幀 `v3` move strip；runtime 僅在 `unit.moving` 推進 frame；移除整體上下彈跳與常駐速度線；資產 gate 驗證四格皆不同 | 移動→停下→攻擊銜接影片與腳底接地畫面 |
+| COMBAT-006 | 五階段由單一 `action` 驅動；死亡立即清除 action／attackFrame／weaponSwing；核准 action sheet 接續繪製死亡淡出（`useDeadSprite`），不再疊加 body／weapon transform 且消除死亡瞬間消失缺陷 | attack→hit→death→removed 影片 |
+| COMBAT-008 | 全 59 個戰鬥單位使用 96px 四幀 `v3` move strip；runtime 僅在 `unit.moving` 推進 frame；移除整體上下彈跳與常駐速度線；資產 gate 驗證四格皆不同 | 移動→停下→攻擊銜接影片與腳底接地畫面 |
 | UI-001 | `.header-ornament { display: none; }`；命令卡改 180deg | 各面板基準尺寸截圖 |
 | UI-002 | `startStage(..., { keepPanel })`；自動推關帶 `keepPanel: true` | 開著設定面板推關的畫面 |
 | UI-003 | `accountDisplayName()`；訪客補 `username` | 訪客設定頁畫面 |
