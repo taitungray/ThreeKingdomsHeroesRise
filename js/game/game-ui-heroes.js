@@ -34,7 +34,7 @@ function heroCardHtml(hero, action = "hero-detail") {
   return '<article class="hero-card ' + (inFormation ? "in-formation" : "") + (unlocked ? "" : " locked") + '" data-hero="' + hero.id + '">' +
     avatarHtml(hero) +
     '<div class="hero-card-body">' +
-      '<span class="hero-name">' + hero.name + (synergy.tier > 0 ? '<small style="color:var(--gold,#d7b84f);margin-left:4px;">[' + synergy.name + ']</small>' : '') + '</span>' +
+      '<span class="hero-name">' + hero.name + (synergy.tier > 0 ? '<small class="synergy-tag">[' + synergy.name + ']</small>' : '') + '</span>' +
       '<span class="hero-role">' + hero.role + ' · ' + (unlocked ? "Lv." + level : "第 " + hero.unlock + " 關") + '</span>' +
       '<span class="hero-power">' + (unlocked ? formatNumber(power) : "尚待相遇") + '</span>' +
     '</div>' +
@@ -52,7 +52,11 @@ function renderHeroes(filter = runtime.heroFilter) {
     const equipment = heroEquipmentStats(hero.id);
     return Math.round((hero.atk + equipment.atk) * 7 + hero.hp + equipment.hp + (hero.def + equipment.def) * 12 + (save.heroLevels[hero.id] || 1) * 48);
   };
+  const formationIds = new Set(save.formation || []);
+  const rosterPriority = (hero) => formationIds.has(hero.id) ? 0 : isUnlocked(hero) ? 1 : 2;
   const heroes = HEROES.filter((hero) => filter === "owned" ? isUnlocked(hero) : filter === "locked" ? !isUnlocked(hero) : true).sort((a, b) => {
+    const priorityDelta = rosterPriority(a) - rosterPriority(b);
+    if (priorityDelta) return priorityDelta;
     if (runtime.heroSort === "level") return (save.heroLevels[b.id] || 0) - (save.heroLevels[a.id] || 0);
     if (runtime.heroSort === "role") return String(a.role).localeCompare(String(b.role));
     return powerOf(b) - powerOf(a);
@@ -70,25 +74,35 @@ function renderHeroes(filter = runtime.heroFilter) {
     '<div class="record-item">完成歷史關卡即可讓名將加入。升級只消耗征戰取得的銅錢，不需要抽取重複角色。點選未相遇名將可預覽滿星滿級數值。</div>');
 }
 
-function paperDollHtml(hero) {
+function paperDollHtml(hero, compact = false) {
   const slots = PAPER_DOLL_SLOTS.map((slot) => {
     const item = paperDollItem(hero.id, slot.id);
     const owned = isEquipmentOwned(slot.id, item.id);
     return '<button class="paper-slot paper-slot-' + slot.id + ' item-icon-' + item.id + '" type="button" data-action="paper-cycle" data-hero="' + hero.id + '" data-slot="' + slot.id + '" aria-label="更換' + slot.label + '">' +
       '<i class="slot-mark slot-mark-' + slot.id + '" aria-hidden="true"></i><span>' + slot.label + '</span><b>' + item.name + '</b><small>' + item.bonus + (owned ? "" : " · 未擁有") + '</small><em>點擊輪換已擁有裝備</em></button>';
   }).join("");
-  return '<section class="paper-doll-panel">' +
-    '<div class="paper-doll-heading"><div><span class="eyebrow">外觀配置</span><h3>紙娃娃</h3></div><button class="stone-button compact-button" type="button" data-action="hero-auto-equip" data-hero="' + hero.id + '" style="font-size:12px;padding:4px 10px;background:linear-gradient(135deg,#362816,#543e20);border-color:#d7b84f;color:#ffe699;">⚡ 一鍵最強神裝</button></div>' +
+  const heading = compact ? "" :
+    '<div class="paper-doll-heading"><div><span class="eyebrow">外觀配置</span><h3>紙娃娃</h3></div><button class="stone-button compact-button" type="button" data-action="hero-auto-equip" data-hero="' + hero.id + '">一鍵神裝</button></div>';
+  const note = compact
+    ? '<p class="paper-doll-note">點槽位輪換已擁有裝備。</p>'
+    : '<p class="paper-doll-note">裝備會立刻套用到戰場、編隊與武將卡。<strong>當前加成：' + equipmentBonusLabel(hero.id) + '</strong></p>';
+  return '<section class="paper-doll-panel' + (compact ? " compact" : "") + '">' +
+    heading +
     '<div class="paper-doll-board"><div class="paper-doll-stage">' + avatarHtml(hero, true) + '<span class="paper-doll-rune">' + hero.role + '</span></div><div class="paper-slot-grid">' + slots + '</div></div>' +
-    '<p class="paper-doll-note">裝備會立刻套用到戰場、編隊與武將卡。<strong>當前加成：' + equipmentBonusLabel(hero.id) + '</strong></p>' +
+    note +
     '</section>';
 }
 
 function renderHeroDetail(heroId, previewMax = false) {
   const hero = heroById(heroId);
   if (!hero) return;
+  if (runtime.selectedHero !== heroId) {
+    runtime.heroDetailEquipOpen = false;
+    runtime.heroDetailAdvancedOpen = false;
+  }
   runtime.selectedHero = heroId;
   const unlocked = isUnlocked(hero);
+  if (!unlocked) previewMax = true;
 
   const level = previewMax ? 100 : (save.heroLevels[heroId] || 1);
   const equipment = heroEquipmentStats(heroId);
@@ -104,84 +118,97 @@ function renderHeroDetail(heroId, previewMax = false) {
   const skillCost = heroSkillCost(heroId);
   const synergy = equipmentSynergyTier(heroId);
   const power = Math.round(((hero.atk + equipment.atk) * 7 + hero.hp + equipment.hp + (hero.def + equipment.def) * 12) * (1 + level * 0.13) * growth);
+  const starMarks = previewMax ? "★★★★★" : ("★".repeat(progression.stars) + "☆".repeat(Math.max(0, 5 - progression.stars)));
+  const equipOpen = Boolean(runtime.heroDetailEquipOpen);
+  const advancedOpen = Boolean(runtime.heroDetailAdvancedOpen);
 
   const headerNotice = !unlocked
-    ? '<div class="active-bonds-strip" style="margin-bottom:8px;padding:6px 10px;background:rgba(180,72,50,0.18);border:1px solid rgba(180,72,50,0.4);border-radius:4px;font-size:12px;"><strong>相遇線索：</strong>通關第 ' + hero.unlock + ' 關後加入軍府。以下為滿級滿星圖鑑預覽。</div>'
-    : '';
-
-  const synergyTag = synergy.tier > 0
-    ? '<span class="level-tag" style="background:linear-gradient(135deg,#c69234,#f0d376);color:#2b1900;margin-left:6px;">' + synergy.name + '</span>'
-    : '';
+    ? '<div class="hero-meet-hint"><strong>相遇線索</strong>通關第 ' + hero.unlock + ' 關後加入軍府。以下為滿級滿星預覽。</div>'
+    : "";
 
   const relatedBonds = BONDS.filter((bond) => bond.heroes.includes(heroId));
   const heroBondsHtml = relatedBonds.length
-    ? '<p class="section-caption">名將緣分</p><div class="collection-list" style="margin-bottom:10px;">' + relatedBonds.map((bond) => {
-        const active = activeBonds().some((b) => b.id === bond.id);
-        const members = bond.heroes.map((hid) => {
-          const h = heroById(hid);
-          const inTeam = save.formation.includes(hid);
-          return '<span style="color:' + (inTeam ? 'var(--gold,#d7b84f)' : '#888') + ';margin-right:4px;">' + (h?.name || hid) + (inTeam ? '✓' : '') + '</span>';
-        }).join("");
-        return '<article class="collection-card ' + (active ? 'active' : '') + '" style="padding:6px 10px;"><div><strong>' + bond.name + '</strong><small>' + bond.desc + '</small><div style="font-size:11px;margin-top:2px;">陣容：' + members + '</div></div><em style="font-size:11px;color:' + (active ? 'var(--gold,#d7b84f)' : '#666') + ';">' + (active ? '已啟動' : '未成陣') + '</em></article>';
+    ? '<p class="section-caption">名將緣分</p><div class="hero-bond-row">' + relatedBonds.map((bond) => {
+        const active = activeBonds().some((item) => item.id === bond.id);
+        const pct = Math.round((bond.value || 0) * 100);
+        const bonus = bond.kind === "atk" ? "攻+" + pct + "%" : bond.kind === "def" ? "防+" + pct + "%" : bond.kind === "cooldown" ? "冷卻-" + pct + "%" : "";
+        return '<span class="hero-bond-chip' + (active ? " active" : "") + '">' + bond.name + (bonus ? " · " + bonus : "") + (active ? " ✓" : "") + '</span>';
       }).join("") + '</div>'
-    : '';
+    : "";
 
   const bio = (typeof HERO_BIOGRAPHIES === "object" && HERO_BIOGRAPHIES[heroId]) || { courtesy: "名將", origin: "三國州郡", summary: hero.name + "，三國之世赫赫有名之將，隨主公征戰四方，立下汗馬功勞。", deeds: "身先士卒 · 屢立戰功" };
-  const bioHtml = '<p class="section-caption">名將生平列傳</p>' +
-    '<div class="hero-skill-card" style="border-color:rgba(215,184,79,0.3);background:linear-gradient(135deg,#1f1a14,#282017);margin-bottom:10px;">' +
-      '<div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(215,184,79,0.2);padding-bottom:4px;margin-bottom:6px;">' +
-        '<strong style="color:var(--gold,#d7b84f);">' + hero.name + ' · ' + bio.courtesy + '</strong>' +
-        '<span style="font-size:11px;opacity:0.75;">籍貫：' + bio.origin + '</span>' +
-      '</div>' +
-      '<p style="margin:0 0 6px 0;line-height:1.5;font-size:12px;color:#e8ded1;">' + bio.summary + '</p>' +
-      '<div style="font-size:11px;color:#c7aa68;border-top:1px dashed rgba(215,184,79,0.15);padding-top:4px;"><b>功績典故</b> · ' + bio.deeds + '</div>' +
-    '</div>';
+  const bioHtml = '<details class="hero-bio-fold"><summary>名將列傳</summary>' +
+    '<div class="hero-skill-card">' +
+      '<div class="hero-bio-head"><strong>' + bio.courtesy + '</strong><span>' + bio.origin + '</span></div>' +
+      '<p>' + bio.summary + '</p>' +
+      '<p><b>功績</b> · ' + bio.deeds + '</p>' +
+    '</div></details>';
 
+  const weapon = paperDollItem(heroId, "weapon");
   const sig = typeof heroSignatureResonance === "function" ? heroSignatureResonance(heroId) : null;
-  const sigHtml = sig
-    ? '<p class="section-caption">專屬神兵真名共鳴</p>' +
-      '<div class="hero-skill-card" style="border-color:' + (sig.active ? 'rgba(215,184,79,0.6)' : 'rgba(100,100,100,0.3)') + ';background:' + (sig.active ? 'linear-gradient(135deg,#261c12,#3a2c16)' : '#1a1a1a') + ';margin-bottom:10px;">' +
-        '<div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:4px;">' +
-          '<strong style="color:' + (sig.active ? 'var(--gold,#d7b84f)' : '#888') + ';">' + sig.name + '</strong>' +
-          '<span class="level-tag" style="background:' + (sig.active ? 'linear-gradient(135deg,#c69234,#f0d376);color:#2b1900' : '#444;color:#999') + ';">' + (sig.active ? '神兵真名已啟動' : '未裝備專屬神兵') + '</span>' +
+  let equipTitle = weapon?.name || "兵器";
+  let equipState = synergy.tier > 0 ? synergy.name : "裝備加成已計入上方四維";
+  if (sig) {
+    if (sig.active) {
+      equipTitle = sig.name;
+      equipState = synergy.tier > 0 ? "神兵真名已解鎖 · " + synergy.name : "神兵真名已解鎖";
+    } else {
+      equipState = "未裝備專屬 · " + sig.name;
+    }
+  }
+  const equipHtml = unlocked
+    ? '<p class="section-caption">裝備</p>' +
+      '<div class="hero-equip-bar">' +
+        '<div class="hero-equip-copy"><strong>' + equipTitle + '</strong><small>' + equipState + '</small></div>' +
+        '<button class="stone-button compact-button" type="button" data-action="hero-equip-toggle" data-hero="' + heroId + '" aria-expanded="' + (equipOpen ? "true" : "false") + '">' + (equipOpen ? "收起" : "換裝") + '</button>' +
+        '<button class="stone-button compact-button" type="button" data-action="hero-auto-equip" data-hero="' + heroId + '">一鍵神裝</button>' +
+      '</div>' +
+      (equipOpen ? '<div class="hero-equip-drawer">' + paperDollHtml(hero, true) + '</div>' : "")
+    : '<div class="record-item">' + synergy.desc + '</div>';
+
+  const dockHtml = unlocked
+    ? '<footer class="hero-detail-dock">' +
+        '<button class="seal-button hero-dock-level" type="button" data-action="hero-level" data-hero="' + heroId + '"' + (save.gold < cost ? " disabled" : "") + '>升級 Lv.' + (level + 1) + '（' + cost + ' 銅錢）</button>' +
+        '<div class="hero-dock-row">' +
+          '<button class="stone-button compact-button" type="button" data-action="hero-star" data-hero="' + heroId + '"' + (!starCost || save.shards < starCost.shards || save.gold < starCost.gold ? " disabled" : "") + '>升星 ' + progression.stars + '/5' + (starCost ? '<small>' + starCost.shards + ' 碎片</small>' : "<small>已滿星</small>") + '</button>' +
+          '<button class="stone-button compact-button" type="button" data-action="hero-skill" data-hero="' + heroId + '"' + (!skillCost || save.gold < skillCost.gold || save.food < skillCost.food ? " disabled" : "") + '>戰法 ' + skillLevel + '/10' + (skillCost ? '<small>' + skillCost.gold + ' 錢</small>' : "<small>已滿級</small>") + '</button>' +
+          '<button class="stone-button compact-button" type="button" data-action="formation-toggle" data-hero="' + heroId + '">' + (inFormation ? "撤下" : "出戰") + '</button>' +
         '</div>' +
-        '<p style="margin:4px 0 0 0;font-size:12px;line-height:1.4;color:' + (sig.active ? '#fff2b3' : '#777') + ';">' + sig.desc + '</p>' +
-      '</div>'
-    : '';
+        '<button class="hero-dock-more" type="button" data-action="hero-advanced-toggle" data-hero="' + heroId + '" aria-expanded="' + (advancedOpen ? "true" : "false") + '">' + (advancedOpen ? "收起進階" : "進階養成 · 精煉／突破") + '</button>' +
+        (advancedOpen
+          ? '<div class="hero-dock-row hero-dock-advanced">' +
+              '<button class="stone-button compact-button" type="button" data-action="equipment-refine" data-hero="' + heroId + '"' + (save.jade < refineCost ? " disabled" : "") + '>精煉 +' + refineLevel + '<small>' + refineCost + ' 玉璧</small></button>' +
+              '<button class="stone-button compact-button" type="button" data-action="hero-breakthrough" data-hero="' + heroId + '"' + (!breakthroughCost || save.shards < breakthroughCost.shards || save.jade < breakthroughCost.jade ? " disabled" : "") + '>突破 ' + progression.breakthrough + '/3' + (breakthroughCost ? '<small>' + breakthroughCost.shards + ' 碎片</small>' : "<small>需 3 星</small>") + '</button>' +
+            '</div>'
+          : "") +
+      '</footer>'
+    : '<footer class="hero-detail-dock"><button class="seal-button hero-dock-level" type="button" data-action="campaign-select" data-stage="' + hero.unlock + '">前往第 ' + hero.unlock + ' 關相遇</button></footer>';
 
   setPanel("武將詳情",
-    headerNotice +
-    '<section class="detail-hero">' +
-      avatarHtml(hero, false) +
-      '<h3>' + hero.name + synergyTag + '</h3>' +
-      '<span class="hero-role">' + hero.role + ' · ' + hero.title + '</span>' +
-      '<p class="hero-power">戰力 <strong>' + formatNumber(power) + '</strong> ' + (previewMax ? '<small style="color:var(--gold,#d7b84f)">(滿級預覽)</small>' : '') + '</p>' +
-      '<p class="hero-progression">星級 ' + (previewMax ? '5 / 5 (極)' : progression.stars + ' / 5') + ' · 突破 ' + (previewMax ? '3 / 3' : progression.breakthrough + ' / 3') + ' · 精煉共鳴: ' + synergy.name + '</p>' +
-      '<div class="stat-list">' +
-        '<span>武力 <b>' + Math.round(hero.atk + level * 3.2 + equipment.atk) + '</b></span>' +
-        '<span>兵力 <b>' + Math.round(hero.hp + level * 23 + equipment.hp) + '</b></span>' +
-        '<span>統率 <b>' + Math.round(hero.def + level * .8 + equipment.def) + '</b></span>' +
-        '<span>速度 <b>' + Math.round(hero.speed + equipment.speed) + '</b></span>' +
+    '<div class="hero-detail">' +
+      '<div class="hero-detail-scroll">' +
+        headerNotice +
+        '<section class="detail-hero">' +
+          avatarHtml(hero, false) +
+          '<h3>' + hero.name + '<span class="hero-lv">Lv.' + level + '</span>' + (previewMax ? '<small>滿級預覽</small>' : "") + '</h3>' +
+          '<span class="hero-role">' + hero.role + ' · ' + hero.title + '</span>' +
+          '<p class="hero-power">戰力 <strong>' + formatNumber(power) + '</strong><span class="hero-stars" aria-label="星級 ' + progression.stars + ' / 5">' + starMarks + '</span></p>' +
+          '<div class="stat-list">' +
+            '<span>武力 <b>' + Math.round(hero.atk + level * 3.2 + equipment.atk) + '</b></span>' +
+            '<span>兵力 <b>' + Math.round(hero.hp + level * 23 + equipment.hp) + '</b></span>' +
+            '<span>統率 <b>' + Math.round(hero.def + level * .8 + equipment.def) + '</b></span>' +
+            '<span>速度 <b>' + Math.round(hero.speed + equipment.speed) + '</b></span>' +
+          '</div>' +
+        '</section>' +
+        '<div class="hero-skill-card"><div><strong>戰法 · ' + hero.skill + ' Lv.' + skillLevel + '</strong><span>冷卻 ' + Number(hero.skillCooldown || 5).toFixed(1) + ' 秒</span></div>' +
+          '<p><b>效果</b> · ' + (HERO_SKILL_META[hero.id]?.effect || "根據兵種發揮") + '　<b>範圍</b> · ' + (HERO_SKILL_META[hero.id]?.area || hero.role) + '</p>' +
+          '<p><b>被動</b> · ' + (hero.passive || "尚未記載") + '</p></div>' +
+        equipHtml +
+        heroBondsHtml +
+        bioHtml +
       '</div>' +
-    '</section>' +
-    '<p class="section-caption">戰法與被動</p>' +
-    '<div class="hero-skill-card"><div><strong>戰法 · ' + hero.skill + ' Lv.' + skillLevel + '</strong><span>冷卻 ' + Number(hero.skillCooldown || 5).toFixed(1) + ' 秒</span></div><p><b>效果</b> · ' + (HERO_SKILL_META[hero.id]?.effect || "根據兵種發揮") + '</p><p><b>範圍</b> · ' + (HERO_SKILL_META[hero.id]?.area || hero.role) + '</p><p><b>被動</b> · ' + (hero.passive || "尚未記載") + '</p></div>' +
-    sigHtml +
-    heroBondsHtml +
-    bioHtml +
-    (unlocked ? paperDollHtml(hero) : '<div class="record-item" style="margin-top:10px;">' + synergy.desc + '</div>') +
-    '<div class="action-row">' +
-      (unlocked ?
-        '<button class="stone-button" type="button" data-action="formation-toggle" data-hero="' + heroId + '">' + (inFormation ? "撤下陣容" : "加入陣容") + '</button>' +
-        '<button class="seal-button" type="button" data-action="hero-level" data-hero="' + heroId + '"' + (save.gold < cost ? " disabled" : "") + '>升至 Lv.' + (level + 1) + '<br><small>' + cost + ' 銅錢</small></button>' +
-        '<button class="stone-button compact-button" type="button" data-action="equipment-refine" data-hero="' + heroId + '"' + (save.jade < refineCost ? " disabled" : "") + '>精煉 +' + refineLevel + '<br><small>' + refineCost + ' 玉璧</small></button>' +
-        '<button class="stone-button compact-button" type="button" data-action="hero-star" data-hero="' + heroId + '"' + (!starCost || save.shards < starCost.shards || save.gold < starCost.gold ? " disabled" : "") + '>升星 +' + (progression.stars + 1) + '<br><small>' + (starCost ? starCost.shards + " 碎片" : "已滿星") + '</small></button>' +
-        '<button class="stone-button compact-button" type="button" data-action="hero-breakthrough" data-hero="' + heroId + '"' + (!breakthroughCost || save.shards < breakthroughCost.shards || save.jade < breakthroughCost.jade ? " disabled" : "") + '>突破 +' + (progression.breakthrough + 1) + '<br><small>' + (breakthroughCost ? breakthroughCost.shards + " 碎片 + " + breakthroughCost.jade + " 玉璧" : "需 3 星") + '</small></button>' +
-        '<button class="stone-button compact-button" type="button" data-action="hero-skill" data-hero="' + heroId + '"' + (!skillCost || save.gold < skillCost.gold || save.food < skillCost.food ? " disabled" : "") + '>戰法 +' + (skillLevel + 1) + '<br><small>' + (skillCost ? skillCost.gold + " 銅錢 + " + skillCost.food + " 糧草" : "已滿級") + '</small></button>'
-        : '<button class="seal-button wide-button" type="button" data-action="campaign-select" data-stage="' + hero.unlock + '">前往征戰第 ' + hero.unlock + ' 關相遇</button>'
-      ) +
-    '</div>',
-    true
+      dockHtml +
+    '</div>'
   );
 }
 
@@ -194,8 +221,8 @@ function renderFormation() {
     const row = Math.floor(slot / 3);
     const rowTag = row === 0 ? "前·堅壁" : row === 1 ? "中·突擊" : "後·策應";
     return '<button class="formation-slot' + (hero ? " filled" : "") + (selected ? " selected" : "") + '" type="button" data-action="formation-slot-swap" data-slot="' + slot + '"' + (hero ? ' data-hero="' + hero.id + '"' : "") + '>' +
-      '<span class="slot-pos-tag" style="position:absolute;top:2px;left:4px;font-size:10px;opacity:0.75;">' + rowTag + '</span>' +
-      (hero ? avatarHtml(hero) + "<b>" + hero.name + "</b>" : "<small style='margin-top:10px;'>空位</small>") +
+      '<span class="slot-pos-tag">' + rowTag + '</span>' +
+      (hero ? avatarHtml(hero) + "<b>" + hero.name + "</b>" : "<small class=\"slot-empty\">空位</small>") +
     '</button>';
   }).join("");
   const power = save.formation.reduce((sum, id) => {
@@ -205,8 +232,8 @@ function renderFormation() {
   }, 0);
   const bonds = activeBonds();
   const bondsHtml = bonds.length
-    ? '<div class="active-bonds-strip" style="margin-top:10px;padding:6px 10px;background:rgba(215,184,79,0.12);border:1px solid rgba(215,184,79,0.3);border-radius:4px;font-size:12px;"><strong>啟動羈絆：</strong>' + bonds.map((b) => '<span style="margin-right:8px;color:var(--gold,#d7b84f);">[' + b.name + '] ' + b.desc + '</span>').join("") + '</div>'
-    : '<div class="active-bonds-strip" style="margin-top:10px;padding:4px 8px;font-size:11px;opacity:0.75;">湊齊桃園三結義、五虎將、臥龍鳳雛等可啟動額外羈絆。</div>';
+    ? '<div class="active-bonds-strip"><strong>啟動羈絆：</strong>' + bonds.map((b) => '<span class="bond-chip">[' + b.name + '] ' + b.desc + '</span>').join("") + '</div>'
+    : '<div class="active-bonds-strip muted">湊齊桃園三結義、五虎將、臥龍鳳雛等可啟動額外羈絆。</div>';
 
   const masteryCards = Object.entries(TROOP_CLASSES).map(([role, info]) => {
     const lvl = troopMasteryLevel(role);
@@ -219,23 +246,23 @@ function renderFormation() {
     else if (role === "謀士") bonusText = "攻擊+" + Math.round(bonus.atk * 100) + "%";
 
     const canUpgrade = cost && save.gold >= cost.gold && save.food >= cost.food;
-    return '<article class="collection-card" style="padding:8px 10px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;">' +
-      '<div>' +
-        '<strong style="color:' + info.color + ';">' + info.icon + ' ' + role + '精研 Lv.' + lvl + (lvl >= 10 ? ' (極)' : '') + '</strong>' +
-        '<small style="display:block;margin-top:2px;">' + info.desc + '</small>' +
-        (lvl > 0 ? '<div style="font-size:11px;color:var(--gold,#d7b84f);margin-top:2px;">加成：' + bonusText + '</div>' : '') +
+    return '<article class="collection-card mastery-card mastery-' + role + '">' +
+      '<div class="mastery-copy">' +
+        '<strong class="mastery-title" style="--mastery-color:' + info.color + ';">' + info.icon + ' ' + role + '精研 Lv.' + lvl + (lvl >= 10 ? ' (極)' : '') + '</strong>' +
+        '<small>' + info.desc + '</small>' +
+        (lvl > 0 ? '<div class="mastery-bonus">加成：' + bonusText + '</div>' : '') +
       '</div>' +
       '<div>' +
         (cost ?
           '<button class="seal-button compact-button" type="button" data-action="troop-mastery-upgrade" data-role="' + role + '"' + (canUpgrade ? '' : ' disabled') + '>精研 Lv.' + (lvl + 1) + '<br><small>' + cost.gold + ' 錢 ' + cost.food + ' 糧</small></button>' :
-          '<span class="level-tag" style="background:#555;color:#aaa;">已精研大成</span>'
+          '<span class="level-tag mastery-max">已精研大成</span>'
         ) +
       '</div>' +
     '</article>';
   }).join("");
 
-  const troopSectionHtml = '<p class="section-caption" style="margin-top:14px;">兵種相剋與兵法精研</p>' +
-    '<div class="collection-list" style="margin-bottom:10px;">' + masteryCards + '</div>';
+  const troopSectionHtml = '<p class="section-caption mastery-caption">兵種相剋與兵法精研</p>' +
+    '<div class="collection-list mastery-list">' + masteryCards + '</div>';
 
   setPanel("出戰編隊",
     '<div class="formation-layout">' +
@@ -244,7 +271,7 @@ function renderFormation() {
         '<h3>義勇軍陣</h3>' +
         '<p>出戰 <strong>' + save.formation.length + ' / 5</strong></p>' +
         '<p>總戰力<br><strong>' + formatNumber(power) + '</strong></p>' +
-        '<p style="font-size:11px;line-height:1.4;">前排：生命+10% 防禦+12%<br>中排：攻擊+8% 暴擊<br>後排：攻速+8% 射程+18</p>' +
+        '<p class="formation-note">前排：生命+10% 防禦+12%<br>中排：攻擊+8% 暴擊<br>後排：攻速+8% 射程+18</p>' +
         '<button class="seal-button" type="button" data-action="formation-save">套用編隊</button>' +
       '</aside>' +
     '</div>' +
@@ -281,7 +308,7 @@ function renderTactics() {
       '<h3>' + tactic.name + (isEquipped ? ' <small class="level-tag">出戰中</small>' : '') + '</h3>' +
       '<span class="level-tag">Lv.' + level + '</span>' +
       '<p>' + tactic.desc + '<br>滿級加成：' + Math.round(rawBonus * 100) + '%' + (isEquipped ? ' · <strong style="color:var(--gold,#d7b84f)">生效中</strong>' : ' · 未啟用') + '</p>' +
-      '<div class="action-row" style="display:flex;gap:6px;margin-top:8px;">' +
+      '<div class="action-row tactic-action-row">' +
         '<button class="' + (isEquipped ? "stone-button" : "seal-button") + ' panel-action" type="button" data-action="tactic-equip" data-tactic="' + tactic.id + '"' + (isEquipped ? " disabled" : "") + '>' + (isEquipped ? "已配備" : "出戰") + '</button>' +
         '<button class="stone-button panel-action" type="button" data-action="tactic-level" data-tactic="' + tactic.id + '"' + (save.food < cost ? " disabled" : "") + '>強化 ' + cost + ' 糧</button>' +
       '</div>' +
@@ -431,6 +458,7 @@ function cycleHeroPaperDoll(heroId, slotId) {
   const loadout = heroLoadout(heroId);
   const nextId = cycleOwnedEquipment(slotId, loadout[slotId]);
   loadout[slotId] = nextId;
+  runtime.heroDetailEquipOpen = true;
   resetAllies();
   persist();
   renderHeroDetail(heroId);
@@ -486,6 +514,7 @@ function autoEquipHero(heroId) {
     window.TaoyuanAudio?.sfx?.("reward");
     const newPower = heroCalculatedPower(heroId);
     const delta = newPower - oldPower;
+    runtime.heroDetailEquipOpen = true;
     toast(hero.name + " 已配齊最佳神裝！" + (delta > 0 ? " (戰力 +" + formatNumber(delta) + " ↑)" : ""));
     renderHeroDetail(heroId);
   } else {

@@ -83,7 +83,9 @@
 .pixel-avatar.portrait-asset,
 .pixel-avatar[style*="background-image"] {
   background-position: center;
-  background-size: cover;
+  /* Portraits must keep the full silhouette; cover crops helmets and shoulders on small HUD badges. */
+  background-size: contain;
+  background-color: #233126;
   background-repeat: no-repeat;
   image-rendering: pixelated;
 }

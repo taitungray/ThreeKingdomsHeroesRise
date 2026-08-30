@@ -14,17 +14,45 @@
 |---|---:|---|---|---|---|
 | COMBAT-001 | P0 | Boss 生成曾同時顯示敵將預告、Boss 橫幅與角色對話，遮住戰鬥 | VERIFY | Boss 出場實際截圖／影片確認最多一個中央覆蓋層 | WORK-005 |
 | COMBAT-002 | P0 | 角色周圍曾出現黑框、方形 Sprite cell、不透明 fallback；2026-08-29 實戰截圖再確認攻擊／idle 圖有灰綠與褐色矩形髒色塊 | VERIFY | alpha、cell 外緣色帶自動檢查及全狀態畫面均無框、棋盤島或矩形底塊 | WORK-001、WORK-004 |
-| COMBAT-003 | P0 | 普通敵人、敵將與 Boss 身分曾映射到錯誤或通用圖 | VERIFY | 完成身分／資產表，抽樣關卡與資料一致 | WORK-003 |
+| COMBAT-003 | P0 | 普通敵人、敵將與 Boss 身分曾映射到錯誤或通用圖；2026-08-29 實戰：選呂布卻畫出第二個趙雲（`attack-lubu-v3` 當時 `archetype=zhaoyun`）。已為呂布／諸葛亮／貂蟬建立專屬母圖，核心 11 將 asset gate 禁止互為像素複本 | VERIFY | 完成身分／資產表，抽樣關卡與資料一致；編隊含呂布＋趙雲時兩者剪影不同 | WORK-003 |
 | COMBAT-004 | P0 | 舊攻擊圖集曾有 1,787 個過度稀疏影格，之後版本又以重複站姿填滿五列；`v2` 已重製並由 runtime 抽格 | VERIFY | asset gate 與五階段視覺驗收通過，確認非重複站姿 | WORK-001 |
 | COMBAT-005 | P0 | 程序產生兵器只有共用 anchor，實際畫面有漂浮、比例錯誤與穿模 | VERIFY | 九類兵器逐一通過握點、方向、攻擊與死亡檢查 | WORK-002 |
 | COMBAT-006 | P0 | action、body transform、weapon、VFX 與 death transform 曾疊加，攻擊及死亡畫面錯亂 | VERIFY | attack→hit→death→removed 連續證據通過 | WORK-004 |
-| COMBAT-008 | P0 | move 曾只用整張 body 上下彈跳與速度線，腿部不換步，角色看起來滑行 | VERIFY | 第一章我方、普通敵人與 Boss 的四幀步態及進入／停下銜接畫面通過 | WORK-004 |
+| COMBAT-008 | P0 | move 曾只用整張 body 上下彈跳與速度線，腿部不換步；2026-08-29 產生器依皮膚啟發式把已朝右母圖 flop 成朝左，趙雲／黃忠／盜賊／力士／騎兵／董卓及全部 clone 倒退走 | VERIFY | 第一章我方、普通敵人與 Boss 的四幀步態朝位移方向前進、進入／停下銜接畫面通過 | WORK-004 |
 | COMBAT-009 | P0 | 2026-08-29 實戰截圖顯示 64px 圖格細節流失，archer／strategist 與未精修武將會把舊肖像半身圖帶入戰場 | VERIFY | 96px 全身路徑通過 asset/browser gate，固定尺寸截圖無肖像 bust 且臉、甲、武器可辨識 | WORK-001、WORK-003、WORK-004 |
 | UI-001 | P0 | 對角線／菱形裝飾不只出現在結算，也穿透每日、商城、活動與副本等命令面板 | VERIFY | 所有基準尺寸的主要面板與勝敗結算均無跨區裝飾線 | WORK-008 |
 | UI-002 | P0 | 自動推關進入下一關時，`startStage()` 呼叫 `closePanel()`，會關閉玩家正在閱讀的武將、編隊、設定等面板 | VERIFY | stage transition 不關閉、不搶焦點、不重設使用者面板狀態 | WORK-008 |
 | UI-003 | P1 | 訪客設定頁以 `activeUser.username` 顯示帳號，但訪客資料使用 `displayName`，畫面出現 `undefined` | VERIFY | 訪客與登入帳號均顯示正確名稱，缺值有核准 fallback | WORK-008 |
-| UI-004 | P0 | 390×720 與 320×568 實測中，技能大對話、右側列、底欄、資源列、血條與 VFX 同時壓縮戰場；資源數字被截斷 | VERIFY | 三個基準尺寸通過三秒測試，戰鬥資訊可辨識且無截斷／遮擋 | WORK-005、WORK-102 |
-| UI-005 | P1 | 武將詳情有頭像／屬性重疊，戰法頁出現溢出的 `ACTIVE ARMY PASSIVE` 內部英文標籤 | VERIFY | 武將詳情與戰法頁於基準尺寸無重疊、溢出或內部標籤 | WORK-008、WORK-010 |
+| UI-006 | P0 | 頂欄主公牌經驗數字在窄寬度換行疊字；點擊只加無樣式 `expanded` 且 `openPanel("profile")` 未呼叫 `renderLord()`，面板打不開 | VERIFY | 390×720 主公牌經驗為單行且不與 Lv／稱號重疊；點一次開啟主公軍府 | WORK-005、WORK-008 |
+| UI-009 | P1 | 介面偏網頁表單／廉價卡片，未達直式手遊 App 材質品質 | VERIFY | 基準尺寸截圖確認鐵木指揮甲板＋紙卷軍帳＋朱砂印鈕一致，不像 SaaS | WORK-008 |
+| UI-010 | P1 | 結算截圖曾可用滑鼠拖曳反白文字，右鍵會出現瀏覽器「另存圖片／複製圖片」選單，破壞遊戲 App 表面 | VERIFY | source／www UI smoke 皆確認遊戲根節點攔截 `selectstart`、`contextmenu`、`dragstart`；再補真機／WebView 人工走查 | WORK-008 |
+| UI-011 | P1 | DOM 與 Canvas 曾混用系統楷體、微軟正黑及等寬英文字型；不同裝置字模不一致、標題老舊且細筆畫容易顯糊 | VERIFY | source／www 載入同一內建字型並通過 390／320px 排版 gate；再補 Android 實機字型與載入切換走查 | WORK-008 |
+| UI-007 | P1 | 武將詳情長捲、神兵／共鳴／緣分重複；升級鈕在最底；緣分卡套用 44px 三欄 grid 變成直字 | VERIFY | 390×720 詳情頁升級列釘底可見；緣分 chip 橫排可讀；無重複神兵專區 | WORK-008 |
+| UI-012 | P1 | 50 張頭像來源雖為 64×64，但不同 UI 槽位使用 4:5、方形與多套尺寸；張飛 portrait 曾錯用藍衣文士圖，與戰鬥身分不一致 | VERIFY | source／www 使用同一張正確張飛肖像；同類槽位維持正方形尺寸契約，390×720／320×568 與觸控橫向面板確認無裁切、拉伸或錯綁；手機名冊頭像統一 48×48 | WORK-008 |
+
+## 本輪 UI 排版優化（2026-08-29）
+
+| 項 | 已確認 |
+|---|---|
+| Design tokens／按鈕／Toast／登入 | `css/base.css` 重寫：鐵木＋朱砂金線、可讀字級、觸控 44px |
+| 頂欄擠壓 | 改三段：主公牌｜關卡匾｜速度；移除死控件視野滑桿佔位 |
+| 缺樣式面板 | 補 `mode-banner`／`tactic-card`／敵將預告／結算統計／設定列／圖鑑卡／征戰章節卡與關卡列 |
+| 功能漏字 | 日務用 `task.name`；征戰章節不用不存在的 `icon`／`desc`；`TaoyuanBattle.setStage` 供 gate 測試 |
+| 自動驗收 | `npm run test:ui`：16 面板開關＋主公牌點一次開軍府＋HUD 字級／速度鈕＋征戰卡＋slice gate＋解鎖後再開 |
+
+## 本輪 UI 重整（2026-08-30）
+
+| 項 | 已確認 | 仍缺 |
+|---|---|---|
+| 指揮條與底部甲板 | `css/ui-redesign.css` 改為兩列頂欄、獨立關卡／波次欄、48px 右欄、58px 資源列＋78px 五頁籤 | 390×720、430×932、320×568 截圖與實機人工檢查 |
+| 日常任務列 | `taskCardHtml()` 改為 badge／main／action 語意結構，進度與獎勵不再靠裸 div／漂浮「日」 | 任務、簽到、disabled／claimed 狀態的固定尺寸截圖 |
+| 面板殼 | 內容區改為單一滾動 owner，移除命令面板內部的相互覆蓋依賴 | 所有 16 面板截圖與 keyboard／TalkBack 走查 |
+| 入口責任與去重 | 主公軍府移除編隊／名將／戰役／圖鑑捷徑；進度摘要改為靜態資訊；圖鑑移除稱號／頭像框管理；主線 chip 改為狀態提示 | 需補所有面板截圖與無障礙走查 |
+| 主公牌頭像完整顯示 | 小尺寸頭像改用完整肖像 contain 縮放與深色底材，避免 cover 裁掉頭盔／鬍鬚／肩線 | 需補真機 390×720 截圖 |
+| HUD／面板文字重疊與模糊 | 資料／按鈕改用清晰無襯線字、降低陰影、長字串設獨立欄位與省略；切換面板重設 scrollTop；UI smoke 抽查不同兵種武將 | 需補 390×720、320×568 真機字體與截圖走查 |
+| 瀏覽器原生選字／拖圖／右鍵選單 | 依參考案規範加入 `user-select: none`、`selectstart`／`dragstart`／`contextmenu` 文件級攔截，輸入欄保留文字選取例外；UI smoke 已加入三項事件 gate | 仍需補真機／WebView 長按與右鍵人工走查 |
+| 全遊戲字型 | 內建 `Huninn Game`；DOM／按鈕／HUD／結算／Canvas 共用字模，數字啟用等寬特性，OFL 授權隨檔保存 | 仍需補 Android 實機字型載入及戰鬥飄字人工走查 |
+| UI-005 | P1 | 武將詳情有頭像／屬性重疊，戰法頁出現溢出的 `ACTIVE ARMY PASSIVE` 內部英文標籤 | VERIFY | 武將詳情與戰法頁於基準尺寸無重疊、溢出或內部英文標籤 | WORK-008、WORK-010 |
 | GAMEPLAY-001 | P0 | 3×3 位置會影響實戰與 lane bonus，但編隊 UI 只能增減成員，沒有可用的換位操作 | VERIFY | 玩家可編輯、保存與還原位置，且站位差異有可重現戰果 | WORK-009 |
 | GAMEPLAY-002 | P1 | 演武、塔與副本目前主要以總戰力門檻立即判定結果，沒有進入正式戰鬥 | VERIFY | 可見的戰鬥型副模式至少一個使用完整戰鬥、勝敗與獎勵流程；其餘隱藏 | WORK-101、WORK-105 |
 | ECON-001 | P1 | 裝備可免費輪換全部資料，商城本地兌換多為一次性且按鈕仍寫「領取」，缺少真實取得與持續消耗 | VERIFY | 裝備有擁有／掉落／比較；商城行為與文案一致並有可測試消耗循環 | WORK-011、WORK-104 |
@@ -34,6 +62,18 @@
 | MOTION-001 | P1 | 規範禁止全畫面震動，但 `runtime.shake` 與 Canvas translate 仍存在 | VERIFY | 改成局部回饋，reduced motion 下完全停止 | WORK-006 |
 | QA-001 | P0 | 現有 browser smoke 約數秒即可通過，實測 `drawStats.boss = 0` 仍為 PASS，未涵蓋完整攻擊、死亡、Boss、勝敗與結算畫面 | VERIFY | 自動流程對完整勝敗、Boss draw、death／removed、settlement 與 panel persistence 建立硬斷言及畫面證據 | WORK-007、WORK-013 |
 | PROCESS-001 | P1 | 舊 roadmap／completion 的勾選曾被當成目前完成證明 | VERIFY | 文件分層、內部連結與維護規則通過檢查，後續完成宣告均附證據 | 本次文件整理 |
+
+## 本輪修正與證據（2026-08-29 多角色閘門）
+
+| 項 | 已確認 | 仍缺 |
+|---|---|---|
+| 隱形 Boss（yuanshao／zhurong／simayi） | `BOSS_ACTION_SPRITE_BY_GENERAL` 改走英雄 sheet；`AUTHORED` 只列磁碟存在之 4 Boss；asset gate 斷言 AUTHORED ⊆ 檔案 | 專屬 Boss 圖集（P1） |
+| 入口誠實 | 右欄「排行」→「日務」；演武台→演武場；`sliceGate` 鎖活動／試煉／塔／副本／演武 | 實機點擊 toast 截圖 |
+| 章關敘事 | 第一章敵將去河北猛將；第10關「渠帥末路」；HUD 顯示章名＋關名 | 全章列表人工對讀 |
+| 裝備假深 | `createOwnedEquipment` 僅開局四將負載 | 掉落循環畫面 |
+| 腳步塵 | 還原 move dust／坐騎揚塵 | — |
+
+---
 
 ## 本輪修正與證據（2026-08-29）
 
@@ -46,12 +86,16 @@
 | COMBAT-003／DATA-001 | `huangzhong` 入敵將表；`enemyIdentityMap`；smoke 查關卡 ID 與對應 body 檔 | 抽樣關卡預覽＝實戰畫面 |
 | COMBAT-005 | 九類兵器各有 `anchor`；核准 `v3` action 內嵌手部相連兵器，renderer 不重複疊外部兵器 | 攻擊／死亡穿模畫面 |
 | COMBAT-006 | 五階段由單一 `action` 驅動；死亡立即清除 action／attackFrame／weaponSwing；核准 action sheet 接續繪製死亡淡出（`useDeadSprite`），不再疊加 body／weapon transform 且消除死亡瞬間消失缺陷 | attack→hit→death→removed 影片 |
-| COMBAT-008 | 全 59 個戰鬥單位使用 96px 四幀 `v3` move strip；runtime 僅在 `unit.moving` 推進 frame；移除整體上下彈跳與常駐速度線；資產 gate 驗證四格皆不同 | 移動→停下→攻擊銜接影片與腳底接地畫面 |
+| COMBAT-008 | 全 59 個戰鬥單位使用 96px 四幀 `v3` move strip；runtime 僅在 `unit.moving` 推進 frame；移除整體上下彈跳與常駐速度線。2026-08-29：目視全部現行 move／attack 母圖朝右；皮膚啟發式曾把趙雲／黃忠／盜賊／力士／騎兵／董卓／張角誤判朝左並 flop，clone 全表倒退走。產生器 flop set 已清空，asset gate 斷言為空 | 移動→停下→攻擊銜接影片與腳底接地畫面 |
 | UI-001 | `.header-ornament { display: none; }`；命令卡改 180deg | 各面板基準尺寸截圖 |
 | UI-002 | `startStage(..., { keepPanel })`；自動推關帶 `keepPanel: true` | 開著設定面板推關的畫面 |
 | UI-003 | `accountDisplayName()`；訪客補 `username` | 訪客設定頁畫面 |
 | UI-004 | `.compact-hud` + `360px` media | 390×720／320×568 三秒測試 |
 | UI-005 | 詳情改 grid；戰法文案改中文；無 `ACTIVE ARMY PASSIVE` | 詳情／戰法頁截圖 |
+| UI-006 | `openPanel("profile")` → `renderLord()`；主公牌首擊開面板；經驗分數改疊在條上單行；`test:ui` 斷言不溢牌、不疊 Lv | 實機 390×720 點擊截圖 |
+| UI-007 | 詳情改釘底 `hero-detail-dock`；緣分 `hero-bond-chip`；神兵合進裝備列；列傳 `hero-bio-fold`；`test:ui` 斷言升級列可見、無 collection-card 直字 | 390×720 張飛詳情截圖 |
+| UI-008 | 右欄改設定／郵件／日務／更多；抽屜補行商；主公軍府集中管理稱號／頭像框並移除跨頁捷徑；結算戰報繁中；關閉鈕 44px；敵將預告 2s；`npm test`／`test:ui` 通過 | 390×720 右欄／軍府／結算截圖 |
+| UI-009 | 全 UI App 級材質重設計：`base`／`hud`／`panels` 鐵木紙卷朱砂；登入改軍府語氣；cache `20260829app1`；`npm test`／`test:ui` 通過 | 390×720 戰鬥 HUD／面板／登入截圖 |
 | GAMEPLAY-001 | `formation-slot-swap` + `swapFormationSlots()` | 換位保存／重載與戰果差 |
 | GAMEPLAY-002 | 問天樓、演武場與日常副本全部對接正式戰鬥生命週期與專屬結算 | 各模式戰勝／戰敗畫面包 |
 | ECON-001 | `ownedEquipment`；商城「兌換」＋可重複項＋玄鐵鎧 | 兌換消耗循環畫面 |

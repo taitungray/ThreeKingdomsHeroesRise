@@ -1,0 +1,855 @@
+/*
+ * UI overhaul: 像素戰史・軍令器物・角色主導
+ * Loaded last so the redesign is auditable in one layer.  The existing
+ * gameplay DOM and data contracts stay intact; this file only changes the
+ * visual system and layout anchors.
+ */
+
+:root {
+  --ui-ink: #101613;
+  --ui-ink-soft: #1d2a23;
+  --ui-bronze: #8b6a3c;
+  --ui-bronze-light: #d9b86d;
+  --ui-paper: #ead8aa;
+  --ui-paper-light: #f8edcf;
+  --ui-paper-shadow: #b59662;
+  --ui-cinnabar: #a84232;
+  --ui-cinnabar-dark: #63231d;
+  --ui-jade: #6d9976;
+  --ui-muted: #6f614a;
+  --ui-line: rgba(86, 65, 37, .46);
+  --ui-radius: 4px;
+  --ui-gap: 10px;
+  --ui-safe: max(10px, var(--safe-bottom));
+  /* Avatar contract: source art is 64x64; UI slots stay square and scale by role. */
+  --avatar-size-hud: 40px;
+  --avatar-size-roster: 48px;
+  --avatar-size-showcase: 88px;
+  --avatar-size-formation: 40px;
+  --avatar-size-strip: 30px;
+  --avatar-size-trial: 54px;
+}
+
+/* Image is used as material, not as a decorative color block. */
+.game-app {
+  /* The renderer's world is authored at 390px.  Keep the shell at that
+     width so wide phone/webview surfaces do not expose a mismatched side
+     gutter around the fixed-aspect canvas. */
+  width: min(100vw, 390px);
+  max-width: 390px;
+  background:
+    linear-gradient(180deg, rgba(17, 28, 22, .96), rgba(8, 14, 11, .98)),
+    url("../assets/backgrounds/terrain-tile-0-v1.webp");
+  background-size: cover, 180px 180px;
+}
+
+/* Entry screens share the same map-and-seal language as the in-game panels. */
+.auth-screen {
+  background: linear-gradient(180deg, rgba(14, 23, 17, .72), rgba(7, 12, 9, .96)), url("../assets/backgrounds/terrain-tile-10-v1.webp");
+  background-size: cover, 260px 260px;
+}
+.auth-card {
+  background: linear-gradient(rgba(248, 237, 207, .88), rgba(206, 174, 115, .94)), url("../assets/backgrounds/terrain-tile-0-v1.webp");
+  background-size: 100% 100%, 220px 220px;
+}
+.auth-provider-card { background: linear-gradient(rgba(227, 204, 155, .8), rgba(166, 131, 74, .72)), url("../assets/backgrounds/terrain-tile-5-v1.webp"); background-size: 100% 100%, cover; }
+.loading-screen { background: linear-gradient(rgba(15, 23, 16, .86), rgba(7, 12, 9, .96)), url("../assets/backgrounds/terrain-tile-10-v1.webp"); background-size: cover, 240px 240px; }
+.loading-seal { color: transparent !important; background: url("../assets/icons/seal-taoyuan.webp") center / contain no-repeat; }
+
+.panel-backdrop,
+.modal-backdrop {
+  background: rgba(7, 12, 9, .84);
+  backdrop-filter: blur(7px) saturate(.72);
+}
+
+.game-panel {
+  border: 2px solid var(--ui-bronze);
+  border-radius: 10px 4px 10px 4px;
+  background:
+    linear-gradient(90deg, rgba(108, 76, 38, .72) 0 9px, transparent 9px calc(100% - 9px), rgba(108, 76, 38, .72) calc(100% - 9px)),
+    linear-gradient(180deg, rgba(255, 245, 211, .96), rgba(215, 188, 133, .97)),
+    url("../assets/backgrounds/terrain-tile-0-v1.webp");
+  background-size: 100% 100%, 100% 100%, 240px 240px;
+  box-shadow: 0 16px 0 rgba(4, 8, 6, .74), 0 24px 46px rgba(0, 0, 0, .64), inset 0 0 0 1px rgba(255, 240, 182, .42);
+}
+
+.panel-header {
+  height: 60px;
+  min-height: 60px;
+  border-bottom: 2px solid #3f2a1d;
+  background:
+    linear-gradient(90deg, rgba(87, 31, 24, .82), rgba(48, 32, 21, .76) 48%, rgba(37, 52, 40, .82)),
+    url("../assets/backgrounds/terrain-tile-5-v1.webp");
+  background-size: cover, 220px 150px;
+  background-position: center, center;
+  box-shadow: inset 0 1px 0 rgba(255, 228, 149, .24), 0 4px 12px rgba(0, 0, 0, .42);
+}
+
+.panel-header h2 {
+  font-size: 22px;
+  letter-spacing: .12em;
+  text-shadow: 0 2px 0 rgba(26, 13, 8, .72);
+}
+
+.panel-close,
+.panel-back {
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--ui-bronze-light);
+  border-radius: 4px;
+  background:
+    linear-gradient(rgba(19, 29, 23, .78), rgba(9, 16, 12, .92)),
+    url("../assets/icons/icon-menu.webp") center / 20px 20px no-repeat;
+  box-shadow: inset 0 1px 0 rgba(255, 241, 175, .2), 0 3px 0 rgba(9, 9, 6, .78);
+}
+
+.panel-content {
+  padding: 16px 14px calc(30px + var(--safe-bottom));
+  background:
+    linear-gradient(rgba(248, 237, 207, .9), rgba(217, 190, 139, .93)),
+    url("../assets/backgrounds/terrain-tile-0-v1.webp");
+  background-size: 100% 100%, 220px 220px;
+  background-blend-mode: normal, multiply;
+}
+
+.section-caption {
+  margin: 18px 0 9px;
+  color: var(--ui-cinnabar);
+  font-size: 17px;
+  letter-spacing: .06em;
+}
+
+.section-caption::before {
+  width: 22px;
+  height: 22px;
+  border: 0;
+  background: url("../assets/icons/seal-taoyuan.webp") center / contain no-repeat;
+  box-shadow: none;
+  filter: sepia(.3) saturate(.8);
+}
+
+.section-caption::after {
+  background: linear-gradient(90deg, rgba(168, 66, 50, .55), transparent);
+}
+
+/* Buttons are objects with a single clear role. */
+.seal-button,
+.stone-button,
+.compact-button {
+  border-radius: 4px;
+  letter-spacing: .03em;
+}
+
+.seal-button {
+  background:
+    linear-gradient(rgba(167, 61, 45, .84), rgba(90, 28, 22, .94)),
+    url("../assets/icons/seal-victory.webp") center / 42px 42px no-repeat;
+  background-blend-mode: normal, soft-light;
+}
+
+.stone-button {
+  background:
+    linear-gradient(rgba(31, 48, 38, .9), rgba(10, 19, 14, .96)),
+    url("../assets/backgrounds/terrain-tile-5-v1.webp") center / 100% 100% no-repeat;
+}
+
+.compact-button {
+  min-height: 44px !important;
+  padding-inline: 11px !important;
+  font-size: 14px !important;
+}
+
+/* Lists use a paper ledger surface; no nested dashboard cards. */
+.task-card,
+.shop-card,
+.arena-card,
+.mode-card,
+.mail-card,
+.achievement-item,
+.collection-card,
+.record-item {
+  min-width: 0;
+  border: 1px solid rgba(86, 65, 37, .72);
+  border-radius: 3px 8px 3px 3px;
+  background:
+    linear-gradient(90deg, rgba(168, 66, 50, .14), transparent 26%),
+    rgba(244, 226, 183, .88);
+  box-shadow: 0 2px 0 rgba(82, 55, 28, .28), inset 0 1px 0 rgba(255, 251, 221, .62);
+}
+
+.task-card,
+.achievement-item {
+  grid-template-columns: 42px minmax(0, 1fr) auto;
+  gap: 10px;
+  min-height: 92px;
+  padding: 10px 10px 10px 8px;
+}
+
+.task-badge {
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--ui-bronze-light);
+  border-radius: 4px;
+  background: url("../assets/icons/icon-daily.webp") center / 24px 24px no-repeat, linear-gradient(#d7a94e, #805a24);
+  box-shadow: inset 0 1px 0 rgba(255, 248, 194, .55), 0 2px 0 rgba(62, 39, 17, .54);
+  color: transparent;
+}
+
+.task-badge-weekly,
+.task-card.weekly .task-badge {
+  background-image: url("../assets/icons/icon-scroll.webp"), linear-gradient(#d7a94e, #805a24);
+}
+
+.task-card .panel-action,
+.achievement-item .panel-action,
+.shop-card .panel-action,
+.arena-card .panel-action,
+.mode-card .panel-action {
+  min-width: 84px;
+  align-self: center;
+}
+
+.task-card .progress-track,
+.progress-track {
+  border-radius: 2px;
+  background: #443d2d;
+}
+
+.task-card.cleared,
+.achievement-item.cleared,
+.mode-card.cleared,
+.collection-card.active {
+  border-color: rgba(89, 127, 87, .9);
+  background: linear-gradient(90deg, rgba(94, 137, 92, .26), transparent 35%), rgba(221, 235, 190, .86);
+}
+
+/* Hero roster: portrait first, data second, one tap target. */
+.hero-grid {
+  gap: 8px;
+  padding: 8px;
+  border: 2px solid #4a3b27;
+  border-radius: 6px;
+  background:
+    linear-gradient(rgba(18, 27, 20, .84), rgba(12, 18, 13, .92)),
+    url("../assets/backgrounds/terrain-tile-0-v1.webp");
+  background-size: 100% 100%, 180px 180px;
+}
+
+.hero-card {
+  grid-template-columns: 72px minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) 44px;
+  grid-template-areas: "avatar body" "avatar action";
+  min-height: 124px;
+  padding: 8px;
+  border: 1px solid #725835;
+  border-radius: 4px;
+  background:
+    linear-gradient(90deg, rgba(255, 239, 194, .9), rgba(214, 187, 132, .9)),
+    url("../assets/backgrounds/terrain-tile-0-v1.webp");
+  background-size: 100% 100%, 160px 160px;
+}
+
+.hero-card > .pixel-avatar { grid-area: avatar; width: 68px; height: 82px; align-self: center; border: 2px solid #a8894e; border-radius: 4px; background-size: contain !important; }
+.hero-card-body { grid-area: body; align-self: end; }
+.hero-card .panel-action { grid-area: action; width: auto; justify-self: stretch; }
+.hero-card .hero-name { font-size: 16px; }
+.hero-card .hero-role { font-size: 13px; }
+.hero-card .hero-power { font-size: 14px; }
+.hero-card .synergy-tag { margin-left: 4px; color: #8a5b24; font-size: 11px; }
+
+/* Hero detail is a character sheet, not a spreadsheet. */
+.detail-hero {
+  min-height: 188px;
+  grid-template-columns: 112px minmax(0, 1fr);
+  padding: 16px 14px 14px 132px;
+  border: 1px solid #715630;
+  border-radius: 5px 12px 5px 5px;
+  background:
+    linear-gradient(90deg, rgba(35, 46, 34, .14), rgba(244, 224, 176, .84)),
+    url("../assets/backgrounds/terrain-tile-5-v1.webp");
+  background-size: 100% 100%, cover;
+  background-position: center;
+}
+
+.detail-hero > .pixel-avatar {
+  left: 14px;
+  top: 14px;
+  width: 104px;
+  height: 150px;
+  border: 2px solid #c09a52;
+  border-radius: 6px;
+  background-size: contain !important;
+}
+
+.hero-skill-card,
+.hero-equip-bar {
+  border-radius: 4px;
+  background:
+    linear-gradient(90deg, rgba(163, 61, 46, .12), transparent 32%),
+    rgba(245, 228, 185, .88);
+}
+
+/* Formation: board gets the width, summary becomes a compact command strip. */
+.formation-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.formation-board {
+  width: 100%;
+  min-height: 220px;
+  aspect-ratio: auto;
+  border: 2px solid #6f5431;
+  border-radius: 7px;
+  background:
+    linear-gradient(rgba(24, 48, 31, .25), rgba(9, 20, 14, .62)),
+    url("../assets/backgrounds/terrain-tile-5-v1.webp");
+  background-size: cover, 180px 180px;
+}
+
+.formation-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid #80633d;
+  border-radius: 4px;
+  background: rgba(235, 213, 165, .92);
+}
+
+.formation-summary h3 { grid-column: 1 / -1; margin: 0; }
+.formation-summary p { min-width: 0; margin: 0; font-size: 12px; line-height: 1.25; }
+.formation-summary p:nth-of-type(2) { grid-column: span 2; }
+.formation-summary p:nth-of-type(3) { grid-column: 1 / -1; }
+.formation-summary > button { grid-column: 1 / -1; width: 100%; }
+
+.formation-slot { border-radius: 3px; background: rgba(12, 25, 17, .62); }
+.formation-slot.filled { background: rgba(222, 177, 79, .58); }
+
+/* Tactical cards have an illustrated scroll mark, not a text bubble. */
+.tactic-card {
+  border-radius: 4px 12px 4px 4px;
+  background:
+    linear-gradient(90deg, rgba(149, 55, 43, .18), transparent 42%),
+    url("../assets/backgrounds/terrain-tile-0-v1.webp");
+  background-size: 100% 100%, 180px 180px;
+}
+
+.tactic-sigil {
+  border-radius: 4px;
+  background: url("../assets/icons/icon-scroll.webp") center / 32px 32px no-repeat, linear-gradient(#876027, #3f2816);
+}
+.tactic-card { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: 7px 9px; padding-left: 72px; }
+.tactic-card .tactic-sigil { grid-row: auto; }
+.tactic-card h3 { min-width: 0; margin: 2px 0 0; }
+.tactic-card > .level-tag { justify-self: end; }
+.tactic-card > p { grid-column: 1 / -1; }
+.tactic-action-row { display: flex; gap: 6px; margin-top: 8px; grid-column: 1 / -1; }
+.tactic-action-row button { flex: 1 1 0; min-width: 0; }
+
+/* Campaign map: every stage has a terrain thumbnail and boss identity. */
+.campaign-chapter-hero {
+  min-height: 142px;
+  grid-template-columns: 62px minmax(0, 1fr) 72px;
+  border-radius: 6px 16px 6px 6px;
+  background:
+    linear-gradient(90deg, rgba(22, 29, 19, .82), rgba(53, 50, 28, .5)),
+    url("../assets/backgrounds/terrain-tile-5-v1.webp");
+  background-size: cover, cover;
+  color: #fff2c7;
+}
+
+.campaign-chapter-badge { background: url("../assets/icons/seal-taoyuan.webp") center / contain no-repeat !important; color: transparent !important; }
+.campaign-chapter-hero h3, .campaign-chapter-hero p { color: #fff0c1; text-shadow: 0 1px 2px #000b; }
+.campaign-chapter-hero .campaign-boss-portrait { width: 68px; height: 100px; border: 2px solid #d4ae5a; border-radius: 5px; background-position: center; background-size: contain; background-repeat: no-repeat; filter: drop-shadow(0 4px 4px #000b); }
+
+.stage-card {
+  grid-template-columns: 58px minmax(0, 1fr) auto;
+  grid-template-areas: "visual info actions";
+  min-height: 86px;
+  padding: 8px 8px 8px 7px;
+  border-radius: 4px 11px 4px 4px;
+  background: rgba(244, 226, 183, .9);
+}
+
+.stage-visual { grid-area: visual; width: 52px; height: 68px; border: 2px solid #8d6d3f; border-radius: 4px; background-position: center; background-size: cover; box-shadow: inset 0 0 0 1px rgba(255, 239, 174, .44); }
+.stage-visual-0 { background-image: url("../assets/backgrounds/terrain-tile-0-v1.webp"); }
+.stage-visual-1 { background-image: url("../assets/backgrounds/terrain-tile-5-v1.webp"); }
+.stage-visual-2 { background-image: url("../assets/backgrounds/terrain-tile-10-v1.webp"); }
+.stage-visual-3 { background-image: url("../assets/backgrounds/terrain-tile-12-v1.webp"); }
+.stage-visual-4 { background-image: url("../assets/backgrounds/terrain-tile-15-v1.webp"); }
+.stage-info { grid-area: info; min-width: 0; }
+.stage-actions { grid-area: actions; min-width: 78px; }
+.stage-card.current { background-image: linear-gradient(rgba(173, 67, 47, .28), rgba(235, 195, 130, .9)), url("../assets/backgrounds/terrain-tile-5-v1.webp"); background-size: 100% 100%, cover; }
+.stage-card.cleared { background-image: linear-gradient(rgba(92, 134, 82, .22), rgba(224, 235, 194, .88)), url("../assets/backgrounds/terrain-tile-0-v1.webp"); background-size: 100% 100%, cover; }
+
+/* Mode pages each receive a different image family. */
+.mode-banner,
+.arena-banner {
+  min-height: 128px;
+  border-radius: 6px 15px 6px 6px;
+  background-image: linear-gradient(90deg, rgba(239, 217, 168, .92), rgba(223, 195, 140, .74)), url("../assets/backgrounds/terrain-tile-5-v1.webp");
+  background-size: 100% 100%, cover;
+}
+
+.arena-banner { background-image: linear-gradient(90deg, rgba(30, 45, 38, .92), rgba(72, 89, 64, .64)), url("../assets/backgrounds/terrain-tile-10-v1.webp"); }
+.arena-banner h3, .arena-banner p, .arena-banner .mode-stats span, .arena-banner .mode-stats b { color: #fff0c1; text-shadow: 0 1px 2px #000b; }
+
+.mode-card,
+.shop-card,
+.arena-card {
+  grid-template-columns: 48px minmax(0, 1fr) auto;
+  min-height: 92px;
+  padding: 10px 9px 10px 8px;
+  background-image: linear-gradient(90deg, rgba(255, 243, 201, .9), rgba(219, 192, 139, .88)), url("../assets/backgrounds/terrain-tile-0-v1.webp");
+  background-size: 100% 100%, 180px 180px;
+}
+
+.mode-icon,
+.arena-badge,
+.shop-badge {
+  width: 44px;
+  height: 52px;
+  border: 1px solid #c2974b;
+  border-radius: 3px;
+  background: url("../assets/icons/icon-scroll.webp") center / 30px 30px no-repeat, #563b22;
+  color: transparent;
+}
+
+.mode-card[data-dungeon="coin-vault"] .mode-icon { background-image: url("../assets/icons/res-coin.webp"), linear-gradient(#795127, #332116); }
+.mode-card[data-dungeon="grain-field"] .mode-icon { background-image: url("../assets/icons/res-food.webp"), linear-gradient(#795127, #332116); }
+.mode-card[data-dungeon="weapon-yard"] .mode-icon { background-image: url("../assets/icons/slot-weapon.webp"), linear-gradient(#795127, #332116); }
+.arena-badge { background-image: url("../assets/icons/icon-arena.webp"), linear-gradient(#795127, #332116); }
+.shop-card .shop-badge { background-size: 30px 30px, auto; }
+.shop-card.tone-common .shop-badge { background-image: url("../assets/icons/res-jade.webp"), linear-gradient(#795127, #332116); }
+.shop-card.tone-rare .shop-badge { background-image: url("../assets/icons/slot-armor.webp"), linear-gradient(#795127, #332116); }
+.shop-card.tone-epic .shop-badge { background-image: url("../assets/icons/slot-weapon.webp"), linear-gradient(#795127, #332116); }
+.shop-card.tone-legend .shop-badge { background-image: url("../assets/icons/seal-taoyuan.webp"), linear-gradient(#795127, #332116); }
+
+.arena-card { background-image: linear-gradient(90deg, rgba(226, 230, 194, .92), rgba(193, 202, 157, .82)), url("../assets/backgrounds/terrain-tile-10-v1.webp"); }
+.arena-portraits { display: flex; gap: 2px; margin-top: 4px; }
+.arena-portraits .pixel-avatar { width: 24px; height: 30px; border: 1px solid #9c7b43; border-radius: 2px; background-size: contain !important; }
+.event-card .mode-icon { background-image: url("../assets/icons/icon-flag.webp"), linear-gradient(#795127, #332116); }
+.pass-card .mode-icon { color: #ffe3a1; background-image: url("../assets/icons/icon-scroll.webp"), linear-gradient(#795127, #332116); background-size: 30px 30px, auto; text-shadow: 0 1px 2px #26170b; }
+
+.tower-banner { background-image: linear-gradient(90deg, rgba(36, 43, 52, .9), rgba(103, 86, 58, .54)), url("../assets/backgrounds/terrain-tile-10-v1.webp"); }
+.event-card { background-image: linear-gradient(90deg, rgba(154, 48, 37, .18), rgba(247, 225, 176, .9)), url("../assets/backgrounds/terrain-tile-5-v1.webp"); }
+.pass-card.legend-card { background-image: linear-gradient(90deg, rgba(186, 137, 48, .32), rgba(246, 220, 151, .88)), url("../assets/backgrounds/terrain-tile-5-v1.webp"); }
+
+/* Trials get their own contract so the global mode grid cannot collapse prose. */
+.trial-card {
+  display: grid;
+  grid-template-columns: 58px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  min-height: 106px;
+  padding: 10px;
+  border: 1px solid #765936;
+  border-radius: 4px 12px 4px 4px;
+  background: linear-gradient(90deg, rgba(30, 30, 24, .95), rgba(59, 47, 31, .94)), url("../assets/backgrounds/terrain-tile-5-v1.webp");
+  background-size: 100% 100%, cover;
+  color: #f6e7bc;
+}
+.trial-card > .pixel-avatar { width: 54px; height: 72px; border: 1px solid #d3ab5a; border-radius: 3px; background-size: contain !important; }
+.trial-card-copy { min-width: 0; }
+.trial-card h3, .trial-card p, .trial-card small { overflow-wrap: anywhere; }
+.trial-card h3 { margin: 2px 0 4px; color: #ffe29a; font-size: 16px; }
+.trial-card p { margin: 0; color: #e6d6ae; font-size: 13px; line-height: 1.38; }
+.trial-card small { display: block; margin-top: 5px; color: #d4aa5d; font-size: 12px; line-height: 1.3; }
+.trial-card .panel-action { min-width: 74px; }
+
+/* Collection uses portrait galleries and a clear milestone path. */
+.collection-factions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.collection-faction { position: relative; min-height: 104px; padding: 9px 8px 8px 58px; border: 1px solid #81623a; border-radius: 4px; background: linear-gradient(90deg, rgba(238, 216, 168, .9), rgba(219, 191, 137, .86)), url("../assets/backgrounds/terrain-tile-0-v1.webp"); background-size: 100% 100%, 140px 140px; }
+.collection-faction-portrait { position: absolute; left: 8px; bottom: 8px; width: 42px; height: 68px; background-size: contain; background-position: bottom center; background-repeat: no-repeat; filter: drop-shadow(0 2px 2px #34231488); }
+.collection-faction strong { display: block; font-size: 16px; }
+.collection-faction small { display: block; margin-top: 5px; color: var(--ui-muted); font-size: 12px; line-height: 1.3; }
+.collection-card { grid-template-columns: minmax(0, 1fr) auto; padding: 10px; }
+.collection-card .record-item { margin-top: 6px; box-shadow: none; }
+.collection-milestone-list { margin-bottom: 12px; }
+.faction-resonance { display: block; }
+.faction-resonance-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; min-width: 0; }
+.faction-resonance-head strong { color: var(--faction-color, var(--ui-cinnabar)); }
+.faction-resonance-head span { flex: 0 0 auto; color: var(--ui-muted); font-size: 12px; }
+.faction-resonance .collection-milestone { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 8px; width: 100%; }
+.collection-milestone > div { min-width: 0; overflow-wrap: anywhere; }
+.mastery-card { display: grid; grid-template-columns: minmax(0, 1fr) 116px; align-items: center; gap: 10px; margin-bottom: 6px; padding: 9px 10px; }
+.mastery-copy { min-width: 0; }
+.mastery-title { color: var(--mastery-color, var(--ui-cinnabar)); }
+.mastery-copy small { display: block; margin-top: 2px; }
+.mastery-bonus { margin-top: 3px; color: #8a5b24; font-size: 12px; }
+.mastery-max { color: #74624a; background: rgba(74, 63, 47, .18); }
+.mastery-card button { width: 100%; padding-inline: 6px !important; font-size: 14px !important; }
+.mastery-card button small { font-size: 12px !important; }
+.mastery-caption { margin-top: 14px; }
+.formation-note { margin: 0; font-size: 11px; line-height: 1.4; }
+
+/* Settings are rows with pictograms; danger sits at the bottom. */
+.setting-row { grid-template-columns: 30px minmax(0, 1fr) auto; min-height: 58px; padding: 8px 10px 8px 8px; border-radius: 3px; }
+.setting-row::before { content: ""; grid-column: 1; grid-row: 1; width: 26px; height: 26px; background: center / contain no-repeat; opacity: .84; }
+.setting-row-sound::before { background-image: url("../assets/icons/icon-settings.webp"); }
+.setting-row-music::before { background-image: url("../assets/icons/icon-daily.webp"); }
+.setting-row-effects::before { background-image: url("../assets/icons/icon-arena.webp"); }
+.setting-row-quality::before { background-image: url("../assets/icons/icon-book.webp"); }
+.setting-row-notify::before { background-image: url("../assets/icons/icon-mail.webp"); }
+.setting-row-rename::before { background-image: url("../assets/icons/icon-medal.webp"); }
+.setting-row > div { grid-column: 2; }
+.setting-row > button { grid-column: 3; }
+.setting-row .seal-button { background-image: linear-gradient(rgba(126, 42, 31, .9), rgba(77, 25, 19, .95)), url("../assets/icons/seal-victory.webp"); }
+.setting-row-version::before { background-image: url("../assets/icons/icon-book.webp"); }
+.setting-row-purchase::before { background-image: url("../assets/icons/icon-shop.webp"); }
+.setting-row-report::before { background-image: url("../assets/icons/icon-mail.webp"); }
+.setting-row-save::before { background-image: url("../assets/icons/seal-victory.webp"); }
+.setting-row-danger::before { background-image: url("../assets/icons/icon-dungeon.webp"); }
+.setting-row-danger { border-color: rgba(140, 57, 43, .78); background: linear-gradient(90deg, rgba(164, 61, 44, .18), transparent 45%), rgba(244, 226, 183, .88); }
+
+/* Mail and achievements carry a visible object so their rows do not collapse into text-only cards. */
+.mail-announcement { grid-template-columns: 42px auto minmax(0, 1fr); align-items: start; }
+.mail-announcement .mail-seal { grid-column: 1; grid-row: 1 / span 2; width: 38px; height: 44px; border: 1px solid #c6a152; border-radius: 4px; background: url("../assets/icons/icon-mail.webp") center / 28px 28px no-repeat, linear-gradient(#733328, #311713); box-shadow: inset 0 1px 0 #fff3, 0 2px 0 #5a321d; }
+.mail-announcement .story-stage { grid-column: 2; grid-row: 1; }
+.mail-announcement > div { grid-column: 3; grid-row: 1; }
+.achievement-mark { width: 38px; height: 44px; border: 1px solid #c6a152; border-radius: 4px; background: url("../assets/icons/icon-medal.webp") center / 28px 28px no-repeat, linear-gradient(#795127, #332116); box-shadow: inset 0 1px 0 #fff3, 0 2px 0 #5a321d; }
+.task-card.task-card-plain { grid-template-columns: 42px minmax(0, 1fr) auto; align-items: center; }
+.task-card.task-card-plain .achievement-mark { grid-column: 1; }
+.task-card.task-card-plain .task-copy { grid-column: 2; }
+.task-card.task-card-plain .panel-action { grid-column: 3; }
+
+/* The canvas owns the chapter-specific ground art.  Letterbox gutters stay a
+   quiet iron-green so they never introduce a second, unrelated tile pattern. */
+.battle-screen { background: radial-gradient(ellipse at 50% 18%, rgba(83, 103, 77, .54), transparent 58%), linear-gradient(180deg, #3c4b3d, #141c15 86%); }
+#battleCanvas { background: #3c4b3d; }
+.top-hud { background: linear-gradient(180deg, rgba(78, 30, 23, .9), rgba(32, 31, 22, .88)), url("../assets/backgrounds/terrain-tile-5-v1.webp"); background-size: 100% 100%, 220px 150px; }
+.lord-card, .lord-card.compact { background: linear-gradient(90deg, rgba(39, 55, 38, .9), rgba(21, 27, 19, .94)), url("../assets/backgrounds/terrain-tile-0-v1.webp"); background-size: 100% 100%, 150px 150px; }
+.stage-banner { background: linear-gradient(90deg, rgba(54, 33, 21, .94), rgba(90, 54, 29, .72)), url("../assets/backgrounds/terrain-tile-5-v1.webp"); background-size: 100% 100%, cover; }
+.quest-tracker { border-radius: 4px 12px 4px 4px; background: linear-gradient(90deg, rgba(46, 31, 21, .94), rgba(34, 45, 31, .9)), url("../assets/icons/seal-taoyuan.webp") right 8px center / 22px 22px no-repeat; }
+.right-rail button { border-radius: 4px 10px 4px 4px; background-size: 100% 100%, 22px 22px; background-position: center, center 4px; background-repeat: no-repeat; }
+.right-rail button span { padding-top: 15px; font-size: 11px; }
+.right-rail button[data-panel="settings"] { background-image: linear-gradient(rgba(42, 54, 39, .92), rgba(12, 19, 14, .96)), url("../assets/icons/icon-settings.webp"); }
+.right-rail button[data-panel="mail"] { background-image: linear-gradient(rgba(91, 43, 31, .92), rgba(28, 15, 11, .96)), url("../assets/icons/icon-mail.webp"); }
+.right-rail button[data-panel="daily"] { background-image: linear-gradient(rgba(121, 82, 34, .9), rgba(37, 22, 12, .96)), url("../assets/icons/icon-daily.webp"); }
+#railMoreButton { background-image: linear-gradient(rgba(49, 64, 51, .92), rgba(13, 20, 14, .96)), url("../assets/icons/icon-menu.webp"); }
+.resource-strip, .bottom-hud { background-image: linear-gradient(rgba(24, 31, 22, .9), rgba(10, 15, 10, .96)), url("../assets/backgrounds/terrain-tile-5-v1.webp"); background-size: 100% 100%, 240px 160px; }
+#bossButton { background-image: linear-gradient(rgba(159, 47, 34, .86), rgba(75, 22, 16, .95)), url("../assets/icons/seal-victory.webp"); background-size: 100% 100%, 32px 32px; background-position: center, right 7px center; background-repeat: no-repeat; }
+.dialogue-box { background-image: linear-gradient(rgba(33, 25, 17, .92), rgba(18, 17, 12, .95)), url("../assets/backgrounds/terrain-tile-5-v1.webp"); background-size: 100% 100%, 180px 140px; }
+.boss-banner { background-image: linear-gradient(90deg, rgba(43, 18, 14, .95), rgba(129, 42, 31, .9), rgba(43, 18, 14, .95)), url("../assets/icons/seal-victory.webp"); background-size: 100% 100%, 46px 46px; background-position: center, center; }
+
+/* App-grade combat shell: the battlefield owns the screen; chrome stays at the edges. */
+.top-hud {
+  grid-template-columns: minmax(112px, 132px) minmax(0, 1fr) 44px;
+  grid-template-areas: "lord stage controls";
+  grid-template-rows: 50px;
+  align-items: center;
+  gap: 6px;
+  height: 68px;
+  min-height: 68px;
+  padding: 8px 7px 6px;
+  border-bottom-width: 1px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, .48), inset 0 -1px 0 rgba(5, 7, 5, .86);
+}
+.lord-card,
+.lord-card.compact {
+  width: 100%;
+  height: 50px;
+  min-height: 50px;
+  padding: 5px 6px 5px 45px;
+  border-radius: 5px;
+}
+.lord-card > .pixel-avatar,
+.lord-card.compact > .pixel-avatar {
+  left: 5px;
+  width: 36px;
+  height: 38px;
+  margin-top: -19px;
+  border-radius: 4px;
+}
+.lord-info { gap: 1px; }
+.lord-info > strong { font-size: 13px !important; line-height: 1.05; }
+.lord-info em { display: none; }
+.level-line { grid-template-columns: auto minmax(0, 1fr); gap: 4px; margin-top: 1px; }
+.level-line b { font-size: 11px !important; }
+.exp-track { height: 11px; border-radius: 2px; }
+.exp-track small,
+.lord-exp-overlay { font-size: 11px !important; }
+.stage-banner {
+  height: 50px;
+  min-height: 50px;
+  padding: 5px 8px;
+  border-radius: 5px;
+  align-items: center;
+}
+.stage-banner strong,
+#stageCompactLabel {
+  width: 100%;
+  font-size: 12px !important;
+  line-height: 1.15;
+  letter-spacing: .01em !important;
+  text-align: left;
+}
+.wave-chip {
+  justify-self: start;
+  padding: 2px 7px;
+  border-radius: 3px;
+  font-size: 11px !important;
+}
+.battle-controls { width: 44px; height: 50px; }
+.speed-button,
+.vfx-toggle-button { width: 44px; min-width: 44px; height: 44px; min-height: 44px; border-radius: 5px; font-size: 14px; }
+.quest-tracker { display: none; }
+
+.right-rail {
+  top: 76px;
+  right: 6px;
+  width: 44px;
+  max-height: none;
+  gap: 0;
+}
+.right-rail button { width: 44px; height: 44px; min-width: 44px; min-height: 44px; }
+.right-rail-drawer {
+  top: 72px;
+  right: 12px;
+  /* Keep the expanded command deck above the resource/nav deck at every
+     phone height.  The old fixed 98px bottom left a 4px collision at 320x568. */
+  bottom: calc(108px + var(--safe-bottom));
+  width: min(264px, calc(100% - 16px));
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background-image:
+    linear-gradient(180deg, rgba(38, 50, 40, .985), rgba(11, 17, 12, .995)),
+    url("../assets/backgrounds/terrain-tile-5-v1.webp");
+  background-size: 100% 100%, 220px 160px;
+  background-blend-mode: normal, multiply;
+}
+.rail-drawer-head {
+  background-image:
+    linear-gradient(180deg, rgba(93, 63, 39, .9), rgba(35, 23, 14, .96)),
+    url("../assets/backgrounds/terrain-tile-5-v1.webp");
+  background-size: 100% 100%, 180px 120px;
+}
+.right-rail-drawer .alert-dot { position: absolute; right: 8px; width: 9px; height: 9px; border-radius: 50%; background: #c84737; }
+.right-rail-drawer .rail-drawer-list button {
+  background: linear-gradient(90deg, rgba(48, 64, 49, .92), rgba(27, 37, 28, .82));
+  box-shadow: inset 0 1px 0 rgba(231, 196, 112, .1);
+}
+.right-rail-drawer .rail-drawer-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+.battle-info-lane { top: 76px; left: 8px; right: 56px; }
+.enemy-preview { max-width: 280px; padding: 8px 10px; }
+.enemy-preview header { margin-bottom: 6px; }
+.enemy-preview-card { min-height: 48px; padding: 5px 7px; }
+.enemy-preview-card .pixel-avatar,
+.enemy-preview-avatar { width: 38px; height: 42px; }
+.dialogue-box {
+  left: 8px;
+  right: 54px;
+  bottom: 100px;
+  min-height: 50px;
+  padding: 7px 10px 7px 48px;
+  border-radius: 5px;
+}
+.dialogue-box > .pixel-avatar { left: 6px; top: 6px; width: 34px; height: 36px; }
+.dialogue-box p { font-size: 12px; line-height: 1.3; }
+.dialogue-box p strong { font-size: 13px; }
+.dialogue-box p span { font-size: 12px; }
+.boss-banner { top: 20%; width: min(78%, 290px); padding: 9px 12px 10px; }
+.boss-banner span { font-size: 12px; }
+.boss-banner strong { font-size: 21px; }
+
+.bottom-hud { box-shadow: 0 -1px 0 rgba(231, 196, 112, .7), 0 -8px 18px rgba(0, 0, 0, .48); }
+.resource-strip {
+  grid-template-columns: repeat(4, minmax(0, 1fr)) minmax(82px, 1.25fr);
+  gap: 3px;
+  min-height: 36px;
+  height: 36px;
+  padding: 3px 5px;
+}
+.resource-strip > span {
+  min-height: 28px;
+  height: 28px;
+  gap: 3px;
+  padding: 2px 4px;
+  border-radius: 3px;
+  font-size: 12px;
+}
+.resource-strip i { width: 17px; height: 17px; }
+#bossButton { min-height: 30px; height: 30px; padding: 2px 5px; border-radius: 4px; }
+#bossButton small { font-size: 11px; }
+#bossButton strong { font-size: 12px; }
+.bottom-nav { height: 60px; }
+.bottom-nav button { padding: 3px 2px 4px; }
+.bottom-nav i { width: 25px; height: 25px; margin-bottom: 1px; }
+.bottom-nav span { font-size: 11px; letter-spacing: .03em; }
+.nav-notice { top: 1px; min-width: 16px; height: 16px; font-size: 11px; line-height: 14px; }
+
+/* Content completeness: data reflows before text is clipped. */
+.detail-hero { padding-left: 116px; }
+.detail-hero > .pixel-avatar { width: 88px; height: 132px; }
+.detail-hero .stat-list { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 6px; }
+.detail-hero .stat-list span { min-width: 0; }
+.panel-content h3,
+.panel-content p,
+.panel-content small,
+.panel-content strong { overflow-wrap: anywhere; }
+
+.announcement-card { border-radius: 4px 12px 4px 4px; background-image: linear-gradient(90deg, rgba(255, 245, 210, .9), rgba(219, 190, 137, .88)), url("../assets/backgrounds/terrain-tile-0-v1.webp"); background-size: 100% 100%, 180px 180px; }
+
+/* Overlays receive state-specific imagery and do not look like ordinary panels. */
+.reward-modal,
+.settlement-modal,
+.tutorial-modal { border-radius: 8px 18px 8px 8px; background-image: linear-gradient(rgba(246, 232, 194, .88), rgba(188, 158, 103, .92)), url("../assets/backgrounds/terrain-tile-5-v1.webp"); background-size: 100% 100%, cover; }
+.reward-chest { background: url("../assets/icons/seal-taoyuan.webp") center / contain no-repeat !important; }
+.tutorial-modal .tutorial-mark { background: url("../assets/icons/seal-taoyuan.webp") center / contain no-repeat, #7c2d22; color: transparent; }
+
+/* Width and touch contracts. */
+.panel-content,
+.panel-content > *,
+.panel-content button,
+.panel-content article,
+.panel-content section { min-width: 0; max-width: 100%; }
+.panel-content button { min-height: 44px; }
+.hero-sort-row button { min-height: 44px; }
+.panel-tabs button { min-height: 44px; }
+
+@media (max-width: 360px) {
+  .panel-content { padding-inline: 9px; }
+  .top-hud { grid-template-columns: 106px minmax(0, 1fr) 42px; gap: 4px; padding-inline: 5px; }
+  .lord-card, .lord-card.compact { padding-left: 41px; }
+  .lord-card > .pixel-avatar, .lord-card.compact > .pixel-avatar { left: 4px; width: 33px; height: 36px; margin-top: -18px; }
+  .lord-info > strong { font-size: 12px !important; }
+  .stage-banner { padding-inline: 6px; }
+  .stage-banner strong, #stageCompactLabel { font-size: 11px !important; }
+  .wave-chip { font-size: 10px !important; }
+  .battle-controls, .speed-button, .vfx-toggle-button { width: 42px; min-width: 42px; }
+  .right-rail { right: 4px; width: 42px; }
+  .right-rail button { width: 42px; min-width: 42px; height: 42px; min-height: 42px; }
+  .battle-info-lane { right: 50px; }
+  .dialogue-box { right: 48px; }
+  .resource-strip { grid-template-columns: repeat(4, minmax(0, 1fr)) minmax(74px, 1.15fr); padding-inline: 3px; }
+  .resource-strip > span { gap: 2px; padding-inline: 2px; font-size: 11px; }
+  .resource-strip i { width: 15px; height: 15px; }
+  #bossButton small { display: none; }
+  #bossButton strong { font-size: 11px; }
+  .bottom-nav { height: 58px; }
+  .bottom-nav i { width: 23px; height: 23px; }
+  .bottom-nav span { font-size: 10px; }
+  .hero-grid { grid-template-columns: 1fr; }
+  .hero-card { min-height: 116px; }
+  .detail-hero { min-height: 164px; padding: 12px 10px 12px 102px; }
+  .detail-hero > .pixel-avatar { left: 10px; top: 12px; width: 78px; height: 116px; }
+  .detail-hero h3 { font-size: 18px; }
+  .formation-board { min-height: 198px; }
+  .formation-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .formation-summary p:nth-of-type(2) { grid-column: auto; }
+  .formation-summary p:nth-of-type(3) { grid-column: 1 / -1; }
+  .stage-card { grid-template-columns: 48px minmax(0, 1fr); grid-template-areas: "visual info" "actions actions"; gap: 7px; }
+  .stage-visual { width: 44px; height: 58px; }
+  .stage-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; width: 100%; }
+  .stage-actions button { width: 100%; }
+  .mode-card,
+  .shop-card,
+  .arena-card {
+    grid-template-columns: 42px minmax(0, 1fr);
+    grid-template-areas: "visual copy" "action action";
+    align-items: start;
+  }
+  .mode-card > .mode-icon,
+  .shop-card > .shop-badge,
+  .arena-card > .arena-badge { grid-area: visual; }
+  .mode-card > div:not(.mode-icon),
+  .shop-card > div:not(.shop-badge),
+  .arena-card > div:not(.arena-badge) { grid-area: copy; }
+  .mode-card > .panel-action,
+  .shop-card > .panel-action,
+  .arena-card > .panel-action { grid-area: action; width: 100%; }
+  .task-card.task-card-plain { grid-template-columns: 38px minmax(0, 1fr); grid-template-areas: "mark copy" "action action"; }
+  .task-card.task-card-plain .achievement-mark { grid-area: mark; }
+  .task-card.task-card-plain .task-copy { grid-area: copy; }
+  .task-card.task-card-plain .panel-action { grid-area: action; width: 100%; }
+  .trial-card { grid-template-columns: 50px minmax(0, 1fr); grid-template-areas: "avatar copy" "action action"; }
+  .trial-card > .pixel-avatar { grid-area: avatar; width: 46px; height: 62px; }
+  .trial-card-copy { grid-area: copy; }
+  .trial-card > .panel-action { grid-area: action; width: 100%; }
+  .collection-factions { grid-template-columns: 1fr; }
+  .faction-resonance-head { align-items: flex-start; flex-direction: column; gap: 2px; }
+  .faction-resonance .collection-milestone { grid-template-columns: 1fr; }
+  .faction-resonance .collection-milestone button { width: 100%; }
+  .mastery-card { display: grid; grid-template-columns: 1fr; }
+  .mastery-card button { width: 100%; }
+  .mail-announcement { grid-template-columns: 38px minmax(0, 1fr); }
+  .mail-announcement .mail-seal { grid-column: 1; }
+  .mail-announcement .story-stage { grid-column: 2; }
+  .mail-announcement > div { grid-column: 1 / -1; grid-row: 2; margin-top: 4px; }
+  .tactic-card { padding-left: 62px; }
+  .tactic-sigil { left: 9px; width: 42px; height: 42px; }
+  .tactic-action-row { flex-direction: column; }
+  .setting-row { grid-template-columns: 26px minmax(0, 1fr) auto; gap: 7px; min-height: 62px; }
+  .setting-row > button { grid-column: 3; justify-self: end; min-width: 80px; padding-inline: 7px !important; }
+  .setting-row strong, .setting-row small { white-space: normal; line-height: 1.2; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .game-panel, .right-rail-drawer, .reward-modal, .settlement-modal, .tutorial-modal { animation: none; }
+}
+
+/* Character portrait contract: equal context means equal square geometry.
+ * Showcase art remains larger, but no avatar slot uses a stretched 4:5 box. */
+.pixel-avatar,
+.pixel-avatar.portrait-asset,
+.pixel-avatar[style*="background-image"] {
+  aspect-ratio: 1;
+  background-size: contain !important;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+.pixel-avatar { width: var(--avatar-size-hud); height: var(--avatar-size-hud); }
+.lord-card > .pixel-avatar,
+.lord-card.compact > .pixel-avatar,
+.enemy-preview-card .pixel-avatar,
+.enemy-preview-avatar,
+.dialogue-box > .pixel-avatar { width: var(--avatar-size-hud); height: var(--avatar-size-hud); }
+.hero-card > .pixel-avatar,
+.hero-card .pixel-avatar { width: var(--avatar-size-roster); height: var(--avatar-size-roster); }
+.detail-hero > .pixel-avatar,
+.paper-doll-stage > .pixel-avatar,
+.lord-portrait { width: var(--avatar-size-showcase); height: var(--avatar-size-showcase); }
+.formation-slot .pixel-avatar { width: var(--avatar-size-formation); height: var(--avatar-size-formation); }
+.arena-portraits .pixel-avatar { width: var(--avatar-size-strip); height: var(--avatar-size-strip); }
+.trial-card > .pixel-avatar { width: var(--avatar-size-trial); height: var(--avatar-size-trial); }
+.collection-faction-portrait,
+.campaign-chapter-hero .campaign-boss-portrait {
+  width: var(--avatar-size-showcase);
+  height: var(--avatar-size-showcase);
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+.collection-faction-portrait { width: var(--avatar-size-hud); height: var(--avatar-size-hud); }
+.campaign-chapter-hero .campaign-boss-portrait { width: 68px; height: 68px; }
+.lord-portrait { background-size: contain !important; background-position: center !important; }
+
+@media (max-width: 360px) {
+  :root {
+    --avatar-size-hud: 36px;
+    --avatar-size-showcase: 78px;
+  }
+}
+
+.seal-button.compact-button,
+.seal-button.panel-action {
+  color: #fff6d0;
+  text-shadow: 0 1px 2px #3a120e;
+}
+.seal-button.compact-button small,
+.seal-button.panel-action small {
+  color: #fff6d0 !important;
+  -webkit-text-fill-color: #fff6d0;
+  text-shadow: 0 1px 2px #3a120e;
+}

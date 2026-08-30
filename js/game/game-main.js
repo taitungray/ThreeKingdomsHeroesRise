@@ -29,13 +29,6 @@ document.addEventListener("pointerdown", (event) => {
 }, { passive: true });
 
 $("profileButton").addEventListener("click", () => {
-  const card = $("profileButton");
-  if (!card.classList.contains("expanded")) {
-    card.classList.add("expanded");
-    card.setAttribute("aria-expanded", "true");
-    toast("再點一次開啟主公詳情");
-    return;
-  }
   openPanel("profile");
 });
 $("panelClose").addEventListener("click", closePanel);
@@ -263,6 +256,23 @@ window.TaoyuanBattle = {
   },
   startStageKeepPanel(stage) {
     startStage(stage || activeStageNumber(), "QA keep panel", { keepPanel: true });
+    return this.peek();
+  },
+  openPanel(type) {
+    openPanel(type);
+    return this.peek();
+  },
+  closePanel() {
+    closePanel();
+    return this.peek();
+  },
+  getSave() {
+    return save;
+  },
+  setStage(stage) {
+    save.stage = Math.max(1, Number(stage) || 1);
+    if (typeof persist === "function") persist();
+    if (typeof updateHud === "function") updateHud();
     return this.peek();
   },
   kick() {

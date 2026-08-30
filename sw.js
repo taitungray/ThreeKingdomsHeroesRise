@@ -1,4 +1,4 @@
-const CACHE_NAME = "taoyuan-qunying-v7";
+const CACHE_NAME = "taoyuan-qunying-v12";
 const PRECACHE = [
   "./",
   "./index.html",

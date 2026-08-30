@@ -3,17 +3,52 @@
 
 function renderLord() {
   const power = currentArmyPower();
-  const avatar = AVATAR_FRAMES.find((frame) => frame.id === save.equippedFrame)?.avatar || "avatar-liubei";
+  const frame = avatarFrameById(save.equippedFrame) || AVATAR_FRAMES[0];
+  const frameColor = frame?.color || "#c6a654";
+  const lordHero = heroById("liubei");
+  const portrait = lordHero?.portrait || "assets/characters/portrait-liubei-v1.webp";
+  const needed = 90 + save.level * 35;
+  const expPct = clamp((save.exp / needed) * 100, 0, 100);
+  const titleName = titleById(save.equippedTitle)?.name || "義勇軍";
+  const titles = TITLES.map((title) => {
+    const unlocked = titleUnlocked(title);
+    const equipped = save.equippedTitle === title.id;
+    return '<button class="lord-pick' + (equipped ? " equipped" : "") + (unlocked ? "" : " locked") + '" type="button" data-action="title-equip" data-title="' + title.id + '"' + ((!unlocked || equipped) ? " disabled" : "") + '>' +
+      '<strong>' + title.name + '</strong><small>' + (equipped ? "裝備中" : unlocked ? "可裝備" : title.desc) + '</small></button>';
+  }).join("");
+  const frames = AVATAR_FRAMES.map((item) => {
+    const unlocked = avatarFrameUnlocked(item);
+    const equipped = save.equippedFrame === item.id;
+    return '<button class="lord-pick frame-pick' + (equipped ? " equipped" : "") + (unlocked ? "" : " locked") + '" type="button" data-action="frame-equip" data-frame="' + item.id + '"' + ((!unlocked || equipped) ? " disabled" : "") + '>' +
+      '<i class="frame-swatch" style="--frame-color:' + (item.color || "#c6a654") + '" aria-hidden="true"></i>' +
+      '<span><strong>' + item.name + '</strong><small>' + (equipped ? "裝備中" : unlocked ? "可裝備" : item.desc) + '</small></span></button>';
+  }).join("");
   setPanel("主公軍府",
-    '<section class="detail-hero">' +
-      '<span class="pixel-avatar ' + avatar + ' full"><i></i><span class="portrait-eyes" aria-hidden="true"></span><span class="avatar-detail" aria-hidden="true"></span></span>' +
-      '<h3>' + (save.playerName || "劉玄德") + '</h3>' +
-      '<span class="hero-role">' + (titleById(save.equippedTitle)?.name || "義勇軍主公") + '</span>' +
-      '<p class="hero-power">軍勢 <strong>' + formatNumber(power) + '</strong></p>' +
-      '<div class="stat-list"><span>主公等級 <b>' + save.level + '</b></span><span>歷史進度 <b>第 ' + save.stage + ' 關</b></span><span>名將數 <b>' + HEROES.filter(isUnlocked).length + '</b></span><span>陣容人數 <b>' + save.formation.length + '</b></span></div>' +
-    '</section>' +
-    '<p class="section-caption">軍府方針</p>' +
-    '<div class="record-item">不設武將抽取。沿著歷史戰役結識角色，再透過等級、兵種位置、裝備精煉共鳴與戰法構築自己的隊伍。</div>');
+    '<section class="lord-office">' +
+      '<div class="lord-identity" style="--frame-color:' + frameColor + '">' +
+        '<span class="pixel-avatar avatar-liubei portrait-asset portrait-asset-liubei lord-portrait" style="background-image:url(\'' + portrait + '\');border-color:' + frameColor + '" aria-hidden="true"><i></i></span>' +
+        '<div class="lord-identity-copy">' +
+          '<h3>' + (save.playerName || "劉玄德") + '</h3>' +
+          '<span class="lord-title-badge">' + titleName + '</span>' +
+          '<p class="hero-power">軍勢 <strong>' + formatNumber(power) + '</strong></p>' +
+          '<div class="lord-exp-block" aria-label="主公經驗">' +
+            '<span>主公等級 <b>Lv.' + save.level + '</b></span>' +
+            '<div class="progress-track lord-exp-track"><i style="width:' + expPct + '%"></i><small>' + Math.floor(save.exp) + ' / ' + needed + '</small></div>' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+      '<p class="section-caption lord-summary-caption">軍府摘要</p>' +
+      '<div class="lord-progress-grid">' +
+        '<div class="lord-stat-chip" role="group" aria-label="歷史進度"><span>歷史進度</span><b>第 ' + save.stage + ' 關</b></div>' +
+        '<div class="lord-stat-chip" role="group" aria-label="已結識名將"><span>名將數</span><b>' + HEROES.filter(isUnlocked).length + '</b></div>' +
+        '<div class="lord-stat-chip" role="group" aria-label="出戰陣容"><span>陣容</span><b>' + save.formation.length + ' 人</b></div>' +
+      '</div>' +
+      '<p class="section-caption">稱號</p>' +
+      '<div class="lord-pick-list">' + titles + '</div>' +
+      '<p class="section-caption">頭像框</p>' +
+      '<div class="lord-pick-list">' + frames + '</div>' +
+      '<p class="panel-footnote">沿歷史戰役結識名將，不設抽取。</p>' +
+    '</section>');
 }
 
 function taskCardHtml(task, weekly = false) {
@@ -22,7 +57,17 @@ function taskCardHtml(task, weekly = false) {
   const claimed = state.claimed.includes(task.id);
   const percent = Math.round(progress / task.target * 100);
   const tag = weekly ? "週" : "日";
-  return '<article class="task-card ' + (claimed ? "cleared" : "") + '"><div class="task-badge">' + tag + '</div><div><h3>' + task.title + '</h3><div class="progress-track"><i style="width:' + percent + '%"></i></div><small>' + progress + ' / ' + task.target + '　' + rewardHtml(task.reward, true) + '</small></div><button class="' + (claimed || progress < task.target ? "stone-button" : "seal-button") + ' panel-action" type="button" data-action="daily-task-claim" data-task="' + task.id + '"' + (weekly ? ' data-weekly="true"' : '') + (claimed || progress < task.target ? " disabled" : "") + '>' + (claimed ? "已領" : "領取") + '</button></article>';
+  const taskName = task.name || task.title || "軍務";
+  const stateLabel = claimed ? "已領取" : progress >= task.target ? "可領取" : "進行中";
+  return '<article class="task-card ' + (weekly ? "weekly " : "") + (claimed ? "cleared" : "") + '">' +
+    '<div class="task-badge ' + (weekly ? "task-badge-weekly" : "task-badge-daily") + '" aria-hidden="true">' + tag + '</div>' +
+    '<div class="task-card-main">' +
+      '<div class="task-card-head"><h3>' + taskName + '</h3><span class="task-state">' + stateLabel + '</span></div>' +
+      '<div class="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="' + task.target + '" aria-valuenow="' + progress + '" aria-label="' + taskName + '進度"><i style="width:' + percent + '%"></i></div>' +
+      '<div class="task-card-meta"><span class="task-progress">進度 ' + progress + ' / ' + task.target + '</span><span class="task-rewards" aria-label="獎勵">' + rewardHtml(task.reward, true) + '</span></div>' +
+    '</div>' +
+    '<button class="' + (claimed || progress < task.target ? "stone-button" : "seal-button") + ' panel-action" type="button" data-action="daily-task-claim" data-task="' + task.id + '"' + (weekly ? ' data-weekly="true"' : '') + (claimed || progress < task.target ? " disabled" : "") + ' aria-label="' + (claimed ? taskName + '已領取' : progress < task.target ? taskName + '尚未完成' : '領取' + taskName + '獎勵') + '">' + (claimed ? "已領" : "領取") + '</button>' +
+  '</article>';
 }
 
 function renderDaily() {
@@ -30,9 +75,9 @@ function renderDaily() {
   const tasks = DAILY_TASKS.map((task) => taskCardHtml(task, false)).join("");
   const weeklyTasks = WEEKLY_TASKS.map((task) => taskCardHtml(task, true)).join("");
   setPanel("日常軍務",
-    '<section class="mode-banner"><span class="eyebrow">每日更新</span><h3>今日軍務</h3><p>每日 00:00 自動重置進度與獎勵。</p></section>' +
+    '<p class="section-caption">今日軍務</p>' +
     '<div class="task-list">' + tasks + '</div>' +
-    '<section class="mode-banner" style="margin-top:12px;"><span class="eyebrow">每週更新</span><h3>本週軍務目標</h3><p>每週一 00:00 自動重置。</p></section>' +
+    '<p class="section-caption">本週軍務</p>' +
     '<div class="task-list">' + weeklyTasks + '</div>');
   $("panelContent").insertAdjacentHTML("beforeend", renderCheckinSection());
 }
@@ -62,7 +107,7 @@ function claimTask(taskId, isWeekly = false) {
   updateHud();
   renderDaily();
   window.TaoyuanAudio?.sfx?.("reward");
-  toast("已領取「" + task.title + "」軍資");
+  toast("已領取「" + (task.name || task.title || "軍務") + "」軍資");
 }
 
 function claimCheckin() {
@@ -100,13 +145,35 @@ function claimDailyAd() {
   else window.TaoyuanAds.showRewardedAd({ onReward: grant });
 }
 
+function isShopClaimed(item) {
+  if (!item) return true;
+  if (!save.shopPurchases) save.shopPurchases = {};
+  if (item.repeatable) return false;
+  return (save.shopPurchases[item.id] || 0) > 0;
+}
+
+function achievementData() {
+  const unlockedHeroes = HEROES.filter((hero) => isUnlocked(hero)).length;
+  const kills = Number(save.stats?.kills) || 0;
+  const arenaWins = Number(save.arena?.wins) || 0;
+  const stage = Math.max(1, Number(save.stage) || 1);
+  return ACHIEVEMENTS.map((item) => {
+    let value = 0;
+    if (item.type === "stage") value = stage;
+    else if (item.type === "kills") value = kills;
+    else if (item.type === "heroes") value = unlockedHeroes;
+    else if (item.type === "arena") value = arenaWins;
+    return { ...item, value };
+  });
+}
+
 function renderShop() {
   ensureCycleState();
   const cards = SHOP_ITEMS.map((item) => {
     const claimed = isShopClaimed(item);
     const nativeLocked = Boolean(item.requiresNativePurchase && !window.TaoyuanIAP.isAvailable());
     const buttonText = nativeLocked ? "App 專屬" : claimed ? "已兌換" : "兌換";
-    return '<article class="shop-card tone-' + item.tone + '"><div class="shop-badge">' + (item.tone === "legend" ? "秘" : "商") + '</div><div><h3>' + item.name + '</h3><p>' + item.desc + '</p><small>費用 ' + rewardHtml(item.cost, true) + ' · 獲得 ' + rewardHtml(item.reward, true) + '</small></div><button class="' + (claimed || nativeLocked ? "stone-button" : "seal-button") + ' panel-action" type="button" data-action="shop-buy" data-shop="' + item.id + '"' + (claimed || nativeLocked ? " disabled" : "") + '>' + buttonText + '</button></article>';
+    return '<article class="shop-card tone-' + item.tone + '" data-shop-item="' + item.id + '"><div class="shop-badge" aria-hidden="true">' + (item.tone === "legend" ? "秘" : "商") + '</div><div><h3>' + item.name + '</h3><p>' + item.desc + '</p><small>費用 ' + rewardHtml(item.cost, true) + ' · 獲得 ' + rewardHtml(item.reward, true) + '</small></div><button class="' + (claimed || nativeLocked ? "stone-button" : "seal-button") + ' panel-action" type="button" data-action="shop-buy" data-shop="' + item.id + '"' + (claimed || nativeLocked ? " disabled" : "") + '>' + buttonText + '</button></article>';
   }).join("");
   setPanel(UI_TEXT.shop, '<p class="section-caption">軍需所取得，不設虛假永久買賣。</p><div class="shop-list">' + cards + '</div><p class="panel-footnote">原生商店商品未配置正式 SKU 時會自動保持停用。</p>');
 }
@@ -120,7 +187,7 @@ function buyShopItem(itemId) {
     window.TaoyuanIAP.purchase(item.productId).then((result) => {
       if (result.ok) {
         awardResources(item.reward);
-        save.shopClaims[item.id] = (save.shopClaims[item.id] || 0) + 1;
+        save.shopPurchases[item.id] = (save.shopPurchases[item.id] || 0) + 1;
         persist();
         updateHud();
         renderShop();
@@ -136,7 +203,7 @@ function buyShopItem(itemId) {
   }
   for (const [res, amount] of Object.entries(item.cost || {})) save[res] -= amount;
   awardResources(item.reward);
-  save.shopClaims[item.id] = (save.shopClaims[item.id] || 0) + 1;
+  save.shopPurchases[item.id] = (save.shopPurchases[item.id] || 0) + 1;
   recordTaskProgress("daily-shop");
   persist();
   updateHud();
@@ -157,7 +224,7 @@ function renderEvents(tab = runtime.eventTab || "pass") {
   ensureCycleState();
 
   const tabs = '<div class="panel-tabs">' +
-    '<button type="button" data-action="event-tab" data-tab="pass" class="' + (tab === "pass" ? "active" : "") + '">征戰敕令 (戰令)</button>' +
+    '<button type="button" data-action="event-tab" data-tab="pass" class="' + (tab === "pass" ? "active" : "") + '">征戰敕令</button>' +
     '<button type="button" data-action="event-tab" data-tab="events" class="' + (tab === "events" ? "active" : "") + '">限時活動</button>' +
     '</div>';
 
@@ -168,7 +235,7 @@ function renderEvents(tab = runtime.eventTab || "pass") {
       const percent = Math.round(progress / event.target * 100);
       return '<article class="mode-card event-card ' + (claimed ? "cleared" : "") + '"><div class="mode-icon">期</div><div><h3>' + event.name + '</h3><p>' + event.desc + '</p><div class="progress-track"><i style="width:' + percent + '%"></i></div><small>' + progress + ' / ' + event.target + '　' + rewardHtml(event.reward, true) + '</small></div><button class="' + (claimed || progress < event.target ? "stone-button" : "seal-button") + ' panel-action" type="button" data-action="event-claim" data-event="' + event.id + '"' + (claimed || progress < event.target ? " disabled" : "") + '>' + (claimed ? "已領" : "領取") + '</button></article>';
     }).join("");
-    setPanel("限時活動", tabs + '<section class="mode-banner"><span class="eyebrow">限時每週活動</span><h3>桃園義勇週</h3><p>每週重置征戰任務，完成領取豐厚軍資。</p></section><div class="mode-list">' + cards + '</div>');
+    setPanel("限時活動", tabs + '<section class="mode-banner"><h3>桃園義勇週</h3><p>每週重置征戰任務，完成領取軍資。</p></section><div class="mode-list">' + cards + '</div>');
     return;
   }
 
@@ -183,29 +250,28 @@ function renderEvents(tab = runtime.eventTab || "pass") {
     const reward = battlePassLevelReward(lvl);
     const isMajor = lvl % 5 === 0;
 
-    return '<article class="mode-card' + (isMajor ? ' legend-card' : '') + (claimed ? ' cleared' : '') + '" style="padding:10px 12px;margin-bottom:8px;">' +
-      '<div class="mode-icon" style="' + (isMajor ? 'background:linear-gradient(135deg,#c69234,#f0d376);color:#2b1900;' : '') + '">' + lvl + '</div>' +
-      '<div style="flex:1;">' +
-        '<h4 style="margin:0 0 2px 0;font-size:13px;">' + (isMajor ? '★ 敕令大獎 · ' : '') + '第 ' + lvl + ' 階</h4>' +
+    return '<article class="mode-card pass-card' + (isMajor ? " legend-card" : "") + (claimed ? " cleared" : "") + '">' +
+      '<div class="mode-icon">' + lvl + '</div>' +
+      '<div class="pass-card-copy">' +
+        '<h4>' + (isMajor ? "敕令大獎 · " : "") + "第 " + lvl + " 階</h4>" +
         '<small>' + rewardHtml(reward, true) + '</small>' +
       '</div>' +
-      '<button class="' + (claimed ? 'stone-button' : unlocked ? 'seal-button' : 'stone-button') + ' panel-action" type="button" data-action="battlepass-claim" data-level="' + lvl + '"' + (claimed || !unlocked ? ' disabled' : '') + '>' +
-        (claimed ? '已領取' : unlocked ? '可領取' : '未達成') +
+      '<button class="' + (claimed ? "stone-button" : unlocked ? "seal-button" : "stone-button") + ' panel-action" type="button" data-action="battlepass-claim" data-level="' + lvl + '"' + (claimed || !unlocked ? " disabled" : "") + '>' +
+        (claimed ? "已領取" : unlocked ? "可領取" : "未達成") +
       '</button>' +
     '</article>';
   }).join("");
 
   setPanel("征戰敕令", tabs +
-    '<section class="mode-banner" style="background:linear-gradient(135deg,#231c26,#3b2533);border:1px solid #735165;">' +
-      '<span class="eyebrow">長期征戰回饋</span>' +
+    '<section class="mode-banner decree-banner">' +
       '<h3>敕令軍階 · Lv.' + currentLevel + '</h3>' +
-      '<p>進行戰役推關、擊敗首領或完成日常任務可累積敕令經驗，最高 30 階大獎！</p>' +
+      '<p>推關、擊敗首領或完成日常可累積敕令經驗，最高 30 階。</p>' +
       '<div class="mode-stats">' +
         '<span>總經驗 <b>' + currentXp + ' 點</b></span>' +
         '<span>當前進度 <b>' + (currentXp % 10) + ' / 10</b></span>' +
       '</div>' +
     '</section>' +
-    '<div class="mode-list" style="max-height:420px;overflow-y:auto;padding-right:4px;">' + passCards + '</div>');
+    '<div class="mode-list pass-list">' + passCards + '</div>');
 }
 
 function claimLocalEvent(eventId) {
@@ -243,7 +309,8 @@ function claimFactionMilestone(msKey) {
 function renderCollection() {
   const counts = Object.entries(FACTIONS).map(([id, faction]) => {
     const owned = (FACTION_BY_HERO[id] || []).filter((heroId) => isUnlocked(heroById(heroId))).length;
-    return '<div class="collection-faction"><i style="--faction-color:' + faction.color + '"></i><strong>' + faction.name + '</strong><span>' + owned + ' 名</span><small>' + faction.desc + '</small></div>';
+    const portraits = (FACTION_BY_HERO[id] || []).slice(0, 2).map((heroId) => heroById(heroId)).filter(Boolean).map((hero) => '<span class="collection-faction-portrait" style="background-image:url(\'' + hero.portrait + '\')" aria-hidden="true"></span>').join("");
+    return '<div class="collection-faction faction-' + id + '">' + portraits + '<i style="--faction-color:' + faction.color + '"></i><strong>' + faction.name + '</strong><span>' + owned + ' 名</span><small>' + faction.desc + '</small></div>';
   }).join("");
 
   const milestonesHtml = Object.entries(FACTION_MILESTONES).map(([factionId, list]) => {
@@ -254,41 +321,31 @@ function renderCollection() {
       const msKey = factionId + "-" + ms.count;
       const claimed = Boolean(save.collectionMilestones?.[msKey]);
       const reached = ownedCount >= ms.count;
-      return '<div class="record-item" style="display:flex;align-items:center;justify-content:space-between;margin-top:6px;padding:6px 10px;' + (claimed ? 'border-color:#d7b84f;background:rgba(215,184,79,0.08);' : '') + '">' +
-        '<div><strong>' + ms.name + '</strong> (相遇 ' + ms.count + ' 人)：<span style="color:#ffd84d;">' + ms.label + '</span><br><small>獎勵：' + ms.jade + ' 玉璧</small></div>' +
+      return '<div class="record-item collection-milestone ' + (claimed ? "claimed" : reached ? "ready" : "locked") + '">' +
+        '<div><strong>' + ms.name + '</strong> (相遇 ' + ms.count + ' 人)：<span class="milestone-bonus">' + ms.label + '</span><br><small>獎勵：' + ms.jade + ' 玉璧</small></div>' +
         '<button class="' + (claimed ? 'stone-button' : reached ? 'seal-button' : 'stone-button') + ' compact-button" type="button" data-action="claim-faction-milestone" data-key="' + msKey + '"' + (claimed || !reached ? ' disabled' : '') + '>' +
           (claimed ? '已啟動' : reached ? '領取啟動' : ownedCount + '/' + ms.count) +
         '</button>' +
       '</div>';
     }).join("");
-    return '<article class="collection-card" style="display:block;margin-bottom:8px;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;"><strong style="color:' + faction.color + ';">' + faction.name + ' 勢力共鳴</strong><span>已結識 ' + ownedCount + ' / ' + totalCount + ' 人</span></div>' + items + '</article>';
+    return '<article class="collection-card faction-resonance"><div class="faction-resonance-head"><strong style="--faction-color:' + faction.color + ';">' + faction.name + ' 勢力共鳴</strong><span>已結識 ' + ownedCount + ' / ' + totalCount + ' 人</span></div>' + items + '</article>';
   }).join("");
 
   const bonds = BONDS.map((bond) => {
     const active = activeBonds().some((item) => item.id === bond.id);
-    return '<article class="collection-card ' + (active ? "active" : "") + '"><strong>' + bond.name + '</strong><small>' + bond.desc + '</small><em>' + (active ? "已觸發" : "尚未集齊") + '</em></article>';
-  }).join("");
-  const titles = TITLES.map((title) => {
-    const unlocked = titleUnlocked(title);
-    const equipped = save.equippedTitle === title.id;
-    return '<article class="collection-card title-card ' + (unlocked ? "active" : "locked") + '"><strong>' + title.name + '</strong><small>' + title.desc + '</small><button class="' + (equipped || !unlocked ? "stone-button" : "seal-button") + ' panel-action" type="button" data-action="title-equip" data-title="' + title.id + '"' + ((!unlocked || equipped) ? " disabled" : "") + '>' + (equipped ? "已裝備" : unlocked ? "裝備" : "未解鎖") + '</button></article>';
+    return '<article class="collection-card ' + (active ? "active" : "") + '"><div><strong>' + bond.name + '</strong><small>' + bond.desc + '</small></div><em>' + (active ? "已觸發" : "尚未集齊") + '</em></article>';
   }).join("");
   const treasures = TREASURES.map((treasure) => {
     const unlocked = campaignClears() >= treasure.unlock;
     const equipped = save.equippedTreasure === treasure.id;
-    return '<article class="collection-card treasure-card ' + (unlocked ? "active" : "locked") + '"><strong>' + treasure.name + '</strong><small>' + treasure.desc + '</small><button class="' + (equipped || !unlocked ? "stone-button" : "seal-button") + ' panel-action" type="button" data-action="treasure-equip" data-treasure="' + treasure.id + '"' + ((!unlocked || equipped) ? " disabled" : "") + '>' + (equipped ? "已配裝" : unlocked ? "配裝" : "第 " + treasure.unlock + " 關") + '</button></article>';
+    return '<article class="collection-card treasure-card ' + (unlocked ? "active" : "locked") + '"><div><strong>' + treasure.name + '</strong><small>' + treasure.desc + '</small></div><button class="' + (equipped || !unlocked ? "stone-button" : "seal-button") + ' panel-action" type="button" data-action="treasure-equip" data-treasure="' + treasure.id + '"' + ((!unlocked || equipped) ? " disabled" : "") + '>' + (equipped ? "已配裝" : unlocked ? "配裝" : "第 " + treasure.unlock + " 關") + '</button></article>';
   }).join("");
-  setPanel("圖鑑與義結", '<p class="section-caption">陣營勢力收集共鳴</p><div class="collection-list" style="margin-bottom:12px;">' + milestonesHtml + '</div><p class="section-caption">勢力簡介</p><div class="collection-factions">' + counts + '</div><p class="section-caption">緣分組合</p><div class="collection-list">' + bonds + '</div><p class="section-caption">稱號</p><div class="collection-list">' + titles + '</div><p class="section-caption">寶物神器</p><div class="collection-list">' + treasures + '</div>');
-  $("panelContent").insertAdjacentHTML("beforeend", renderFrameSection());
+  setPanel("圖鑑與義結", '<p class="section-caption">陣營勢力收集共鳴</p><div class="collection-list collection-milestone-list">' + milestonesHtml + '</div><p class="section-caption">勢力簡介</p><div class="collection-factions">' + counts + '</div><p class="section-caption">緣分組合</p><div class="collection-list">' + bonds + '</div><p class="section-caption">寶物神器</p><div class="collection-list">' + treasures + '</div><p class="panel-footnote">稱號與頭像框統一在主公軍府管理，避免重複入口。</p>');
 }
 
+// 保留舊模組介面；頭像框清單已由主公軍府單一入口管理，不再由圖鑑呼叫。
 function renderFrameSection() {
-  const frames = AVATAR_FRAMES.map((frame) => {
-    const unlocked = avatarFrameUnlocked(frame);
-    const equipped = save.equippedFrame === frame.id;
-    return '<article class="collection-card frame-card ' + (unlocked ? "active" : "locked") + '"><div class="frame-card-preview"><span class="pixel-avatar ' + frame.avatar + '"><i></i></span></div><div><strong>' + frame.name + '</strong><small>' + frame.desc + '</small></div><button class="' + (equipped || !unlocked ? "stone-button" : "seal-button") + ' panel-action" type="button" data-action="frame-equip" data-frame="' + frame.id + '"' + ((!unlocked || equipped) ? " disabled" : "") + '>' + (equipped ? "已裝備" : unlocked ? "裝備" : "未解鎖") + '</button></article>';
-  }).join("");
-  return '<p class="section-caption">頭像與名框</p><div class="collection-list frame-list">' + frames + '</div>';
+  return "";
 }
 
 function equipAvatarFrame(frameId) {
@@ -297,14 +354,16 @@ function equipAvatarFrame(frameId) {
   save.equippedFrame = frame.id;
   persist();
   updateHud();
-  renderCollection();
+  if (runtime.panel === "profile") renderLord();
+  else renderCollection();
   toast("頭像框已更換為「" + frame.name + "」");
 }
 
 function renderMail() {
   const claimed = Boolean(save.mailClaimed);
   setPanel("軍中文書",
-    '<article class="announcement-card">' +
+    '<article class="announcement-card mail-announcement">' +
+      '<span class="mail-seal" aria-hidden="true"></span>' +
       '<span class="story-stage">主公親啟</span>' +
       '<div>' +
         '<strong>桃園初征軍令補給</strong>' +
@@ -320,7 +379,17 @@ function renderAchievements() {
     const claimed = save.achievementClaimed.includes(item.id);
     const ready = item.value >= item.target && !claimed;
     const progressText = Math.min(item.value, item.target) + " / " + item.target;
-    return '<article class="task-card ' + (claimed ? "cleared" : "") + '"><div><h3>' + item.title + '</h3><p>' + item.desc + '</p><small>' + progressText + ' · ' + rewardHtml(item, true) + '</small></div><button class="' + (claimed || !ready ? "stone-button" : "seal-button") + ' panel-action" type="button" data-action="achievement-claim" data-achievement="' + item.id + '"' + (claimed || !ready ? " disabled" : "") + '>' + (claimed ? "已領" : "領取") + '</button></article>';
+    const rewards = rewardHtml(achievementReward(item), true);
+    return '<article class="task-card task-card-plain ' + (claimed ? "cleared" : "") + '">' +
+      '<span class="achievement-mark achievement-mark-' + item.id + '" aria-hidden="true"></span>' +
+      '<div class="task-copy">' +
+        '<h3>' + item.title + '</h3>' +
+        '<p>' + item.desc + '</p>' +
+        '<small>' + progressText + '</small>' +
+        (rewards ? '<div class="reward-row">' + rewards + '</div>' : "") +
+      '</div>' +
+      '<button class="' + (claimed || !ready ? "stone-button" : "seal-button") + ' panel-action" type="button" data-action="achievement-claim" data-achievement="' + item.id + '"' + (claimed || !ready ? " disabled" : "") + '>' + (claimed ? "已領" : "領取") + '</button>' +
+    '</article>';
   }).join("");
   setPanel("成就手冊", '<div class="task-list">' + list + '</div>');
 }
@@ -342,23 +411,23 @@ function renderSettings() {
     ? '<div class="setting-account-box"><span class="setting-account-name">' + accountDisplayName(account) + '</span><span class="setting-account-state">已登入</span><div class="setting-account-actions"><button class="stone-button compact-button" type="button" data-action="auth-switch">切換帳號</button><button class="stone-button compact-button" type="button" data-action="auth-logout">登出</button></div></div>'
     : '<div class="setting-account-box"><span class="setting-account-name">未登入</span><span class="setting-account-state">目前進度保留於本機</span><button class="seal-button compact-button" type="button" data-action="auth-switch">登入帳號</button></div>';
 
-  const soundRow = '<div class="setting-row"><div><strong>音效</strong><small>戰鬥與操作音效</small></div><button class="' + (save.sound ? "seal-button" : "stone-button") + '" type="button" data-action="setting-toggle" data-setting="sound">' + (save.sound ? "開啟" : "關閉") + '</button></div>';
-  const musicRow = '<div class="setting-row"><div><strong>音樂</strong><small>背景音樂</small></div><button class="' + (save.music ? "seal-button" : "stone-button") + '" type="button" data-action="setting-toggle" data-setting="music">' + (save.music ? "開啟" : "關閉") + '</button></div>';
-  const effectsRow = '<div class="setting-row"><div><strong>戰場特效</strong><small>技能與光影</small></div><button class="' + (save.effects ? "seal-button" : "stone-button") + '" type="button" data-action="setting-toggle" data-setting="effects">' + (save.effects ? "開啟" : "關閉") + '</button></div>';
-  const qualityRow = '<div class="setting-row"><div><strong>畫面品質</strong><small>' + (save.renderQuality === "low" ? "低功耗" : "高畫質") + '</small></div><button class="stone-button" type="button" data-action="quality-toggle">' + (save.renderQuality === "low" ? "低功耗" : "高畫質") + '</button></div>';
-  const notifyRow = '<div class="setting-row"><div><strong>推播通知</strong><small>體力滿溢與活動提醒</small></div><button class="' + (save.notifications ? "seal-button" : "stone-button") + '" type="button" data-action="notification-request">' + (save.notifications ? "已授權" : "開啟通知") + '</button></div>';
-  const renameRow = '<div class="setting-row"><div><strong>主公稱號</strong><small>' + (save.playerName || "玄德") + '</small></div><button class="stone-button" type="button" data-action="rename-player">更改名稱</button></div>';
+  const soundRow = '<div class="setting-row setting-row-sound"><div><strong>音效</strong><small>戰鬥與操作音效</small></div><button class="' + (save.sound ? "seal-button" : "stone-button") + '" type="button" data-action="setting-toggle" data-setting="sound">' + (save.sound ? "開啟" : "關閉") + '</button></div>';
+  const musicRow = '<div class="setting-row setting-row-music"><div><strong>音樂</strong><small>背景音樂</small></div><button class="' + (save.music ? "seal-button" : "stone-button") + '" type="button" data-action="setting-toggle" data-setting="music">' + (save.music ? "開啟" : "關閉") + '</button></div>';
+  const effectsRow = '<div class="setting-row setting-row-effects"><div><strong>戰場特效</strong><small>技能與光影</small></div><button class="' + (save.effects ? "seal-button" : "stone-button") + '" type="button" data-action="setting-toggle" data-setting="effects">' + (save.effects ? "開啟" : "關閉") + '</button></div>';
+  const qualityRow = '<div class="setting-row setting-row-quality"><div><strong>畫面品質</strong><small>' + (save.renderQuality === "low" ? "低功耗" : "高畫質") + '</small></div><button class="stone-button" type="button" data-action="quality-toggle">' + (save.renderQuality === "low" ? "低功耗" : "高畫質") + '</button></div>';
+  const notifyRow = '<div class="setting-row setting-row-notify"><div><strong>推播通知</strong><small>體力滿溢與活動提醒</small></div><button class="' + (save.notifications ? "seal-button" : "stone-button") + '" type="button" data-action="notification-request">' + (save.notifications ? "已授權" : "開啟通知") + '</button></div>';
+  const renameRow = '<div class="setting-row setting-row-rename"><div><strong>主公稱號</strong><small>' + (save.playerName || "玄德") + '</small></div><button class="stone-button" type="button" data-action="rename-player">更改名稱</button></div>';
 
   setPanel("系統設定",
     '<p class="section-caption">軍府帳號</p>' + accountHtml +
     '<p class="section-caption">音訊與顯示</p><div class="setting-group">' + soundRow + musicRow + effectsRow + qualityRow + notifyRow + renameRow + '</div>' +
     renderAnnouncementSection() +
     '<p class="section-caption">版本與支援</p><div class="setting-group">' +
-      '<div class="setting-row"><div><strong>客戶端版本</strong><small>v' + APP_VERSION + '</small></div><button class="stone-button" type="button" data-action="version-check">檢查更新</button></div>' +
-      '<div class="setting-row"><div><strong>購買恢復</strong><small>恢復 App 內購</small></div><button class="stone-button" type="button" data-action="restore-purchases">恢復購買</button></div>' +
-      '<div class="setting-row"><div><strong>問題回報</strong><small>傳送反饋記錄</small></div><button class="stone-button" type="button" data-action="report-issue">回報問題</button></div>' +
-      '<div class="setting-row"><div><strong>儲存進度</strong><small>手動同步存檔</small></div><button class="stone-button" type="button" data-action="save-now">立即儲存</button></div>' +
-      '<div class="setting-row"><div><strong>重置存檔</strong><small>清空全部資料</small></div><button class="stone-button" type="button" data-action="reset-save" style="color:#e06050;">重置進度</button></div>' +
+      '<div class="setting-row setting-row-version"><div><strong>客戶端版本</strong><small>v' + APP_VERSION + '</small></div><button class="stone-button" type="button" data-action="version-check">檢查更新</button></div>' +
+      '<div class="setting-row setting-row-purchase"><div><strong>購買恢復</strong><small>恢復 App 內購</small></div><button class="stone-button" type="button" data-action="restore-purchases">恢復購買</button></div>' +
+      '<div class="setting-row setting-row-report"><div><strong>問題回報</strong><small>傳送反饋記錄</small></div><button class="stone-button" type="button" data-action="report-issue">回報問題</button></div>' +
+      '<div class="setting-row setting-row-save"><div><strong>儲存進度</strong><small>手動同步存檔</small></div><button class="stone-button" type="button" data-action="save-now">立即儲存</button></div>' +
+      '<div class="setting-row setting-row-danger"><div><strong>重置存檔</strong><small>清空全部資料</small></div><button class="stone-button" type="button" data-action="reset-save">重置進度</button></div>' +
     '</div>');
 }
 
@@ -389,14 +458,55 @@ function autoAdvanceAfterBattle(result) {
 }
 
 function showSettlement(result) {
-  autoAdvanceAfterBattle(result);
+  const modal = $("settlementModal");
+  if (!modal || !result) {
+    autoAdvanceAfterBattle(result);
+    return;
+  }
+  hideEnemyPreview();
+  const dialogue = $("dialogueBox");
+  if (dialogue) {
+    dialogue.classList.remove("show");
+    dialogue.setAttribute("aria-hidden", "true");
+  }
+  const banner = $("bossBanner");
+  if (banner) {
+    banner.classList.remove("show");
+    banner.setAttribute("aria-hidden", "true");
+  }
+  const win = result.type === "win";
+  const modeLabel = result.mode === "arena" ? "演武" : result.mode === "tower" ? "問天樓" : result.mode === "dungeon" ? "特訓" : result.mode === "trial" ? "列傳" : "";
+  $("settlementTitle").textContent = win ? (modeLabel ? modeLabel + "告捷" : "戰功告捷") : "整軍再戰";
+  $("settlementSubtitle").textContent = win
+    ? (result.progressed
+      ? "第 " + result.stage + " 關首領已擊破"
+      : (result.boss ? "擊敗「" + result.boss + "」" : "本場勝利"))
+    : "全軍暫退，關卡進度不受影響";
+  $("settlementLoot").innerHTML = rewardHtml(result.reward || {}) || '<span class="empty-loot">本次未掠得資源</span>';
+  const stats = $("settlementStats");
+  if (stats) stats.innerHTML = damageStatsHtml(result.damage || []);
+  const unlock = $("settlementUnlock");
+  if (unlock) {
+    unlock.hidden = !result.newlyUnlocked;
+    unlock.textContent = result.newlyUnlocked ? "名將加入：" + result.newlyUnlocked : "";
+  }
+  $("settlementPrimary").textContent = win ? UI_TEXT.continue : UI_TEXT.retry;
+  $("settlementSecondary").textContent = win ? UI_TEXT.retry : UI_TEXT.close;
+  $("settlementPrimary").dataset.settlementAction = win ? "continue" : "retry";
+  $("settlementSecondary").dataset.settlementAction = win ? "retry" : "close";
+  modal.hidden = false;
+  modal.classList.add("open");
+  modal.setAttribute("aria-hidden", "false");
+  window.TaoyuanAudio?.sfx?.(win ? "reward" : "cancel");
 }
 
 function closeSettlement(action) {
   const modal = $("settlementModal");
-  modal.hidden = true;
-  modal.classList.remove("open");
-  modal.setAttribute("aria-hidden", "true");
+  if (modal) {
+    modal.hidden = true;
+    modal.classList.remove("open");
+    modal.setAttribute("aria-hidden", "true");
+  }
   const result = runtime.battleResult;
   runtime.battleResult = null;
   runtime.spawning = false;
@@ -405,6 +515,11 @@ function closeSettlement(action) {
   clearResourceDrops();
   runtime.waveClears = 0;
   runtime.bossActive = false;
+  if (action === "close") {
+    updateHud();
+    if (result?.type === "lose") openPanel("campaign");
+    return;
+  }
   const nextStage = action === "continue"
     ? (runtime.nextStageAfterSettlement || save.stage)
     : (result?.stage || activeStageNumber());

@@ -7,7 +7,8 @@
   <title>三國：群英再起｜三國放置 RPG</title>
   <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/webp" sizes="1024x1024" href="assets/icon.webp">
-  <link rel="stylesheet" href="styles.css">
+  <link rel="preload" href="assets/fonts/jf-openhuninn-2.1.ttf" as="font" type="font/ttf" crossorigin>
+  <link rel="stylesheet" href="styles.css?v=20260830ui12">
 </head>
 <body>
   <main id="gameApp" class="game-app" aria-label="三國：群英再起遊戲">
@@ -16,9 +17,9 @@
       <div class="auth-card">
         <div class="auth-brand">
           <img class="auth-brand-icon" src="assets/icon.webp" alt="三國：群英再起 App icon">
-          <p class="auth-kicker">本地軍府 · 雲端存檔</p>
+          <p class="auth-kicker">義軍軍府 · 雲端存檔</p>
           <h1 id="authModeTitle">三國：群英再起</h1>
-          <p>使用 Google 帳號登入，跨裝置保留你的武將、關卡與軍資。</p>
+          <p>登入軍府，跨裝置保留武將、關卡與軍資。</p>
         </div>
         <div class="auth-provider-card">
           <button id="googleLoginButton" class="google-login-button" type="button"><span class="google-mark" aria-hidden="true">G</span><span>使用 Google 登入</span></button>
@@ -39,31 +40,33 @@
           <span class="pixel-avatar avatar-liubei portrait-asset portrait-asset-liubei" aria-hidden="true" style="background-image:url('assets/characters/portrait-liubei-v1.webp')"><i></i></span>
           <span class="lord-info">
             <strong id="lordName">劉玄德</strong>
-            <span class="level-line"><b id="lordLevel">Lv.1</b><span class="exp-track lord-exp-detail"><i id="expFill"></i></span><small id="expText" class="lord-exp-detail">0/100</small></span>
-            <em id="armyTitle" class="lord-exp-detail">義勇軍</em>
+            <span class="level-line"><b id="lordLevel">Lv.1</b><span class="exp-track"><i id="expFill"></i><small id="expText" class="lord-exp-overlay">0/100</small></span></span>
+            <em id="armyTitle">義勇軍</em>
           </span>
         </button>
 
-        <div class="battle-meta">
-          <button id="skillVfxToggle" class="vfx-toggle-button" type="button">特技效果</button>
-          <div class="field-view-box"><span>戰場視野</span><input type="range" id="fieldViewSlider" min="0.8" max="1.3" step="0.05" value="1" aria-label="戰場視野"></div>
+        <div class="stage-banner" aria-label="當前關卡">
+          <strong id="stageCompactLabel">黃巾之亂 1-1 · 鉅鹿起事</strong>
+          <span id="waveChip" class="wave-chip">第 1 波 · 敵 4</span>
+        </div>
+
+        <div class="battle-controls">
           <button id="speedButton" class="speed-button" type="button" aria-label="切換戰鬥速度" aria-valuetext="戰鬥速度 ×1">×1</button>
-          <p class="stage-meta"><strong id="stageCompactLabel">桃園初陣 1-1</strong><span id="waveChip" class="wave-chip">第 1 波 · 敵 4</span></p>
+          <button id="skillVfxToggle" class="vfx-toggle-button" type="button" aria-label="特技效果" title="特技效果" hidden>特</button>
+          <div class="field-view-box" hidden>
+            <span>戰場視野</span>
+            <input type="range" id="fieldViewSlider" min="0.8" max="1.3" step="0.05" value="1" aria-label="戰場視野">
+          </div>
         </div>
       </header>
 
-      <div id="questTracker" class="quest-tracker" role="button" tabindex="0" data-panel="campaign" aria-label="當前主線目標">
+      <div id="questTracker" class="quest-tracker" role="status" aria-live="polite" aria-label="當前主線目標">
         <span class="quest-tag">主線</span>
-        <span id="questText" class="quest-text">目標：通關第 1 章 · 桃園結義</span>
-        <i class="quest-arrow"></i>
+        <span id="questText" class="quest-text">目標：第 1 關 · 鉅鹿起事</span>
       </div>
 
       <aside class="right-rail" aria-label="快捷功能">
-        <button type="button" data-panel="settings"><span>設定</span></button>
-        <button type="button" data-panel="mail"><span>郵件</span><b class="alert-dot" id="mailDot"></b></button>
-        <button type="button" data-panel="arena"><span>排行</span></button>
-        <button type="button" data-panel="achievement"><span>成就</span></button>
-        <button type="button" data-panel="heroes"><span>精煉</span></button>
+        <button type="button" id="railMoreButton" aria-label="更多軍務" aria-expanded="false" aria-controls="rightRailDrawer"><span>更多</span><b class="alert-dot" id="railMoreDot" hidden></b></button>
       </aside>
       <aside id="rightRailDrawer" class="right-rail-drawer" hidden aria-label="更多軍務">
         <header class="rail-drawer-head">
@@ -71,26 +74,29 @@
           <button id="railDrawerClose" type="button">收起</button>
         </header>
         <div class="rail-drawer-list">
-        <button type="button" data-panel="daily"><i class="icon-calendar"></i><span>日務</span><b class="alert-dot" id="dailyDot"></b></button>
-        <button type="button" data-panel="events"><i class="icon-flag"></i><span>活動</span><b class="alert-dot" id="eventDot"></b></button>
-        <button type="button" data-panel="trials"><i class="icon-scroll"></i><span>名將列傳</span></button>
-        <button type="button" data-panel="arena"><i class="icon-arena"></i><span>演武場</span></button>
-        <button type="button" data-panel="collection"><i class="icon-book"></i><span>圖鑑</span></button>
-        <button type="button" data-panel="tower"><i class="icon-tower"></i><span>問天樓</span></button>
-        <button type="button" data-panel="dungeon"><i class="icon-dungeon"></i><span>日常副本</span></button>
-        <button type="button" data-panel="achievement"><i class="icon-medal"></i><span>成就</span></button>
+          <button type="button" data-panel="daily"><i class="icon-calendar"></i><span>日常軍務</span><b class="alert-dot" id="dailyDot"></b></button>
+          <button type="button" data-panel="mail"><i class="icon-mail"></i><span>軍中文書</span><b class="alert-dot" id="mailDot"></b></button>
+          <button type="button" data-panel="settings"><i class="icon-gear"></i><span>系統設定</span></button>
+          <button type="button" data-panel="shop"><i class="icon-shop"></i><span>行商</span></button>
+          <button type="button" data-panel="events"><i class="icon-flag"></i><span>活動</span><b class="alert-dot" id="eventDot"></b></button>
+          <button type="button" data-panel="collection"><i class="icon-book"></i><span>圖鑑</span></button>
+          <button type="button" data-panel="achievement"><i class="icon-medal"></i><span>成就</span></button>
+          <button type="button" data-panel="trials"><i class="icon-scroll"></i><span>名將列傳</span></button>
+          <button type="button" data-panel="arena"><i class="icon-arena"></i><span>演武場</span></button>
+          <button type="button" data-panel="tower"><i class="icon-tower"></i><span>問天樓</span></button>
+          <button type="button" data-panel="dungeon"><i class="icon-dungeon"></i><span>日常副本</span></button>
         </div>
       </aside>
 
       <div class="battle-info-lane">
         <section id="enemyPreview" class="enemy-preview" aria-live="polite" aria-label="&#x672c;&#x6ce2;&#x6575;&#x5c07;">
-          <header><span id="enemyPreviewLabel">&#x672c;&#x6ce2;&#x6575;&#x5c07;</span><b id="enemyPreviewStage">&#x6843;&#x5712;&#x521d;&#x9663; 1</b></header>
+          <header><span id="enemyPreviewLabel">本波敵將</span><b id="enemyPreviewStage">鉅鹿起事</b></header>
           <div id="enemyPreviewList" class="enemy-preview-list"></div>
         </section>
       </div>
 
       <div id="dialogueBox" class="dialogue-box" aria-live="polite">
-        <span id="dialoguePortrait" class="pixel-avatar avatar-zhangfei"><i></i></span>
+        <span id="dialoguePortrait" class="pixel-avatar avatar-zhangfei portrait-asset portrait-asset-zhangfei" aria-hidden="true" style="background-image:url('assets/characters/portrait-zhangfei-v1.webp')"><i></i></span>
         <p><strong id="dialogueName">張飛</strong><span id="dialogueText">大哥，前方發現黃巾賊軍！</span></p>
       </div>
 
@@ -149,7 +155,7 @@
 
     <div id="settlementModal" class="modal-backdrop" hidden>
       <section class="settlement-modal" role="dialog" aria-modal="true" aria-labelledby="settlementTitle">
-        <span class="settlement-ribbon">BATTLE REPORT</span>
+        <span class="settlement-ribbon" role="img" aria-label="戰報"></span>
         <h2 id="settlementTitle">勝利</h2>
         <p id="settlementSubtitle"></p>
         <div id="settlementLoot" class="settlement-loot"></div>
@@ -162,7 +168,7 @@
     <div id="tutorialLayer" class="modal-backdrop" hidden>
       <section class="tutorial-modal" role="dialog" aria-modal="true" aria-labelledby="tutorialTitle">
         <span class="tutorial-mark">桃</span>
-        <p class="eyebrow">桃園初陣</p>
+        <p class="eyebrow">義軍初征</p>
         <h2 id="tutorialTitle"></h2>
         <p id="tutorialBody"></p>
         <label id="tutorialNameWrap" class="tutorial-name" hidden><span>&#x4e3b;&#x516c;</span><input id="tutorialName" maxlength="10" value="&#x7121;&#x540d;" autocomplete="nickname"></label>
@@ -187,7 +193,7 @@
   <script src="js/auth.js"></script>
   <script>
     (async function bootTaoyuanGame() {
-      const bust = "20260828j";
+      const bust = "20260830ui7";
       const scripts = [
         "js/audio.js",
         "data/game-data.js",
@@ -202,6 +208,7 @@
         "js/game/game-ui-heroes.js",
         "js/game/game-ui-modes.js",
         "js/game/game-ui-panels.js",
+        "js/game/game-input-guard.js",
         "js/cloud-save.js",
         "js/game/game-main.js"
       ];
@@ -230,7 +237,7 @@
     }());
     if ("serviceWorker" in navigator && location.protocol !== "file:" && !/[?&]bust=/.test(location.search)) {
       window.addEventListener("load", () => {
-        navigator.serviceWorker.register("sw.js?v=20260828f").catch(() => {});
+        navigator.serviceWorker.register("sw.js?v=20260829a").catch(() => {});
         navigator.serviceWorker.addEventListener("message", (event) => {
           if (event.data?.type !== "TK_SW_UPDATED") return;
           const key = "tk_sw_reloaded_" + (event.data.cache || "v7");

@@ -4,7 +4,7 @@
 const UI_TEXT = {
   daily: "日務",
   shop: "行商",
-  arena: "演武台",
+  arena: "演武場",
   claim: "領取",
   claimed: "已領",
   battle: "出征",
@@ -33,20 +33,25 @@ function startStage(stage, reason = "征戰", options = {}) {
 function renderCampaign() {
   const current = activeStageNumber();
   const stages = GAME_DATA.stages || [];
-  const currentChapter = chapterForStage();
+  const currentChapter = chapterForStage() || CHAPTERS[0] || { name: "征戰", stage: "戰場", boss: "敵將" };
+  const chapterMark = (currentChapter.name || "征").slice(0, 1);
+  const currentBoss = enemyGeneralById(stageDefinition(current)?.bossGeneral) || null;
   const cards = stages.map((stage) => {
     const passed = stage.id < save.stage;
     const isCurrent = stage.id === save.stage;
     const isBoss = stage.id % 5 === 0;
-    const stageChapter = CHAPTERS[Math.min(CHAPTERS.length - 1, Math.floor((stage.id - 1) / STAGES_PER_CHAPTER))];
+    const stageChapter = CHAPTERS[Math.min(CHAPTERS.length - 1, Math.floor((stage.id - 1) / STAGES_PER_CHAPTER))] || currentChapter;
+    const stageChapterIndex = Math.min(CHAPTERS.length - 1, Math.floor((stage.id - 1) / STAGES_PER_CHAPTER));
     const general = stage.bossGeneral ? enemyGeneralById(stage.bossGeneral) : null;
-    const bossName = general?.name || stageChapter.boss;
-    const stars = save.stageStars[stage.id] || (passed ? 3 : 0);
+    const bossName = general?.name || stageChapter.boss || "敵將";
+    const stageLabel = stage.name || stageChapter.stage || ("關卡 " + stage.id);
+    const stars = save.stageStars?.[stage.id] || (passed ? 3 : 0);
     const starHtml = Array.from({ length: 3 }, (_, index) => '<i class="stage-star' + (index < stars ? " earned" : "") + '"></i>').join("");
-    return '<article class="stage-card ' + (isCurrent ? "current" : passed ? "cleared" : "locked") + ' ' + (isBoss ? "boss" : "") + '" data-stage="' + stage.id + '">' +
+    return '<article class="stage-card ' + (isCurrent ? "current" : passed ? "cleared" : "locked") + ' ' + (isBoss ? "boss" : "") + '" data-stage="' + stage.id + '" data-chapter="' + stageChapterIndex + '">' +
+      '<span class="stage-visual stage-visual-' + stageChapterIndex + '" aria-hidden="true"></span>' +
       '<div class="stage-info">' +
-        '<h3>' + stage.name + '</h3>' +
-        '<p>' + (isBoss ? "守將 · " + bossName : stage.title || stageChapter.name) + '</p>' +
+        '<h3>' + stageLabel + '</h3>' +
+        '<p>' + (isBoss ? "守將 · " + bossName : (stageChapter.name || "征戰")) + '</p>' +
         '<div class="stage-stars">' + starHtml + '</div>' +
       '</div>' +
       '<div class="stage-actions">' +
@@ -56,17 +61,16 @@ function renderCampaign() {
     '</article>';
   }).join("");
   setPanel("征戰天下",
-    '<section class="campaign-chapter-hero">' +
-      '<div class="campaign-chapter-badge">' + currentChapter.icon + '</div>' +
+    '<section class="campaign-chapter-hero" data-chapter="' + Math.min(CHAPTERS.length - 1, Math.floor((current - 1) / STAGES_PER_CHAPTER)) + '">' +
+      '<div class="campaign-chapter-badge" aria-hidden="true">' + chapterMark + '</div>' +
       '<div>' +
         '<span class="eyebrow">當前章節</span>' +
-        '<h3>' + currentChapter.name + '</h3>' +
-        '<p>' + currentChapter.desc + '</p>' +
+        '<h3>' + (currentChapter.name || "征戰") + '</h3>' +
+        '<p>' + (currentChapter.stage || "戰場") + ' · 守將 ' + (currentChapter.boss || "敵將") + '</p>' +
       '</div>' +
+      (currentBoss?.portrait ? '<span class="campaign-boss-portrait" style="background-image:url(\'' + currentBoss.portrait + '\')" aria-label="守將 ' + (currentBoss.name || currentChapter.boss || "敵將") + '"></span>' : '<span class="campaign-boss-portrait" aria-hidden="true"></span>') +
     '</section>' +
     '<div class="stage-list">' + cards + '</div>');
-  const target = document.querySelector('.stage-card.current');
-  if (target) target.scrollIntoView({ block: "center", behavior: "smooth" });
 }
 
 function sweepStage(stage = Math.max(1, save.stage - 1)) {
@@ -89,9 +93,10 @@ function renderArena() {
   const claimedCount = save.arena?.claimed?.length || 0;
   const cards = ARENA_OPPONENTS.map((opponent) => {
     const challenged = (save.arena?.claimed || []).includes(opponent.id);
-    return '<article class="arena-card ' + (challenged ? "cleared" : "") + '"><div class="arena-badge">' + (opponent.tag || "戰") + '</div><div><h3>' + opponent.name + '</h3><p>評估戰力 <strong>' + formatNumber(opponent.power) + '</strong> · 敵陣 ' + (opponent.generals?.length || 3) + ' 將</p><small>獎勵 ' + rewardHtml(opponent.reward, true) + '</small></div><button class="' + (challenged ? "stone-button" : "seal-button") + ' panel-action" type="button" data-action="arena-challenge" data-opponent="' + opponent.id + '"' + (challenged ? " disabled" : "") + '>' + (challenged ? "已挑戰" : "切磋") + '</button></article>';
+    const portraits = (opponent.generals || []).map((id) => enemyGeneralById(id)).filter(Boolean).map((general) => avatarHtml(general, false)).join("");
+    return '<article class="arena-card ' + (challenged ? "cleared" : "") + '"><div class="arena-badge">' + (opponent.tag || "戰") + '</div><div><h3>' + opponent.name + '</h3><p>評估戰力 <strong>' + formatNumber(opponent.power) + '</strong> · 敵陣 ' + (opponent.generals?.length || 3) + ' 將</p><div class="arena-portraits" aria-label="敵方武將">' + portraits + '</div><small>獎勵 ' + rewardHtml(opponent.reward, true) + '</small></div><button class="' + (challenged ? "stone-button" : "seal-button") + ' panel-action" type="button" data-action="arena-challenge" data-opponent="' + opponent.id + '"' + (challenged ? " disabled" : "") + '>' + (challenged ? "已挑戰" : "切磋") + '</button></article>';
   }).join("");
-  setPanel(UI_TEXT.arena, '<section class="arena-banner"><span class="eyebrow">本機影武 · 每週切磋</span><h3>演武擂台</h3><p>與名將幻影進行 5v5 正式對決，驗證陣容剋制與戰法策略。每週結算重置。</p><div class="mode-stats"><span>我方戰力 <b>' + formatNumber(power) + '</b></span><span>本週已勝 <b>' + claimedCount + ' / ' + ARENA_OPPONENTS.length + '</b></span></div></section><div class="arena-list">' + cards + '</div>');
+  setPanel("演武場", '<section class="arena-banner"><h3>演武擂台</h3><p>與名將幻影進行 5v5 正式對決，驗證陣容剋制與戰法策略。每週結算重置。</p><div class="mode-stats"><span>我方戰力 <b>' + formatNumber(power) + '</b></span><span>本週已勝 <b>' + claimedCount + ' / ' + ARENA_OPPONENTS.length + '</b></span></div></section><div class="arena-list">' + cards + '</div>');
 }
 
 function challengeArena(opponentId) {
@@ -113,7 +118,7 @@ function renderDungeons() {
   const stamina = staminaStatus();
   const cards = DAILY_DUNGEONS.map((dungeon) => {
     const claimed = Boolean(save.dungeons?.claimed?.[dungeon.id]);
-    return '<article class="mode-card ' + (claimed ? "cleared" : "") + '"><div class="mode-icon">特</div><div><h3>' + dungeon.name + '</h3><p>' + dungeon.desc + '</p><small>建議戰力 ' + formatNumber(dungeon.power) + ' · ' + rewardHtml(dungeon.reward, true) + '</small></div><button class="' + (claimed ? "stone-button" : "seal-button") + ' panel-action" type="button" data-action="dungeon-challenge" data-dungeon="' + dungeon.id + '"' + (claimed || stamina.current < dungeon.cost ? " disabled" : "") + '>' + (claimed ? "已完成" : "挑戰") + '<br><small>' + dungeon.cost + ' 體力</small></button></article>';
+    return '<article class="mode-card ' + (claimed ? "cleared" : "") + '" data-dungeon="' + dungeon.id + '"><div class="mode-icon">特</div><div><h3>' + dungeon.name + '</h3><p>' + dungeon.desc + '</p><small>建議戰力 ' + formatNumber(dungeon.power) + ' · ' + rewardHtml(dungeon.reward, true) + '</small></div><button class="' + (claimed ? "stone-button" : "seal-button") + ' panel-action" type="button" data-action="dungeon-challenge" data-dungeon="' + dungeon.id + '"' + (claimed || stamina.current < dungeon.cost ? " disabled" : "") + '>' + (claimed ? "已完成" : "挑戰") + '<br><small>' + dungeon.cost + ' 體力</small></button></article>';
   }).join("");
   setPanel("日常副本", '<section class="mode-banner"><span class="eyebrow">每日特訓 · 資源獲取</span><h3>日常副本</h3><p>挑戰特定主題部隊與首領，獲取大量銅錢、糧草、玉璧與鍛造碎片。每日 00:00 重置。</p><div class="mode-stats"><span>體力 <b>' + stamina.current + ' / ' + stamina.max + '</b></span><span>每 5 分鐘回復 <b>+1</b></span></div></section><div class="mode-list">' + cards + '</div>');
 }
@@ -140,7 +145,7 @@ function renderTower() {
   const required = TOWER_CONFIG.basePower + (nextFloor - 1) * TOWER_CONFIG.powerStep;
   const cost = TOWER_CONFIG.stamina || 4;
   const power = currentArmyPower();
-  setPanel(TOWER_CONFIG.name || "問天樓", '<section class="mode-banner"><span class="eyebrow">無盡本機模式</span><h3>' + (TOWER_CONFIG.name || "問天樓") + '</h3><p>已通關 ' + (save.tower?.best || 0) + ' 層，下層建議戰力 ' + formatNumber(required) + '。</p><div class="mode-stats"><span>我方 <b>' + formatNumber(power) + '</b></span><span>體力 <b>' + stamina.current + ' / ' + stamina.max + '</b></span></div></section><button class="seal-button wide-button" type="button" data-action="tower-challenge"' + (stamina.current < cost ? " disabled" : "") + '>挑戰第 ' + nextFloor + ' 層 · 消耗 ' + cost + ' 體力</button><p class="panel-footnote">每層只計入最高進度，失敗可重新挑戰。</p>');
+  setPanel(TOWER_CONFIG.name || "問天樓", '<section class="mode-banner tower-banner"><span class="eyebrow">無盡本機模式</span><h3>' + (TOWER_CONFIG.name || "問天樓") + '</h3><p>已通關 ' + (save.tower?.best || 0) + ' 層，下層建議戰力 ' + formatNumber(required) + '。</p><div class="mode-stats"><span>我方 <b>' + formatNumber(power) + '</b></span><span>體力 <b>' + stamina.current + ' / ' + stamina.max + '</b></span></div></section><button class="seal-button wide-button" type="button" data-action="tower-challenge"' + (stamina.current < cost ? " disabled" : "") + '>挑戰第 ' + nextFloor + ' 層 · 消耗 ' + cost + ' 體力</button><p class="panel-footnote">每層只計入最高進度，失敗可重新挑戰。</p>');
 }
 
 function challengeTower() {
@@ -163,19 +168,10 @@ function renderTrials() {
   const cards = trials.map((trial) => {
     const isCleared = clearedList.includes(trial.id);
     const hero = heroById(trial.heroId);
-    return '<article class="mode-card ' + (isCleared ? "cleared" : "") + '" style="background:linear-gradient(135deg, rgba(40,30,20,0.85), rgba(20,16,12,0.95));border:1.5px solid ' + (isCleared ? '#d4af37' : '#6a5232') + ';margin-bottom:8px;padding:10px;border-radius:6px;">' +
-      '<div style="display:flex;align-items:center;gap:10px;">' +
-        avatarHtml(hero, false) +
-        '<div style="flex:1;min-width:0;">' +
-          '<span class="eyebrow" style="color:#d4aa5d;font-size:11px;">' + trial.chapter + '</span>' +
-          '<h3 style="margin:2px 0 3px 0;color:' + (isCleared ? '#ffd700' : '#ffe6a1') + ';font-size:16px;">' + trial.name + '</h3>' +
-          '<p style="margin:0;color:#c9be9f;font-size:12px;line-height:1.4;">' + trial.desc + '</p>' +
-          '<div style="margin-top:4px;font-size:11px;color:#d4aa5d;">首通解鎖：' + trial.reward.frame.name + ' + ' + trial.reward.title.name + ' + 碎片×' + trial.reward.shards + '</div>' +
-        '</div>' +
-        '<div style="text-align:right;">' +
-          '<button class="' + (isCleared ? "stone-button" : "seal-button") + ' panel-action" type="button" data-action="trial-challenge" data-trial="' + trial.id + '"' + (stamina.current < trial.cost ? " disabled" : "") + '>' + (isCleared ? "重戰" : "挑戰") + '<br><small>' + trial.cost + ' 體力</small></button>' +
-        '</div>' +
-      '</div>' +
+    return '<article class="trial-card ' + (isCleared ? "cleared" : "") + '">' +
+      avatarHtml(hero, false) +
+      '<div class="trial-card-copy"><span class="eyebrow">' + trial.chapter + '</span><h3>' + trial.name + '</h3><p>' + trial.desc + '</p><small>首通解鎖：' + trial.reward.frame.name + ' + ' + trial.reward.title.name + ' + 碎片×' + trial.reward.shards + '</small></div>' +
+      '<button class="' + (isCleared ? "stone-button" : "seal-button") + ' panel-action" type="button" data-action="trial-challenge" data-trial="' + trial.id + '"' + (stamina.current < trial.cost ? " disabled" : "") + '>' + (isCleared ? "重戰" : "挑戰") + '<br><small>' + trial.cost + ' 體力</small></button>' +
     '</article>';
   }).join("");
 

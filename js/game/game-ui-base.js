@@ -63,7 +63,8 @@ function updateHud() {
   const chapterStage = ((stage - 1) % STAGES_PER_CHAPTER) + 1;
   const chapterNumber = Math.floor((stage - 1) / STAGES_PER_CHAPTER) + 1;
   const stageTitle = stageConfig?.name || "關卡 " + stage;
-  setHudText("stageCompactLabel", chapterNumber + "-" + chapterStage);
+  const chapterName = CHAPTERS[Math.min(CHAPTERS.length - 1, Math.floor((stage - 1) / STAGES_PER_CHAPTER))]?.name || "";
+  setHudText("stageCompactLabel", (chapterName ? chapterName + " " : "") + chapterNumber + "-" + chapterStage + " · " + stageTitle);
   if ($("enemyPreviewStage")) setHudText("enemyPreviewStage", stageTitle);
   const curChapter = CHAPTERS[Math.min(CHAPTERS.length - 1, Math.floor((save.stage - 1) / STAGES_PER_CHAPTER))];
   const targetStage = stageDefinition(save.stage);
@@ -88,6 +89,16 @@ function updateHud() {
   const eventReady = LOCAL_EVENTS.some((event) => eventProgress(event.id) >= event.target && !save.eventState.claimed.includes(event.id));
   setHudProperty("eventDot", "hidden", !eventReady);
   setHudProperty("railMoreDot", "hidden", !eventReady);
+  const frame = avatarFrameById(save.equippedFrame);
+  const lordAvatar = $("profileButton")?.querySelector?.(".pixel-avatar");
+  if (lordAvatar && frame?.color) {
+    const key = "lordFrameColor";
+    if (runtime.hudCache[key] !== frame.color) {
+      runtime.hudCache[key] = frame.color;
+      lordAvatar.style.borderColor = frame.color;
+      lordAvatar.style.boxShadow = "0 0 0 1px #111a12, 0 2px 6px #0008, inset 0 0 0 1px " + frame.color + "66";
+    }
+  }
 }
 
 function enemyPreviewAvatarHtml(general) {
@@ -119,7 +130,7 @@ function showEnemyPreview(stage = activeStageNumber(), wave = null) {
   preview.classList.add("show");
   preview.setAttribute("aria-hidden", "false");
   clearTimeout(runtime.enemyPreviewTimer);
-  runtime.enemyPreviewTimer = setTimeout(hideEnemyPreview, 4200);
+  runtime.enemyPreviewTimer = setTimeout(hideEnemyPreview, 2000);
 }
 
 function hideEnemyPreview() {
@@ -160,12 +171,17 @@ function showDialogue(speaker, text, avatar = "avatar-liubei") {
     box.classList.add("show");
     box.setAttribute("aria-hidden", "false");
   }
-  runtime.dialogueTimer = 4.2;
+  runtime.dialogueTimer = 2.8;
 }
 
 function setPanel(title, html) {
   $("panelTitle").textContent = title;
-  $("panelContent").innerHTML = html;
+  const content = $("panelContent");
+  content.innerHTML = html;
+  const panel = $("gamePanel");
+  if (panel) panel.dataset.panel = runtime.panel || "";
+  // Panels share one scroll owner; every new screen must start at its title.
+  content.scrollTop = 0;
   $("panelBackdrop").hidden = false;
   $("gamePanel").classList.add("open");
   $("gamePanel").setAttribute("aria-hidden", "false");
@@ -179,6 +195,7 @@ function closePanel() {
   runtime.panel = null;
   runtime.formationPick = null;
   runtime.selectedHero = null;
+  $("profileButton")?.setAttribute("aria-expanded", "false");
   const drawer = $("rightRailDrawer");
   if (drawer) {
     drawer.hidden = true;
@@ -204,12 +221,36 @@ function toggleRailDrawer() {
 }
 
 function openPanel(type) {
+  // Vertical slice: keep campaign core open; gate meta modes until chapter-1 clear.
+  const sliceGate = { events: 11, trials: 11, tower: 11, dungeon: 6, arena: 6 };
+  const unlockAt = sliceGate[type];
+  if (unlockAt && Number(save.stage) < unlockAt) {
+    toast("通關第 " + (unlockAt - 1) + " 關後開放「" + ({
+      events: "活動／征戰敕令",
+      trials: "名將列傳",
+      tower: "問天樓",
+      dungeon: "日常副本",
+      arena: "演武場"
+    }[type] || type) + "」");
+    return;
+  }
   runtime.panel = type;
   const drawer = $("rightRailDrawer");
   if (drawer) {
     drawer.hidden = true;
     $("railMoreButton")?.setAttribute("aria-expanded", "false");
   }
+  if (type === "battle") {
+    closePanel();
+    document.querySelectorAll(".bottom-nav [data-panel]").forEach((btn) => {
+      btn.classList.toggle("selected", btn.dataset.panel === "battle");
+    });
+    $("profileButton")?.setAttribute("aria-expanded", "false");
+    return;
+  }
+  document.querySelectorAll(".bottom-nav [data-panel]").forEach((btn) => {
+    btn.classList.toggle("selected", btn.dataset.panel === type);
+  });
   if (type === "heroes") renderHeroes();
   else if (type === "formation") renderFormation();
   else if (type === "tactics") renderTactics();
@@ -225,13 +266,28 @@ function openPanel(type) {
   else if (type === "mail") renderMail();
   else if (type === "achievement") renderAchievements();
   else if (type === "settings") renderSettings();
+  else if (type === "profile") renderLord();
+  $("profileButton")?.setAttribute("aria-expanded", String(type === "profile"));
   beep(330, 0.04, "square", 0.018);
 }
 
 function rewardHtml(reward = {}, compact = false) {
   const labels = { gold: "銅錢", food: "糧草", jade: "玉璧", shards: "名將碎片", exp: "經驗" };
   const icons = { gold: "res-coin", food: "res-food", jade: "res-jade", shards: "res-shard", exp: "res-exp" };
-  return Object.entries(reward).filter(([, value]) => value && value !== true).map(([key, value]) => '<span class="reward-chip" title="' + (labels[key] || key) + '"><i class="' + (icons[key] || "res-coin") + '"></i><b>' + formatNumber(value) + '</b>' + (compact ? "" : " " + (labels[key] || key)) + '</span>').join("");
+  return Object.entries(reward)
+    .filter(([key, value]) => labels[key] && Number(value) > 0)
+    .map(([key, value]) => '<span class="reward-chip" title="' + labels[key] + '"><i class="' + icons[key] + '"></i><b>' + formatNumber(value) + '</b>' + (compact ? "" : " " + labels[key]) + '</span>')
+    .join("");
+}
+
+function achievementReward(item = {}) {
+  return {
+    gold: Number(item.gold) || 0,
+    food: Number(item.food) || 0,
+    jade: Number(item.jade) || 0,
+    shards: Number(item.shards) || 0,
+    exp: Number(item.exp) || 0
+  };
 }
 
 function damageStatsHtml(rows = []) {
@@ -246,6 +302,10 @@ function handlePanelAction(button) {
   const action = button.dataset.action;
   if (!action) return;
 
+  if (action === "open-panel") {
+    openPanel(button.dataset.panel);
+    return;
+  }
   if (action === "hero-filter") renderHeroes(button.dataset.filter);
   else if (action === "hero-sort") {
     runtime.heroSort = button.dataset.sort;
@@ -254,6 +314,13 @@ function handlePanelAction(button) {
     renderHeroes();
   }
   else if (action === "hero-detail") renderHeroDetail(button.dataset.hero);
+  else if (action === "hero-equip-toggle") {
+    runtime.heroDetailEquipOpen = !runtime.heroDetailEquipOpen;
+    renderHeroDetail(button.dataset.hero);
+  } else if (action === "hero-advanced-toggle") {
+    runtime.heroDetailAdvancedOpen = !runtime.heroDetailAdvancedOpen;
+    renderHeroDetail(button.dataset.hero);
+  }
   else if (action === "hero-auto-equip") autoEquipHero(button.dataset.hero);
   else if (action === "paper-cycle") cycleHeroPaperDoll(button.dataset.hero, button.dataset.slot);
   else if (action === "equipment-refine") refineHeroEquipment(button.dataset.hero);
@@ -343,7 +410,7 @@ function handlePanelAction(button) {
     const achievement = achievementData().find((item) => item.id === button.dataset.achievement);
     if (!achievement || achievement.value < achievement.target || save.achievementClaimed.includes(achievement.id)) return;
     save.achievementClaimed.push(achievement.id);
-    awardResources(achievement);
+    awardResources(achievementReward(achievement));
     persist();
     updateHud();
     toast("成就獎勵已領取");
@@ -388,7 +455,8 @@ function handlePanelAction(button) {
       save.equippedTitle = title.id;
       persist();
       updateHud();
-      renderCollection();
+      if (runtime.panel === "profile") renderLord();
+      else renderCollection();
       toast("稱號已裝備");
     }
   } else if (action === "treasure-equip") {

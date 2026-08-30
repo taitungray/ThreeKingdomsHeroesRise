@@ -1,60 +1,113 @@
+@font-face {
+  font-family: "Huninn Game";
+  src: url("../assets/fonts/jf-openhuninn-2.1.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
 :root {
-  --ink: #171512;
-  --paper: #dfcda0;
-  --paper-light: #f5e8bd;
-  --gold: #e0b653;
-  --jade: #79c69c;
-  --red: #ad3d31;
-  --text: #fff2cf;
-  --surface-field: #4f604d;
-  --surface-paper: #d2bd8e;
-  --surface-iron: #1a211a;
-  --accent-danger: #cb4e3f;
-  --accent-reward: #e0b653;
-  --line-dark: #111510;
-  --line-mid: #65583c;
-  --line-light: #c6a965;
-  --iron-1: #30372e;
-  --iron-2: #171d17;
-  --wood-1: #6a452d;
-  --wood-2: #342219;
-  --red-1: #b64a38;
-  --red-2: #6f241e;
-  --paper-1: #f0dfb5;
-  --paper-2: #bba477;
+  /* Aesthetic: 鐵木軍帳 · 朱砂戰令 · 暗金線 */
+  --ink: #14110e;
+  --paper: #e8d6a8;
+  --paper-light: #faf0d0;
+  --gold: #e8c46a;
+  --gold-bright: #ffe9a8;
+  --jade: #6fbf94;
+  --red: #c44738;
+  --text: #fff4d6;
+  --surface-field: #3e4c3c;
+  --surface-paper: #dcc89a;
+  --surface-iron: #10160f;
+  --accent-danger: #e05544;
+  --accent-reward: #e8c46a;
+  --line-dark: #080a07;
+  --line-mid: #7a6238;
+  --line-light: #d8b45e;
+  --iron-1: #343c32;
+  --iron-2: #10160f;
+  --wood-1: #7a5232;
+  --wood-2: #2a1a10;
+  --red-1: #d4563e;
+  --red-2: #6e2218;
+  --paper-1: #f6e8c0;
+  --paper-2: #c8b07c;
   --touch-target: 44px;
-  --motion-fast: 100ms;
-  --motion-panel: 200ms;
+  --motion-fast: 90ms;
+  --motion-panel: 220ms;
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
-  --panel-ink: #2a2218;
-  --panel-muted: #5a4630;
-  --panel-cinnabar: #7a2e24;
-  --panel-line: #6e5634;
-  --panel-paper: #efe1b6;
+  --panel-ink: #2a2117;
+  --panel-muted: #6a5238;
+  --panel-cinnabar: #8e3026;
+  --panel-line: #7a6038;
+  --panel-paper: #f4e6bc;
   --panel-paper-deep: #cbb58a;
+  --panel-shadow: 0 14px 0 #070907cc, 0 28px 56px #000d;
   --type-display: 22px;
-  --type-heading: 18px;
+  --type-heading: 17px;
   --type-body: 15px;
   --type-meta: 14px;
   --type-button: 16px;
+  --type-number: 15px;
+  --font-ui: "Huninn Game", "Microsoft JhengHei UI", "Microsoft JhengHei", "PingFang TC", sans-serif;
+  --font-display: "Huninn Game", "Microsoft JhengHei UI", "Microsoft JhengHei", "PingFang TC", sans-serif;
+  --font-number: "Huninn Game", "Arial", sans-serif;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --mat-wood:
+    linear-gradient(180deg, rgba(255, 220, 160, 0.12), transparent 38%),
+    linear-gradient(180deg, #5a3e28, #1e140e);
+  --mat-iron:
+    linear-gradient(180deg, rgba(220, 210, 170, 0.1), transparent 40%),
+    linear-gradient(180deg, #2c342c, #10160f);
+  --mat-paper:
+    radial-gradient(ellipse at 20% 0%, #fff8dc55, transparent 45%),
+    linear-gradient(180deg, #f6e8c0, #c8b07c);
+  --mat-seal:
+    linear-gradient(180deg, rgba(255, 220, 160, 0.28), transparent 42%),
+    linear-gradient(180deg, #d4563e, #6e2218);
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-html, body {
+html, body, .game-app {
   width: 100%;
   height: 100%;
   margin: 0;
   overflow: hidden;
   background:
-    radial-gradient(circle at 50% 12%, #4b4a3e 0 3%, transparent 30%),
-    repeating-linear-gradient(135deg, #10130f 0 2px, #171a15 2px 5px);
+    radial-gradient(ellipse at 50% 0%, #4a4030 0%, transparent 46%),
+    radial-gradient(ellipse at 50% 100%, #1a2218 0%, transparent 40%),
+    repeating-linear-gradient(135deg, #0c0f0b 0 4px, #141814 4px 8px);
   color: var(--text);
-  font-family: "Microsoft JhengHei", "PingFang TC", "Noto Sans TC", sans-serif;
+  font-family: var(--font-ui);
   touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
 }
 button { color: inherit; font: inherit; border: 0; cursor: pointer; user-select: none; touch-action: manipulation; }
-button:focus-visible { outline: 3px solid #fff0a0; outline-offset: 2px; }
+img,
+svg,
+picture,
+a {
+  -webkit-user-drag: none;
+  user-drag: none;
+}
+input,
+textarea,
+select,
+[contenteditable="true"] {
+  -webkit-user-select: text;
+  user-select: text;
+  -webkit-touch-callout: default;
+}
+button:focus-visible { outline: 3px solid var(--gold-bright); outline-offset: 2px; }
 [hidden] { display: none !important; }
 
 .game-app {
@@ -64,8 +117,14 @@ button:focus-visible { outline: 3px solid #fff0a0; outline-offset: 2px; }
   min-height: 0;
   margin: 0 auto;
   overflow: hidden;
-  background: #263528;
-  box-shadow: 0 0 0 2px #0a0c09, 0 0 0 5px #392e20, 0 0 46px #000e;
+  background:
+    radial-gradient(ellipse at 50% 18%, #3a4a38 0%, transparent 55%),
+    linear-gradient(180deg, #243028, #1a2218);
+  box-shadow:
+    0 0 0 2px #060806,
+    0 0 0 7px #3a2e1e,
+    0 0 0 8px #d4ae5888,
+    0 0 64px #000e;
   isolation: isolate;
 }
 .game-app::before {
@@ -74,67 +133,114 @@ button:focus-visible { outline: 3px solid #fff0a0; outline-offset: 2px; }
   inset: 0;
   z-index: 35;
   pointer-events: none;
-  border: 4px solid transparent;
-  border-image: linear-gradient(#d4b56a, #5a4328, #c9a24a) 1;
-  box-shadow: inset 0 0 28px #000c;
+  border: 3px solid transparent;
+  border-image: linear-gradient(180deg, #f0d080, #6a5030 42%, #d4ae58) 1;
+  box-shadow: inset 0 0 42px #000c;
+}
+.game-app::after {
+  content: "";
+  position: absolute;
+  inset: 3px;
+  z-index: 34;
+  pointer-events: none;
+  box-shadow: inset 0 0 0 1px #c4a05633;
 }
 
-/* 按鈕系列 */
+/* 按鈕 — 朱砂印 / 石鈕 */
 .seal-button, .stone-button {
-  min-height: 44px;
-  padding: 8px 16px;
+  position: relative;
+  min-height: var(--touch-target);
+  padding: 10px 18px;
   border: 2px solid #3a241a;
-  border-radius: 6px;
-  color: #fff0c1;
-  font-family: "DFKai-SB", "KaiTi", serif;
-  font-size: 16px;
-  font-weight: bold;
-  letter-spacing: 1px;
-  background: linear-gradient(180deg, var(--red-1), var(--red-2));
-  box-shadow: inset 0 0 0 1px #e2a26a, 0 3px 0 #2a1711;
-  text-shadow: 1px 1px #40130f;
-  transition: transform 0.1s ease, filter 0.1s ease, box-shadow 0.1s ease;
+  border-radius: var(--radius-sm);
+  color: #fff6d0;
+  font-family: "DFKai-SB", "KaiTi", "Microsoft JhengHei", serif;
+  font-size: var(--type-button);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  background: var(--mat-seal);
+  box-shadow:
+    inset 0 1px 0 #ffd8a099,
+    inset 0 -3px 0 #4a1812,
+    0 0 0 1px #e8c46a55,
+    0 4px 0 #1a0e0a;
+  text-shadow: 0 1px 2px #3a120e;
+  transition: transform var(--motion-fast), filter var(--motion-fast), box-shadow var(--motion-fast);
 }
-.seal-button:active { transform: translateY(2px); filter: brightness(0.9); }
+.seal-button:active {
+  transform: translateY(3px) scale(0.985);
+  filter: brightness(0.94);
+  box-shadow: inset 0 3px 6px #3a120e99, 0 0 0 1px #e8c46a44, 0 1px 0 #1a0e0a;
+}
 .stone-button {
-  border-color: #272d24;
-  color: #f1e5bd;
-  background: linear-gradient(180deg, #626b5a, #2d382d);
-  box-shadow: inset 0 0 0 1px #a8a17e, 0 3px 0 #161b15;
-  text-shadow: 1px 1px #141a14;
+  border-color: #2a3028;
+  color: #f6ecd4;
+  background: var(--mat-iron);
+  box-shadow:
+    inset 0 1px 0 #d8d0b066,
+    inset 0 -3px 0 #0e140e,
+    0 0 0 1px #8a7a5855,
+    0 4px 0 #0a0e0a;
+  text-shadow: 0 1px 2px #0e140e;
 }
-.stone-button:active { transform: translateY(2px); filter: brightness(0.9); }
-.seal-button:disabled, .stone-button:disabled { opacity: 1; filter: saturate(.25) brightness(.78); color: #bbb9a6; border-color: #4d4d43; box-shadow: inset 0 0 0 1px #797968, 0 2px 0 #252620; }
+.stone-button:active {
+  transform: translateY(3px) scale(0.985);
+  filter: brightness(0.94);
+}
+.seal-button:disabled, .stone-button:disabled {
+  opacity: 1;
+  filter: saturate(0.15) brightness(0.68);
+  color: #b0aea0;
+  border-color: #4a4a40;
+  box-shadow: inset 0 0 0 1px #787868, 0 2px 0 #22241e;
+  cursor: not-allowed;
+  transform: none;
+}
 
 .compact-button {
-  min-height: 44px !important;
-  padding: 6px 10px !important;
+  min-height: var(--touch-target) !important;
+  padding: 6px 12px !important;
   font-size: 14px !important;
   white-space: nowrap;
-  border: 1px solid #765b37;
-  color: #633126;
-  background: linear-gradient(#ebd9ab, #b99f6d);
-  box-shadow: inset 0 0 0 1px #fff0c2;
+  border: 1.5px solid #7a6038;
+  border-radius: var(--radius-sm);
+  color: #5a3224;
+  background: linear-gradient(180deg, #f4e4b8, #b89a64);
+  box-shadow: inset 0 1px 0 #fff4cc, 0 2px 0 #5a4428;
 }
-.compact-button small { display: block; font-size: 12px; line-height: 1.2; font-weight: 700; }
+.compact-button small { display: block; font-size: 12px; line-height: 1.25; font-weight: 700; }
 .wide-button { width: 100%; min-height: 48px; margin-top: 10px; font-size: var(--type-button); }
-.text-button { display: block; min-height: 38px; margin: 10px auto 0; color: #70482d; border: 0; background: transparent; font-size: 11px; text-decoration: underline; text-underline-offset: 3px; }
+.text-button {
+  display: block;
+  min-height: 44px;
+  margin: 10px auto 0;
+  color: #7a5230;
+  border: 0;
+  background: transparent;
+  font-size: 14px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
 
-/* 提示與 Toast */
+/* Toast — 軍令條 */
 .toast {
   position: absolute;
   z-index: 100;
   left: 50%;
-  bottom: calc(130px + var(--safe-bottom));
+  bottom: calc(142px + var(--safe-bottom));
   width: max-content;
-  max-width: min(86%, 340px);
-  padding: 8px 16px;
-  border: 1px solid #c59c4d;
-  color: #ffe7a1;
+  max-width: min(88%, 340px);
+  padding: 12px 20px;
+  border: 2px solid var(--line-light);
+  border-radius: var(--radius-sm);
+  color: var(--gold-bright);
   text-align: center;
-  background: #1a241aeF;
-  box-shadow: 0 4px 14px #000b, inset 0 0 0 1px #d9ba6d33;
-  font-size: 14px;
+  background:
+    linear-gradient(180deg, #2e382ef5, #121812f8);
+  box-shadow: 0 8px 24px #000c, inset 0 0 0 1px #d9ba6d44, inset 0 1px 0 #fff3;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
   opacity: 0;
   transform: translate(-50%, 12px);
   transition: opacity .2s, transform .2s;
@@ -142,7 +248,7 @@ button:focus-visible { outline: 3px solid #fff0a0; outline-offset: 2px; }
 }
 .toast.show { opacity: 1; transform: translate(-50%, 0); }
 
-/* Loading 畫面 */
+/* Loading */
 .loading-screen {
   position: absolute;
   z-index: 90;
@@ -150,46 +256,113 @@ button:focus-visible { outline: 3px solid #fff0a0; outline-offset: 2px; }
   display: grid;
   place-items: center;
   align-content: center;
-  gap: 10px;
+  gap: 14px;
   color: #f7e9ba;
-  background: radial-gradient(circle at 50% 34%, #87502f 0 4%, transparent 18%), linear-gradient(145deg, #111711, #2e3b2d 55%, #151a15);
+  background:
+    radial-gradient(circle at 50% 30%, #8a4a2888 0 4%, transparent 28%),
+    linear-gradient(165deg, #0c100c, #2a3828 52%, #10160f);
   text-align: center;
   transition: opacity .28s ease;
 }
 .loading-screen[hidden] { display: none; }
-.loading-screen strong { font-family: "DFKai-SB", "KaiTi", serif; font-size: 26px; letter-spacing: 4px; color: #ffe6a3; text-shadow: 0 2px 8px #000, 0 0 12px rgba(245, 203, 93, 0.6); }
-.loading-screen small { color: #c9b36e; font-size: 12px; letter-spacing: 2px; }
+.loading-screen strong {
+  font-family: "DFKai-SB", "KaiTi", serif;
+  font-size: 28px;
+  letter-spacing: 0.22em;
+  color: var(--gold-bright);
+  text-shadow: 0 2px 8px #000, 0 0 18px rgba(245, 203, 93, 0.4);
+}
+.loading-screen small { color: #c9b36e; font-size: 13px; letter-spacing: 0.16em; }
 .loading-seal {
   display: block;
-  width: 64px;
-  height: 64px;
+  width: 80px;
+  height: 80px;
   background-image: url("../assets/icons/seal-taoyuan.webp");
   background-size: contain;
   background-position: center;
   background-repeat: no-repeat;
   border: 0 !important;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.8) !important;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.8) !important;
   color: transparent !important;
   font-size: 0 !important;
-  border-radius: 8px;
+  border-radius: 12px;
   transform: rotate(-3deg);
   animation: seal-float 3s ease-in-out infinite;
 }
 @keyframes seal-float {
   0%, 100% { transform: rotate(-3deg) translateY(0); }
-  50% { transform: rotate(-1deg) translateY(-4px); }
+  50% { transform: rotate(-1deg) translateY(-6px); }
 }
 
-.rotate-hint { display: none; position: absolute; z-index: 200; inset: 0; place-items: center; align-content: center; color: #ede4cb; text-align: center; background: #171914; }
-.rotate-hint i { width: 55px; height: 85px; border: 3px solid #bfae7e; border-radius: 7px; transform: rotate(-25deg); animation: phone-turn 1.6s ease-in-out infinite; }
-.rotate-hint p { margin: 24px 0 0; line-height: 1.6; }
-.rotate-hint small { color: #a99e83; }
+.rotate-hint {
+  display: none;
+  position: absolute;
+  z-index: 200;
+  inset: 0;
+  place-items: center;
+  align-content: center;
+  color: #ede4cb;
+  text-align: center;
+  background: #121610;
+}
+.rotate-hint i {
+  width: 56px;
+  height: 88px;
+  border: 3px solid #bfae7e;
+  border-radius: 8px;
+  transform: rotate(-25deg);
+  animation: phone-turn 1.6s ease-in-out infinite;
+}
+.rotate-hint p { margin: 24px 0 0; line-height: 1.6; font-size: 16px; }
+.rotate-hint small { color: #a99e83; font-size: 14px; }
 @keyframes phone-turn { 50% { transform: rotate(0); } }
 
-@media (orientation: landscape) and (max-height: 540px) { .rotate-hint { display: grid; } }
+.eyebrow {
+  display: inline-block;
+  margin: 0 0 4px;
+  color: #9a7840;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: none;
+}
+.panel-footnote {
+  margin: 12px 0 0;
+  color: var(--panel-muted);
+  font-size: 13px;
+  line-height: 1.45;
+  text-align: center;
+}
+.record-item {
+  padding: 12px 14px;
+  border: 1.5px solid #8a7048;
+  border-radius: var(--radius-sm);
+  color: var(--panel-ink);
+  background:
+    linear-gradient(90deg, #8e3026 0 4px, transparent 4px),
+    linear-gradient(180deg, #f2e4b8, #d0ba88);
+  font-size: 14px;
+  line-height: 1.5;
+  box-shadow: inset 0 0 0 1px #fff0c244;
+}
+.action-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+.action-row > button { flex: 1 1 calc(50% - 8px); min-width: 120px; }
+
+@media (orientation: landscape) and (max-height: 540px) {
+  .rotate-hint { display: grid; }
+}
 @media (min-width: 700px) {
   .game-app { height: min(100dvh, 900px); margin-top: max(0px, calc((100dvh - 900px) / 2)); }
 }
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
 }
