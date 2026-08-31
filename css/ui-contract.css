@@ -162,6 +162,59 @@
   min-height: 48px;
 }
 
+/* Detail sheets keep the four stat pairs on a full-width ledger row.  The
+   previous grid left the list in the narrow copy column, so Chinese labels
+   and values collapsed into unreadable fragments on 390px screens. */
+.detail-hero .stat-list {
+  grid-column: 1 / -1;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px 10px;
+}
+
+.detail-hero .stat-list span {
+  min-width: 0;
+  white-space: nowrap;
+  color: #4f3d28;
+}
+
+.detail-hero .stat-list span b {
+  margin-left: 6px;
+  color: #2a2117;
+}
+
+.hero-skill-card p {
+  color: #4f3d28;
+}
+
+.hero-skill-card p b {
+  color: #33261a;
+}
+
+/* Disabled controls remain legible: saturation is communicated by the
+   muted iron surface and border, never by darkening the text itself. */
+.seal-button:disabled,
+.stone-button:disabled {
+  filter: none;
+  color: #e6e2cf;
+  -webkit-text-fill-color: #e6e2cf;
+  border-color: #89907e;
+  background: linear-gradient(180deg, #596255, #3d473e);
+  text-shadow: 0 1px 2px #182018;
+}
+
+.seal-button:disabled small,
+.stone-button:disabled small {
+  color: #d8d7c8 !important;
+  -webkit-text-fill-color: #d8d7c8;
+}
+
+@media (max-width: 360px) {
+  .detail-hero .stat-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 8px;
+  }
+}
+
 @media (max-width: 360px) {
   .top-hud {
     grid-template-columns: 106px minmax(0, 1fr) 42px;

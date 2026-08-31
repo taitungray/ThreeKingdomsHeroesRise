@@ -41,7 +41,7 @@
 | WORK-012 | 重製第一章 10 關的命名、敵陣、節奏與獎勵 | CONTENT-001 | IN PROGRESS | 章名、關名、敵人與 Boss 一致；每關目的、首勝／重複獎勵與失敗提示可核對 |
 | WORK-013 | 建立垂直切片自動、視覺與實機驗收包 | QA-001 | IN PROGRESS | Boss draw、勝敗、death／removed、settlement、panel persistence 與固定尺寸證據齊全 |
 | WORK-015 | 建立共用 modal／dialog manager，修正焦點、背景 inert 與原生對話 | UI-014、UI-016 | IN PROGRESS | 開啟聚焦、Tab trap、Escape、回焦與巢狀保護通過；`prompt`／`confirm` 不再出現在玩家路徑 |
-| WORK-016 | 收斂 UI token 與 CSS cascade，恢復 44px／14px 底線 | UI-015 | IN PROGRESS | 移除互相覆寫的壓縮規則；三個直式基準尺寸無必要文字小於 14px、可用控制小於 44×44px |
+| WORK-016 | 收斂 UI token 與 CSS cascade，恢復 44px／14px 底線 | UI-015 | IN PROGRESS | 移除互相覆寫的壓縮規則；三個直式基準尺寸無必要文字小於 14px、可用控制小於 44×44px；另以 `npm run test:ui` 逐一檢查 50 名武將詳情的 stat ledger 與 disabled 對比，人工 Android／WebView／TalkBack 仍待補 |
 
 ## P1 — 垂直切片穩定後
 

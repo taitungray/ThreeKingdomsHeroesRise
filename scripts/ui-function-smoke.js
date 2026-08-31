@@ -689,10 +689,25 @@ async function main() {
     if (!heroDetailUi.hasLevel) failures.push("hero-detail: level-up missing from dock");
     await page.evaluate(() => window.TaoyuanBattle.closePanel());
 
-    // Representative hero details: long names, different roles and portrait assets must share one readable contract.
+    await page.evaluate(() => window.TaoyuanBattle.openPanel('heroes'));
+    await page.waitForTimeout(120);
+    const allHeroIds = await page.evaluate(() => [...document.querySelectorAll('.hero-card[data-hero]')].map((card) => card.dataset.hero));
+    await page.evaluate(() => window.TaoyuanBattle.closePanel());
+    await page.waitForTimeout(60);
+    await page.evaluate(() => {
+      const save = window.TaoyuanBattle.getSave?.();
+      if (!save) return;
+      save.gold = 0;
+      save.food = 0;
+      save.jade = 0;
+      save.shards = 0;
+    });
+    const heroIdsToAudit = allHeroIds.length ? allHeroIds : ['liubei', 'zhangfei', 'zhugeliang', 'diaochan', 'lubu'];
+
+    // Representative hero details: every unlocked and locked character must share one readable contract.
     const representativeHeroes = ["liubei", "zhangfei", "zhugeliang", "diaochan", "lubu"];
     const heroRoleAudit = [];
-    for (const heroId of representativeHeroes) {
+    for (const heroId of heroIdsToAudit) {
       await page.evaluate((id) => {
         window.TaoyuanBattle.openPanel("heroes");
         const button = document.querySelector('[data-action="hero-detail"][data-hero="' + id + '"]');
@@ -719,10 +734,26 @@ async function main() {
           portraitContained: avatarStyle?.backgroundSize === "contain",
           heroInsideDetail: Boolean(hero && detail && hr.left >= dr.left - 1 && hr.right <= dr.right + 1),
           dockInsidePanel: Boolean(dock && panel && dockRect.top >= pr.top - 1 && dockRect.bottom <= pr.bottom + 2),
-          dockHeight: Math.round(dockRect?.height || 0)
+          dockHeight: Math.round(dockRect?.height || 0),
+          statPairs: [...(hero?.querySelectorAll('.stat-list span') || [])].map((stat) => {
+            const rect = stat.getBoundingClientRect();
+            return { width: rect.width, height: rect.height, overflow: stat.scrollWidth > stat.clientWidth + 1, whiteSpace: getComputedStyle(stat).whiteSpace };
+          }),
+          disabledButtons: [...(dock?.querySelectorAll('button:disabled') || [])].map((button) => {
+            const style = getComputedStyle(button);
+            const rect = button.getBoundingClientRect();
+            return { width: rect.width, height: rect.height, filter: style.filter, color: style.color, fill: style.webkitTextFillColor };
+          }),
+          skillColor: getComputedStyle(document.querySelector('.hero-skill-card p'))?.color || ''
         };
       }, heroId);
       heroRoleAudit.push(audit);
+      if (audit.statPairs.length !== 4 || audit.statPairs.some((stat) => stat.overflow || stat.whiteSpace !== 'nowrap' || stat.width < 42)) {
+        failures.push('hero detail: stat labels or values collapsed/overflowed for ' + heroId);
+      }
+      if (audit.disabledButtons.some((button) => button.width < 44 || button.height < 44 || button.filter !== 'none' || button.color === 'rgb(176, 174, 160)')) {
+        failures.push('hero detail: disabled action contrast/touch target failed for ' + heroId);
+      }
       if (heroId === "zhugeliang") {
         await page.screenshot({ path: path.join(root, "artifacts", screenshotPrefix + "-hero-zhugeliang-390.png"), fullPage: false });
       }
