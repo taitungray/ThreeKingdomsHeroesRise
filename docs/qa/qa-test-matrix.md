@@ -55,9 +55,20 @@
 
 - 390×720 完整跑勝／敗；430×932、320×568、短高橫向檢查 HUD、面板、結算與旋轉提示。
 - 觸控、滑鼠、鍵盤各走一次主要操作；Tab、Enter／Space、Escape、modal focus trap 與焦點返回。
-- 自動、速度、首領、右側四快捷、更多抽屜、五底欄、面板關閉都不遮擋且不重複觸發。
+- 所有可操作控制至少 44×44 CSS px；正文、資源、底欄與必要說明至少 14px。320px 不得用 10–11px 壓縮換取塞入。
+- 自動、速度、首領、第一章核准右側入口、更多抽屜、五底欄、面板關閉都不遮擋且不重複觸發；不得以固定「四快捷」為通過條件。
 - 敵將預告、波次、Boss 橫幅、對話與結算依序顯示，不同中央 overlay 不同時存在。
 - `prefers-reduced-motion` 下關閉裝飾 motion 與全畫面 shake，戰鬥結果不變。
+
+| ID | Given | When | Then |
+|---|---|---|---|
+| UI-ROUTES | 首章空帳號與解鎖測試帳號 | 逐一點擊所有可見入口 | 不注入 QA 假值；每個入口能開啟、完成主要操作、關閉，console 無 error；未完成入口為 Hide 或誠實 Lock |
+| UI-FOCUS | 任一底欄、右欄或面板內觸發器已聚焦 | 開啟並關閉 modal | 初始焦點在標題／首要控制；Tab 不離開 modal；背景 inert；Escape 關閉；焦點回原觸發器 |
+| UI-AUTH | 首次登入或教學可見 | 只用鍵盤／TalkBack 操作 | 初始焦點不在 `BODY`；背景戰鬥控制不可聚焦；主要與略過操作都有可讀名稱 |
+| UI-SIZE | 390×720、430×932、320×568、200% zoom | 量測全部 enabled controls 與必要文字 | 觸控 ≥44×44px、必要文字 ≥14px；無水平捲動、遮擋、裁切或直排中文字 |
+| UI-IA | 第一章尚未完成 | 打開右欄與軍務抽屜 | 只出現核准 Keep／Lock 入口；成就、圖鑑、副模式與營運入口未通過前不冒充可用 |
+| UI-SETTINGS | 無 IAP SKU、無遠端版本檢查或支援服務 | 開啟設定 | 不顯示恢復購買、假版本檢查或假送出；改名、回報、重置不用原生 `prompt`／`confirm` |
+| UI-HUD | 任一章關戰鬥進行中 | 三秒觀察 HUD | 能辨識章－關、關名、波次、Boss 狀態與下一目標；關卡末碼不重複，主線提示不遮戰場 |
 
 ## 5. 存檔、獎勵與營運
 
@@ -78,6 +89,7 @@ node --check js/game/game-main.js
 npm run test:docs
 npm run test:combat-assets
 npm test
+npm run test:ui
 node scripts/repro-combat-freeze.js
 npm run test:combat-browser
 node build.js

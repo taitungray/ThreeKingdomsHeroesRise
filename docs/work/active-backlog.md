@@ -1,6 +1,6 @@
 # 目前工作清單
 
-狀態：ACTIVE。這是唯一的進行中待辦清單，只放「尚未完成、需要採取行動」的工作。產品方向與階段依 [全遊戲調整計畫](game-adjustment-plan.md)，已發生缺陷的細節與證據在 [已知問題](../issues/known-issues.md)，測法在 [QA 測試矩陣](../qa/qa-test-matrix.md)。
+狀態：ACTIVE。這是唯一的進行中待辦清單，只放「尚未完成、需要採取行動」的工作。產品方向與階段依 [全遊戲調整計畫](game-adjustment-plan.md)，UI 逐畫面修正與產圖契約依 [UI 全面修正與資產產圖規格](ui-remediation-and-asset-plan.md)，已發生缺陷的細節與證據在 [已知問題](../issues/known-issues.md)，測法在 [QA 測試矩陣](../qa/qa-test-matrix.md)。
 
 ## 狀態與優先級
 
@@ -40,6 +40,11 @@
 | WORK-011 | 建立裝備擁有、掉落、比較與戰場武器關係 | ECON-001、COMBAT-005 | IN PROGRESS | 不再免費輪換全部裝備；取得、換裝、保存、重載與戰場外觀一致 |
 | WORK-012 | 重製第一章 10 關的命名、敵陣、節奏與獎勵 | CONTENT-001 | IN PROGRESS | 章名、關名、敵人與 Boss 一致；每關目的、首勝／重複獎勵與失敗提示可核對 |
 | WORK-013 | 建立垂直切片自動、視覺與實機驗收包 | QA-001 | IN PROGRESS | Boss draw、勝敗、death／removed、settlement、panel persistence 與固定尺寸證據齊全 |
+| WORK-014 | 修復可見 UI 入口的 runtime 依賴並建立誠實入口 gate | UI-013、UI-017、QA-002 | READY | `currentArmyPower`、`titleUnlocked`、`ACHIEVEMENTS`、`campaignClears` 有單一來源；未完成入口隱藏或鎖定；正式 UI smoke 無例外 |
+| WORK-015 | 建立共用 modal／dialog manager，修正焦點、背景 inert 與原生對話 | UI-014、UI-016 | READY | 開啟聚焦、Tab trap、Escape、回焦與巢狀保護通過；`prompt`／`confirm` 不再出現在玩家路徑 |
+| WORK-016 | 收斂 UI token 與 CSS cascade，恢復 44px／14px 底線 | UI-015 | READY | 移除互相覆寫的壓縮規則；三個直式基準尺寸無必要文字小於 14px、可用控制小於 44×44px |
+| WORK-017 | 瘦身戰場入口、軍務抽屜、設定與主線 HUD | UI-016、UI-017 | READY | 依首章 Keep／Lock／Hide 矩陣顯示；設定無假功能或重複責任；主線 chip 可讀且關卡編號不重複 |
+| WORK-018 | 對齊產品實作與 UI 自動測試，移除過時字串斷言 | QA-002 | READY | `npm test` 與 `npm run test:ui` 驗證實際 computed style、互動與例外，並在同一版本通過 |
 
 ## P1 — 垂直切片穩定後
 
@@ -52,6 +57,7 @@
 | WORK-105 | 副模式全面重用正式戰鬥生命週期 | GAMEPLAY-002 | IN PROGRESS | 問天樓、演武場 5v5、日常副本三大特訓均使用正式戰鬥與專屬結算 |
 | WORK-106 | 50 名武將與 100 關推進解鎖及戰令系統 | — | IN PROGRESS | 50 名將隨關卡推進結識加入，實裝 30 階征戰敕令獎勵領取 |
 | WORK-107 | 全遊戲繁中、名詞與歷史內容校對 | CONTENT-002 | IN PROGRESS | 無錯字、繁簡混用、內部英文與章／關／敵人語意衝突 |
+| WORK-108 | 製作 UI 系統圖示、狀態徽章與空狀態像素資產 | UI-016 | READY | 先完成 9 個 64px 設定圖示與 5 個 32px 狀態徽章；功能穩定後再做 3 張 160×96 空狀態圖；命名、透明邊、縮放與對比通過規格 |
 
 ## 暫緩項目
 
