@@ -13,7 +13,7 @@
 <body>
   <main id="gameApp" class="game-app" aria-label="三國：群英再起遊戲">
     <div id="loadingScreen" class="loading-screen" role="status" aria-live="polite"><span class="loading-seal">&#x6843;</span><strong>&#x4e09;&#x570b;&#xff1a;&#x7fa4;&#x82f1;&#x518d;&#x8d77;</strong><small>&#x6574;&#x8ecd;&#x4e2d;&#x2026;</small></div>
-    <section id="authScreen" class="auth-screen" aria-labelledby="authModeTitle" hidden>
+    <section id="authScreen" class="auth-screen" role="dialog" aria-modal="true" aria-labelledby="authModeTitle" hidden>
       <div class="auth-card">
         <div class="auth-brand">
           <img class="auth-brand-icon" src="assets/icon.webp" alt="三國：群英再起 App icon">
@@ -180,6 +180,17 @@
 
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
     <div id="rotateHint" class="rotate-hint"><i></i><p>請將裝置轉回直向<br><small>直向螢幕才能看清戰局</small></p></div>
+    <div id=inputDialog class=modal-backdrop hidden>
+      <section class=input-dialog role=dialog aria-modal=true aria-labelledby=inputDialogTitle>
+        <h2 id=inputDialogTitle>請確認</h2>
+        <p id=inputDialogMessage></p>
+        <input id=inputDialogValue type=text maxlength=10 autocomplete=off aria-label=輸入內容>
+        <div class=input-dialog-actions>
+          <button id=inputDialogCancel class=stone-button type=button>取消</button>
+          <button id=inputDialogConfirm class=seal-button type=button>確認</button>
+        </div>
+      </section>
+    </div>
   </main>
 
   <script src="js/admob-config.js"></script>

@@ -599,7 +599,6 @@
 .battle-controls { width: 44px; height: 50px; }
 .speed-button,
 .vfx-toggle-button { width: 44px; min-width: 44px; height: 44px; min-height: 44px; border-radius: 5px; font-size: 14px; }
-.quest-tracker { display: none; }
 
 .right-rail {
   top: 76px;
@@ -614,7 +613,7 @@
   right: 12px;
   /* Keep the expanded command deck above the resource/nav deck at every
      phone height.  The old fixed 98px bottom left a 4px collision at 320x568. */
-  bottom: calc(108px + var(--safe-bottom));
+  bottom: calc(136px + var(--safe-bottom));
   width: min(264px, calc(100% - 16px));
   display: flex;
   flex-direction: column;

@@ -186,7 +186,18 @@ const BONDS = GAME_DATA.bonds || [];
 const DAILY_DUNGEONS = GAME_DATA.dailyDungeons || [];
 const TREASURES = GAME_DATA.treasures || [];
 const TITLES = GAME_DATA.titles || [];
+const ACHIEVEMENTS = GAME_DATA.achievements || [
+  { id: 'first-victory', title: '桃園初陣', desc: '完成第一場勝利', type: 'stage', target: 2, reward: { gold: 120, exp: 20 } },
+  { id: 'yellow-turban-breaker', title: '黃巾破陣', desc: '通過第 5 關', type: 'stage', target: 6, reward: { gold: 260, jade: 1 } },
+  { id: 'hundred-kills', title: '百戰精兵', desc: '擊破 100 名敵軍', type: 'kills', target: 100, reward: { food: 260, shards: 3 } },
+  { id: 'gather-heroes', title: '群英初聚', desc: '結識 6 名武將', type: 'heroes', target: 6, reward: { jade: 3, exp: 80 } },
+  { id: 'boss-hunter', title: '首領獵手', desc: '擊破 5 名關卡首領', type: 'bosses', target: 5, reward: { gold: 600, jade: 5 } }
+];
 const TOWER_CONFIG = GAME_DATA.tower || { name: "Tower", basePower: 2700, powerStep: 260, stamina: 4 };
+if (!GAME_DATA.achievements) {
+  ACHIEVEMENTS[0].target = 1;
+  ACHIEVEMENTS[1].target = 5;
+}
 const AVATAR_FRAMES = GAME_DATA.avatarFrames || [];
 const ANNOUNCEMENTS = GAME_DATA.announcements || [];
 const LOCAL_EVENTS = GAME_DATA.localEvents || [];
@@ -427,7 +438,48 @@ function avatarFrameById(id) {
 }
 
 function avatarFrameUnlocked(frame) {
-  return Boolean(frame) && save.maxStage > (Number(frame.unlockStage) || 0);
+  if (!frame) return false;
+  if (frame.trialId) return Boolean(save.trials?.cleared?.includes(frame.trialId));
+  return save.maxStage > (Number(frame.unlockStage) || 0);
+}
+
+function heroCombatPower(heroId) {
+  const hero = heroById(heroId);
+  if (!hero) return 0;
+  const level = Math.max(1, Number(save.heroLevels?.[heroId]) || 1);
+  const equipment = heroEquipmentStats(heroId);
+  const growth = heroGrowthMultiplier(heroId);
+  const base = ((hero.atk + equipment.atk) * 7 + hero.hp + equipment.hp + (hero.def + equipment.def) * 12);
+  return Math.round(base * (1 + level * 0.13) * growth);
+}
+
+function currentArmyPower() {
+  return (save.formation || []).reduce((total, heroId) => total + heroCombatPower(heroId), 0);
+}
+
+function campaignClears() {
+  const recorded = Object.keys(save.stageStars || {}).filter((stageId) => Number(save.stageStars[stageId]) > 0).length;
+  return Math.max(recorded, Math.max(0, Number(save.stage || 1) - 1));
+}
+
+function titleUnlocked(title) {
+  if (!title) return false;
+  const target = Math.max(0, Number(title.value) || 0);
+  if (title.type === 'stage') return campaignClears() >= target;
+  if (title.type === 'heroes') return HEROES.filter(isUnlocked).length >= target;
+  if (title.type === 'arena') return Number(save.arena?.wins || 0) >= target;
+  if (title.type === 'trial') {
+    const trialId = title.trialId || ({
+      'title-guanyu-loyalty': 'trial-guanyu',
+      'title-zhaoyun-changsheng': 'trial-zhaoyun',
+      'title-zhugeliang-wisdom': 'trial-zhugeliang',
+      'title-caocao-hero': 'trial-caocao',
+      'title-lubu-unrivaled': 'trial-lubu',
+      'title-zhouyu-wind': 'trial-zhouyu'
+    })[title.id];
+    return Boolean(trialId && save.trials?.cleared?.includes(trialId));
+  }
+  return false;
 }
 
 function heroProgression(heroId) {

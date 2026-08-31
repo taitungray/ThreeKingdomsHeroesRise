@@ -95,6 +95,12 @@
       configNote.hidden = state.configured;
       configNote.textContent = "尚未設定 Firebase 專案；目前只能使用訪客本機存檔。";
     }
+    if (screen && !screen.hidden) {
+      if (typeof window.openModalLayer === 'function') window.openModalLayer('authScreen');
+      queueMicrotask(() => (state.configured ? googleButton : document.getElementById('authGuest'))?.focus?.({ preventScroll: true }));
+    } else if (typeof window.closeModalLayer === 'function') {
+      window.closeModalLayer('authScreen');
+    }
   }
 
   function notify() {
@@ -185,13 +191,15 @@
     const screen = document.getElementById("authScreen");
     if (!screen) return;
     screen.hidden = false;
-    document.getElementById("googleLoginButton")?.focus();
+    if (typeof window.openModalLayer === "function") window.openModalLayer("authScreen", document.activeElement);
+    else document.getElementById("googleLoginButton")?.focus();
   }
 
   function close() {
     if (!activeUser()) return;
     const screen = document.getElementById("authScreen");
     if (screen) screen.hidden = true;
+    if (typeof window.closeModalLayer === "function") window.closeModalLayer("authScreen");
   }
 
   function render() {

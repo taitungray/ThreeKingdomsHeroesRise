@@ -2,6 +2,165 @@
 "use strict";
 
 let toastTimer = null;
+const modalState = { stack: [] };
+const gameDialogState = { resolve: null, mode: null };
+
+function modalFocusable(root) {
+  if (!root) return [];
+  return [...root.querySelectorAll('button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])')]
+    .filter((element) => element.offsetParent !== null && !element.closest('[inert]'));
+}
+
+function updateModalIsolation() {
+  const active = modalState.stack[modalState.stack.length - 1];
+  document.querySelectorAll('#gameApp > *').forEach((child) => {
+    const isolated = Boolean(active && child !== active.root && child.id !== 'toast' && child.id !== 'rotateHint');
+    child.inert = isolated;
+    if (isolated) child.setAttribute('data-modal-inert', 'true');
+    else child.removeAttribute('data-modal-inert');
+  });
+}
+
+function focusModalEntry(entry) {
+  const dialog = entry?.dialog;
+  if (!dialog) return;
+  const target = dialog.querySelector('[autofocus]') ||
+    (entry.id === 'panelBackdrop' ? dialog.querySelector('#panelClose') : null) ||
+    modalFocusable(dialog)[0];
+  const focusTarget = target || dialog;
+  if (!target && !dialog.hasAttribute('tabindex')) dialog.setAttribute('tabindex', '-1');
+  queueMicrotask(() => focusTarget.focus({ preventScroll: true }));
+}
+
+function openModalLayer(id, trigger = document.activeElement) {
+  const root = $(id);
+  if (!root) return;
+  const dialog = root.querySelector('[role=dialog]') || root;
+  const existingIndex = modalState.stack.findIndex((entry) => entry.id === id);
+  const existingTrigger = existingIndex >= 0 ? modalState.stack[existingIndex].trigger : null;
+  if (existingIndex >= 0) modalState.stack.splice(existingIndex, 1);
+  const entry = { id, root, dialog, trigger: existingTrigger || (trigger && trigger !== document.body ? trigger : null) };
+  modalState.stack.push(entry);
+  root.hidden = false;
+  root.setAttribute('aria-hidden', 'false');
+  root.classList.add('open');
+  updateModalIsolation();
+  focusModalEntry(entry);
+}
+
+function closeModalLayer(id, { restore = true } = {}) {
+  const index = modalState.stack.findIndex((entry) => entry.id === id);
+  if (index < 0) return;
+  const [entry] = modalState.stack.splice(index, 1);
+  entry.root.hidden = true;
+  entry.root.classList.remove('open');
+  entry.root.setAttribute('aria-hidden', 'true');
+  updateModalIsolation();
+  const active = modalState.stack[modalState.stack.length - 1];
+  if (restore && entry.trigger && document.contains(entry.trigger) && !entry.trigger.closest('[inert]') && entry.trigger.offsetParent !== null) {
+    queueMicrotask(() => entry.trigger.focus({ preventScroll: true }));
+  } else if (active) {
+    focusModalEntry(active);
+  }
+}
+
+function finishGameDialog(value) {
+  const resolve = gameDialogState.resolve;
+  gameDialogState.resolve = null;
+  gameDialogState.mode = null;
+  closeModalLayer('inputDialog');
+  if (resolve) resolve(value);
+}
+
+function openGamePrompt(title, message, initial = '') {
+  const root = $('inputDialog');
+  if (!root) return Promise.resolve(null);
+  $('inputDialogTitle').textContent = title || '輸入';
+  $('inputDialogMessage').textContent = message || '';
+  const input = $('inputDialogValue');
+  input.value = initial || '';
+  input.hidden = false;
+  $('inputDialogConfirm').textContent = '確認';
+  gameDialogState.mode = 'prompt';
+  const promise = new Promise((resolve) => { gameDialogState.resolve = resolve; });
+  openModalLayer('inputDialog');
+  return promise;
+}
+
+function openGameConfirm(title, message) {
+  const root = $('inputDialog');
+  if (!root) return Promise.resolve(false);
+  $('inputDialogTitle').textContent = title || '請確認';
+  $('inputDialogMessage').textContent = message || '';
+  $('inputDialogValue').value = '';
+  $('inputDialogValue').hidden = true;
+  $('inputDialogConfirm').textContent = '確定';
+  gameDialogState.mode = 'confirm';
+  const promise = new Promise((resolve) => { gameDialogState.resolve = resolve; });
+  openModalLayer('inputDialog');
+  return promise;
+}
+
+function completeTutorialSkip() {
+  save.tutorialDone = true;
+  persist();
+  const layer = $('tutorialLayer');
+  if (layer) layer.hidden = true;
+  closeModalLayer('tutorialLayer');
+}
+
+function skipTutorial() {
+  if (!save.tutorialDone && Number(save.tutorialStep || 0) > 0 && !gameDialogState.resolve) {
+    openGameConfirm(
+      String.fromCodePoint(30053, 36942, 25945, 23416),
+      String.fromCodePoint(30906, 23450, 35201, 30053, 36942, 26032, 25163, 25945, 23416, 21966, 65311)
+    ).then((confirmed) => {
+      if (confirmed) completeTutorialSkip();
+    });
+    return;
+  }
+  completeTutorialSkip();
+}
+
+function handleModalKeydown(event) {
+  const active = modalState.stack[modalState.stack.length - 1];
+  if (!active) return false;
+  if (event.key === 'Escape') {
+    event.preventDefault();
+    if (active.id === 'inputDialog') finishGameDialog(gameDialogState.mode === 'confirm' ? false : null);
+    else if (active.id === 'panelBackdrop') closePanel();
+    else if (active.id === 'settlementModal') closeSettlement('close');
+    else if (active.id === 'tutorialLayer') skipTutorial();
+    return true;
+  }
+  if (event.key !== 'Tab') return false;
+  const focusables = modalFocusable(active.dialog);
+  if (!focusables.length) {
+    event.preventDefault();
+    active.dialog.focus({ preventScroll: true });
+    return true;
+  }
+  const first = focusables[0];
+  const last = focusables[focusables.length - 1];
+  if (!active.dialog.contains(document.activeElement)) {
+    event.preventDefault();
+    first.focus({ preventScroll: true });
+  } else if (event.shiftKey && document.activeElement === first) {
+    event.preventDefault();
+    last.focus({ preventScroll: true });
+  } else if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault();
+    first.focus({ preventScroll: true });
+  }
+  return true;
+}
+
+document.addEventListener('keydown', handleModalKeydown);
+window.openModalLayer = openModalLayer;
+window.closeModalLayer = closeModalLayer;
+window.openGamePrompt = openGamePrompt;
+window.openGameConfirm = openGameConfirm;
+
 function toast(message) {
   const element = $("toast");
   if (!element || !message) return;
@@ -89,6 +248,7 @@ function updateHud() {
   const eventReady = LOCAL_EVENTS.some((event) => eventProgress(event.id) >= event.target && !save.eventState.claimed.includes(event.id));
   setHudProperty("eventDot", "hidden", !eventReady);
   setHudProperty("railMoreDot", "hidden", !eventReady);
+  updateRouteVisibility();
   const frame = avatarFrameById(save.equippedFrame);
   const lordAvatar = $("profileButton")?.querySelector?.(".pixel-avatar");
   if (lordAvatar && frame?.color) {
@@ -99,6 +259,16 @@ function updateHud() {
       lordAvatar.style.boxShadow = "0 0 0 1px #111a12, 0 2px 6px #0008, inset 0 0 0 1px " + frame.color + "66";
     }
   }
+}
+
+function updateRouteVisibility() {
+  const unlocks = { events: 11, trials: 11, tower: 11, dungeon: 6, arena: 6 };
+  document.querySelectorAll('.rail-drawer-list [data-panel]').forEach((button) => {
+    const required = unlocks[button.dataset.panel];
+    const locked = Boolean(required && Number(save.stage) < required);
+    button.hidden = locked;
+    button.setAttribute('aria-hidden', String(locked));
+  });
 }
 
 function enemyPreviewAvatarHtml(general) {
@@ -124,7 +294,7 @@ function showEnemyPreview(stage = activeStageNumber(), wave = null) {
   list.innerHTML = cards.map((general) =>
     '<article class="enemy-preview-card' + (general.isBoss ? " boss" : "") + '">' +
       enemyPreviewAvatarHtml(general) +
-      '<div><strong>' + (general.isBoss ? "敵首領 · " : "敵將 · ") + general.name + '</strong><small id="enemyPreviewLabel">' + (general.isBoss ? (config?.bossTitle || "本關守將") : (config?.waveTitle || "先鋒部隊")) + '</small></div>' +
+      '<div><strong>' + (general.isBoss ? "敵首領 · " : "敵將 · ") + general.name + '</strong><small class="enemy-preview-role">' + (general.isBoss ? (config?.bossTitle || "本關守將") : (config?.waveTitle || "先鋒部隊")) + '</small></div>' +
     '</article>'
   ).join("");
   preview.classList.add("show");
@@ -182,6 +352,7 @@ function setPanel(title, html) {
   if (panel) panel.dataset.panel = runtime.panel || "";
   // Panels share one scroll owner; every new screen must start at its title.
   content.scrollTop = 0;
+  openModalLayer('panelBackdrop');
   $("panelBackdrop").hidden = false;
   $("gamePanel").classList.add("open");
   $("gamePanel").setAttribute("aria-hidden", "false");
@@ -193,6 +364,7 @@ function closePanel() {
   $("gamePanel").classList.remove("open");
   $("gamePanel").setAttribute("aria-hidden", "true");
   runtime.panel = null;
+  closeModalLayer('panelBackdrop');
   runtime.formationPick = null;
   runtime.selectedHero = null;
   $("profileButton")?.setAttribute("aria-expanded", "false");
@@ -390,13 +562,13 @@ function handlePanelAction(button) {
       toast(save.notifications ? "通知已開啟" : "通知未授權");
     });
   } else if (action === "rename-player") {
-    const name = window.prompt("請輸入主公名稱", save.playerName || "玄德");
-    if (name?.trim()) {
+    openGamePrompt('更改主公名稱', '輸入新的主公名稱', save.playerName || '玄德').then((name) => {
+      if (!name) return;
       save.playerName = name.trim().slice(0, 10);
       persist();
       updateHud();
       renderSettings();
-    }
+    });
   } else if (action === "mail-claim") {
     if (save.mailClaimed) return;
     save.mailClaimed = true;
@@ -428,16 +600,17 @@ function handlePanelAction(button) {
     renderSettings();
     toast(save.renderQuality === "low" ? "已切換低功耗模式" : "已切換高品質");
   } else if (action === "report-issue") {
-    const report = window.prompt("請描述問題", "");
-    if (report?.trim()) {
-      window.TaoyuanPlatform.track("player_report", { report: report.trim().slice(0, 200) });
-      toast("已記錄回報");
-    }
+    openGamePrompt('問題回報', '請描述遇到的問題（最多 200 字）', '').then((report) => {
+      if (!report) return;
+      window.TaoyuanPlatform?.track?.('player_report', { report: report.slice(0, 200) });
+      toast('已記錄回報');
+    });
   } else if (action === "reset-save") {
-    if (window.confirm("確定重置所有關卡、武將與資源進度？")) {
+    openGameConfirm('重置存檔', '確定要清空全部關卡、武將與資源進度嗎？').then((confirmed) => {
+      if (!confirmed) return;
       localStorage.removeItem(SAVE_KEY);
       location.reload();
-    }
+    });
   } else if (action === "campaign-select") startStage(Number(button.dataset.stage));
   else if (action === "campaign-sweep") sweepStage(Number(button.dataset.stage));
   else if (action === "daily-task-claim") claimTask(button.dataset.task, button.dataset.weekly === "true");
@@ -495,6 +668,7 @@ function showTutorial() {
   if (save.tutorialDone) {
     const layer = $("tutorialLayer");
     if (layer) layer.hidden = true;
+    closeModalLayer('tutorialLayer');
     return;
   }
   const stepIndex = Math.min(save.tutorialStep || 0, (TUTORIAL_STEPS.length || 1) - 1);
@@ -504,6 +678,7 @@ function showTutorial() {
     persist();
     const layer = $("tutorialLayer");
     if (layer) layer.hidden = true;
+    closeModalLayer('tutorialLayer');
     return;
   }
   const titleEl = $("tutorialTitle");
@@ -516,6 +691,7 @@ function showTutorial() {
   if (barEl) barEl.style.width = ((stepIndex + 1) / Math.max(1, TUTORIAL_STEPS.length) * 100) + "%";
   const layer = $("tutorialLayer");
   if (layer) layer.hidden = false;
+  openModalLayer('tutorialLayer');
 }
 
 function advanceTutorial() {
@@ -524,6 +700,7 @@ function advanceTutorial() {
     save.tutorialDone = true;
     const layer = $("tutorialLayer");
     if (layer) layer.hidden = true;
+    closeModalLayer('tutorialLayer');
   } else {
     showTutorial();
   }

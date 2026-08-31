@@ -75,6 +75,19 @@
     const plugin = nativeAdMob();
 
     if (!plugin) {
+      if (typeof window.openGameConfirm !== 'function') {
+        state.showing = false;
+        return false;
+      }
+      if (typeof window.openGameConfirm === 'function') {
+        const accepted = await window.openGameConfirm(
+          String.fromCodePoint(35264, 30475, 24291, 21578),
+          String.fromCodePoint(35264, 30475, 30701, 29255, 24291, 21578, 24460, 21487, 38936, 21462, 38989, 22806, 29518, 21237, 21966, 65311)
+        );
+        state.showing = false;
+        if (accepted) options.onReward?.();
+        return accepted;
+      }
       const accepted = window.confirm("這是 Web 預覽用的廣告模擬。觀看後領取獎勵？");
       state.showing = false;
       if (accepted) options.onReward?.();

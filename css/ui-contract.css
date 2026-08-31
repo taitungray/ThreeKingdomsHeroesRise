@@ -1,0 +1,208 @@
+/* UI contract authority: final interaction, type and responsive guarantees. */
+.seal-button,
+.stone-button {
+  font-family: var(--font-ui);
+}
+
+.top-hud {
+  flex-wrap: nowrap;
+}
+
+.stage-banner {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.stage-banner strong,
+#stageCompactLabel {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 14px !important;
+}
+
+.lord-info > strong {
+  font-size: 14px !important;
+}
+
+.level-line b,
+.exp-track small,
+.lord-exp-overlay,
+.nav-notice {
+  font-size: 12px !important;
+}
+
+.wave-chip {
+  min-height: 28px;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 14px !important;
+}
+
+.quest-tracker {
+  display: flex !important;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  width: min(200px, calc(100% - 86px));
+  max-width: min(200px, calc(100% - 86px));
+  padding: 7px 9px;
+}
+
+.quest-tag,
+.quest-text {
+  font-size: 14px !important;
+}
+
+.quest-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.resource-strip {
+  min-height: 54px;
+  height: auto;
+}
+
+.resource-strip > span {
+  min-height: 44px;
+  font-size: 14px !important;
+}
+
+#bossButton {
+  min-height: 44px;
+  height: 44px;
+  padding: 5px 7px;
+}
+
+#bossButton small {
+  font-size: 12px !important;
+}
+
+#bossButton strong {
+  font-size: 14px !important;
+}
+
+.bottom-nav {
+  min-height: 72px;
+  height: 72px;
+}
+
+.bottom-nav button {
+  min-height: 64px;
+}
+
+.bottom-nav span {
+  font-size: 14px !important;
+}
+
+.right-rail button,
+.rail-drawer-head button,
+.right-rail-drawer .rail-drawer-list button,
+.panel-close,
+.panel-back {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+.dialogue-box p,
+.dialogue-box p span {
+  font-size: 14px !important;
+}
+
+.dialogue-box p strong {
+  font-size: 16px !important;
+}
+
+.input-dialog {
+  width: min(340px, calc(100% - 32px));
+  padding: 22px 20px 18px;
+  border: 2px solid var(--panel-line);
+  border-radius: 8px 18px 8px 8px;
+  color: var(--panel-ink);
+  background: var(--mat-paper);
+  box-shadow: var(--panel-shadow);
+}
+
+.input-dialog h2 {
+  margin: 0 0 8px;
+  font-size: var(--type-display);
+}
+
+.input-dialog p {
+  margin: 0 0 14px;
+  font-size: var(--type-body);
+  line-height: 1.5;
+}
+
+.input-dialog input {
+  width: 100%;
+  min-height: 48px;
+  padding: 8px 10px;
+  border: 2px solid var(--panel-line);
+  border-radius: 4px;
+  color: var(--panel-ink);
+  background: var(--paper-light);
+  font-size: var(--type-body);
+}
+
+.input-dialog-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.input-dialog-actions button {
+  min-height: 48px;
+}
+
+@media (max-width: 360px) {
+  .top-hud {
+    grid-template-columns: 106px minmax(0, 1fr) 42px;
+  }
+
+  .stage-banner strong,
+  #stageCompactLabel,
+  .wave-chip {
+    font-size: 14px !important;
+  }
+
+  .resource-strip {
+    gap: 2px;
+    padding-inline: 3px;
+  }
+
+  .resource-strip > span {
+    gap: 2px;
+    padding-inline: 2px;
+    font-size: 14px !important;
+  }
+
+  #bossButton {
+    min-height: 44px;
+    height: 44px;
+  }
+
+  #bossButton small {
+    display: none;
+  }
+
+  #bossButton strong {
+    font-size: 13px !important;
+  }
+
+  .bottom-nav {
+    min-height: 70px;
+    height: 70px;
+  }
+
+  .bottom-nav span {
+    font-size: 14px !important;
+  }
+}

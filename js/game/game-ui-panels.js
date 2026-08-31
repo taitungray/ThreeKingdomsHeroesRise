@@ -421,12 +421,10 @@ function renderSettings() {
   setPanel("系統設定",
     '<p class="section-caption">軍府帳號</p>' + accountHtml +
     '<p class="section-caption">音訊與顯示</p><div class="setting-group">' + soundRow + musicRow + effectsRow + qualityRow + notifyRow + renameRow + '</div>' +
-    renderAnnouncementSection() +
     '<p class="section-caption">版本與支援</p><div class="setting-group">' +
-      '<div class="setting-row setting-row-version"><div><strong>客戶端版本</strong><small>v' + APP_VERSION + '</small></div><button class="stone-button" type="button" data-action="version-check">檢查更新</button></div>' +
-      '<div class="setting-row setting-row-purchase"><div><strong>購買恢復</strong><small>恢復 App 內購</small></div><button class="stone-button" type="button" data-action="restore-purchases">恢復購買</button></div>' +
-      '<div class="setting-row setting-row-report"><div><strong>問題回報</strong><small>傳送反饋記錄</small></div><button class="stone-button" type="button" data-action="report-issue">回報問題</button></div>' +
-      '<div class="setting-row setting-row-save"><div><strong>儲存進度</strong><small>手動同步存檔</small></div><button class="stone-button" type="button" data-action="save-now">立即儲存</button></div>' +
+      '<div class="setting-row setting-row-version"><div><strong>客戶端版本</strong><small>v' + APP_VERSION + '</small></div><span class="setting-value">已是目前版本</span></div>' +
+      '<div class="setting-row setting-row-report"><div><strong>問題回報</strong><small>協助我們改善遊戲</small></div><button class="stone-button" type="button" data-action="report-issue">回報問題</button></div>' +
+      '<div class="setting-row setting-row-save"><div><strong>進度保存</strong><small>每次操作會自動保存至本機</small></div><span class="setting-value">自動保存</span></div>' +
       '<div class="setting-row setting-row-danger"><div><strong>重置存檔</strong><small>清空全部資料</small></div><button class="stone-button" type="button" data-action="reset-save">重置進度</button></div>' +
     '</div>');
 }
@@ -496,6 +494,7 @@ function showSettlement(result) {
   $("settlementSecondary").dataset.settlementAction = win ? "retry" : "close";
   modal.hidden = false;
   modal.classList.add("open");
+  openModalLayer('settlementModal');
   modal.setAttribute("aria-hidden", "false");
   window.TaoyuanAudio?.sfx?.(win ? "reward" : "cancel");
 }
@@ -505,6 +504,7 @@ function closeSettlement(action) {
   if (modal) {
     modal.hidden = true;
     modal.classList.remove("open");
+    closeModalLayer('settlementModal');
     modal.setAttribute("aria-hidden", "true");
   }
   const result = runtime.battleResult;
@@ -553,5 +553,6 @@ function showOfflineReward(seconds) {
 
   $("doubleOffline").disabled = false;
   $("offlineModal").hidden = false;
+  openModalLayer('offlineModal');
   window.TaoyuanAudio?.sfx?.("reward");
 }

@@ -511,6 +511,35 @@ async function main() {
     if (!/^×\d/.test(controlState.before)) failures.push("speed button label broken: " + controlState.before);
 
     // Bottom nav open/close
+    const modalA11y = await page.evaluate(async () => {
+      const trigger = document.querySelector('.bottom-nav [data-panel=heroes]');
+      trigger?.focus();
+      trigger?.click();
+      await new Promise((resolve) => setTimeout(resolve, 30));
+      const backdrop = document.getElementById('panelBackdrop');
+      const dialog = document.getElementById('gamePanel');
+      const backgroundRoot = document.getElementById('battleScreen');
+      const backgroundInert = Boolean(backgroundRoot?.inert && document.querySelector('.bottom-nav button')?.closest('[inert]') === backgroundRoot);
+      const initialInside = Boolean(dialog?.contains(document.activeElement));
+      const focusables = [...(dialog?.querySelectorAll('button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]') || [])].filter((element) => element.offsetParent !== null && element.getAttribute('tabindex') !== '-1');
+      if (focusables.length) {
+        focusables[focusables.length - 1].focus();
+        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true }));
+      }
+      const trapped = Boolean(dialog?.contains(document.activeElement));
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+      await new Promise((resolve) => setTimeout(resolve, 30));
+      return {
+        initialInside,
+        backgroundInert,
+        trapped,
+        closed: Boolean(backdrop?.hidden),
+        restored: document.activeElement === trigger
+      };
+    });
+    if (!modalA11y.initialInside || !modalA11y.backgroundInert || !modalA11y.trapped || !modalA11y.closed || !modalA11y.restored) {
+      failures.push('modal manager: focus, inert, trap, Escape or focus restoration failed: ' + JSON.stringify(modalA11y));
+    }
     const navOpen = await page.evaluate(() => {
       const btn = document.querySelector('.bottom-nav [data-panel="heroes"], .bottom-nav button[data-action="open-panel"][data-panel="heroes"], button[data-panel="heroes"]');
       if (btn) btn.click();

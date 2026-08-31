@@ -1,6 +1,8 @@
 /* Input and boot: event listeners, offline reward and startup */
 "use strict";
 
+if ($('authScreen') && !$('authScreen').hidden) openModalLayer('authScreen');
+
 window.TaoyuanBattle = window.TaoyuanBattle || {
   peek() {
     return { booting: true, allies: 0, enemies: 0, spawning: false, overlays: {} };
@@ -41,6 +43,22 @@ $("panelBack").addEventListener("click", () => {
 });
 let holdActionTimer = null;
 let holdActionInterval = null;
+
+$('inputDialogCancel')?.addEventListener('click', () => {
+  finishGameDialog(gameDialogState.mode === 'confirm' ? false : null);
+});
+$('inputDialogConfirm')?.addEventListener('click', () => {
+  const value = gameDialogState.mode === 'confirm' ? true : $('inputDialogValue')?.value.trim() || null;
+  finishGameDialog(value);
+});
+$('inputDialogValue')?.addEventListener('keydown', (event) => {
+  if (event.key !== 'Enter') return;
+  event.preventDefault();
+  $('inputDialogConfirm')?.click();
+});
+$('inputDialog')?.addEventListener('click', (event) => {
+  if (event.target === $('inputDialog')) finishGameDialog(gameDialogState.mode === 'confirm' ? false : null);
+});
 
 function clearHoldAction() {
   if (holdActionTimer) {
@@ -103,6 +121,7 @@ $("claimOffline").addEventListener("click", () => {
   recordTaskProgress("daily-claim");
   runtime.pendingOffline = null;
   $("offlineModal").hidden = true;
+  closeModalLayer('offlineModal');
   persist();
   updateHud();
   toast("離線軍資已收入府庫");
@@ -291,12 +310,7 @@ window.TaoyuanBattle = {
 $("tutorialNext")?.addEventListener("click", () => {
   if (typeof advanceTutorial === "function") advanceTutorial();
 });
-$("tutorialSkip")?.addEventListener("click", () => {
-  save.tutorialDone = true;
-  persist();
-  const layer = $("tutorialLayer");
-  if (layer) layer.hidden = true;
-});
+$("tutorialSkip")?.addEventListener("click", skipTutorial);
 document.addEventListener("click", (event) => {
   const button = event.target?.closest?.("#settlementPrimary, #settlementSecondary");
   if (!button || $("settlementModal").hidden) return;
@@ -310,16 +324,11 @@ $("settlementSecondary")?.addEventListener("click", () => {
   if ($("settlementModal")?.hidden) return;
   closeSettlement($("settlementSecondary")?.dataset?.settlementAction || "close");
 });
-document.addEventListener("keydown", (event) => {
-  if (event.key !== "Escape") return;
-  if ($("tutorialLayer") && !$("tutorialLayer").hidden) return;
-  if ($("settlementModal") && !$("settlementModal").hidden) closeSettlement("close");
-  else if ($("panelBackdrop") && !$("panelBackdrop").hidden) closePanel();
-});
 window.addEventListener("error", (event) => window.TaoyuanPlatform?.reportError?.(event.error || event.message));
 scheduleGameTimer(() => {
   const loading = $("loadingScreen");
   if (loading) loading.hidden = true;
+  if (!$('authScreen')?.hidden && !window.TaoyuanAuth?.isAuthenticated?.()) return;
   if (typeof showTutorial === "function") showTutorial();
 }, 420);
 
@@ -338,6 +347,7 @@ $("doubleOffline").addEventListener("click", async () => {
   recordTaskProgress("daily-claim");
   runtime.pendingOffline = null;
   $("offlineModal").hidden = true;
+  closeModalLayer('offlineModal');
   persist();
   updateHud();
   toast("離線軍資已雙倍入庫！");

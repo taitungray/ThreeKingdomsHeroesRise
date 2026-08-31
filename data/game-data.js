@@ -162,7 +162,8 @@ window.THREE_KINGDOMS_DATA = {
 window.THREE_KINGDOMS_DATA.stages.forEach((stage, index) => {
   if (stage.name) return;
   const chapter = window.THREE_KINGDOMS_DATA.chapters[Math.min(window.THREE_KINGDOMS_DATA.chapters.length - 1, stage.chapter)];
-  stage.name = (chapter?.stage || "征戰") + " · " + ((index % 5) + 1);
+  const variant = ['前線', '伏兵', '追擊', '決戰', '殘局'][index % 5];
+  stage.name = (chapter?.stage || '征戰') + ' · ' + variant;
 });
 
 const EXTRA_HERO_SPECS = [

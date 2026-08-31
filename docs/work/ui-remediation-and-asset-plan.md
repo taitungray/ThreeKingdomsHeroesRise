@@ -386,3 +386,11 @@ AI 產出後必須人工修正四角對稱、可平鋪邊線與 slice seam；未
 - 新圖符合 STYLE LOCK、透明 alpha、無文字、無黑白邊與統一光向。
 - `npm test`、`npm run test:ui`、`npm run test:docs` 全部通過；文件與程式現況同步。
 - Android 實機完成觸控、字體、TalkBack、背景恢復與外部服務 fallback 後，才可把 UI gate 判為 PASS。
+
+## 本輪實作與測試結果（2026-08-31）
+
+已完成 P0 UI runtime 依賴、共用 modal focus trap／背景 inert／Escape 回焦、44px／14px UI contract、主線目標可見、關卡名稱去重、軍務抽屜入口 gate、設定頁去除假功能與遊戲內輸入／確認 modal。
+
+自動化證據：npm run check:syntax、npm test、npm run test:ui、npm run test:docs 均須在提交前同版本通過；UI smoke 涵蓋 16 個面板、390／430／320px、抽屜滾動、主公軍府、成就／圖鑑／模式入口、modal focus trap 與固定尺寸截圖。
+
+仍需產圖／人工驗收：設定圖示 9 張（64px）、狀態徽記 5 張（32px）、空狀態圖 3 張（160×96）依本文件第 7 節製作；另需 Android／WebView 字型、TalkBack、長按與完整戰鬥生命週期畫面。

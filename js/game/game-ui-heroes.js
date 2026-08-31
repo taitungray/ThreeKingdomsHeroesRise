@@ -466,12 +466,7 @@ function cycleHeroPaperDoll(heroId, slotId) {
 }
 
 function heroCalculatedPower(heroId) {
-  const hero = heroById(heroId);
-  if (!hero) return 0;
-  const level = save.heroLevels[heroId] || 1;
-  const equipment = heroEquipmentStats(heroId);
-  const growth = heroGrowthMultiplier(heroId);
-  return Math.round(((hero.atk + equipment.atk) * 7 + hero.hp + equipment.hp + (hero.def + equipment.def) * 12) * (1 + level * 0.13) * growth);
+  return heroCombatPower(heroId);
 }
 
 function autoEquipHero(heroId) {

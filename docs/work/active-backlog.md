@@ -40,11 +40,8 @@
 | WORK-011 | 建立裝備擁有、掉落、比較與戰場武器關係 | ECON-001、COMBAT-005 | IN PROGRESS | 不再免費輪換全部裝備；取得、換裝、保存、重載與戰場外觀一致 |
 | WORK-012 | 重製第一章 10 關的命名、敵陣、節奏與獎勵 | CONTENT-001 | IN PROGRESS | 章名、關名、敵人與 Boss 一致；每關目的、首勝／重複獎勵與失敗提示可核對 |
 | WORK-013 | 建立垂直切片自動、視覺與實機驗收包 | QA-001 | IN PROGRESS | Boss draw、勝敗、death／removed、settlement、panel persistence 與固定尺寸證據齊全 |
-| WORK-014 | 修復可見 UI 入口的 runtime 依賴並建立誠實入口 gate | UI-013、UI-017、QA-002 | READY | `currentArmyPower`、`titleUnlocked`、`ACHIEVEMENTS`、`campaignClears` 有單一來源；未完成入口隱藏或鎖定；正式 UI smoke 無例外 |
-| WORK-015 | 建立共用 modal／dialog manager，修正焦點、背景 inert 與原生對話 | UI-014、UI-016 | READY | 開啟聚焦、Tab trap、Escape、回焦與巢狀保護通過；`prompt`／`confirm` 不再出現在玩家路徑 |
-| WORK-016 | 收斂 UI token 與 CSS cascade，恢復 44px／14px 底線 | UI-015 | READY | 移除互相覆寫的壓縮規則；三個直式基準尺寸無必要文字小於 14px、可用控制小於 44×44px |
-| WORK-017 | 瘦身戰場入口、軍務抽屜、設定與主線 HUD | UI-016、UI-017 | READY | 依首章 Keep／Lock／Hide 矩陣顯示；設定無假功能或重複責任；主線 chip 可讀且關卡編號不重複 |
-| WORK-018 | 對齊產品實作與 UI 自動測試，移除過時字串斷言 | QA-002 | READY | `npm test` 與 `npm run test:ui` 驗證實際 computed style、互動與例外，並在同一版本通過 |
+| WORK-015 | 建立共用 modal／dialog manager，修正焦點、背景 inert 與原生對話 | UI-014、UI-016 | IN PROGRESS | 開啟聚焦、Tab trap、Escape、回焦與巢狀保護通過；`prompt`／`confirm` 不再出現在玩家路徑 |
+| WORK-016 | 收斂 UI token 與 CSS cascade，恢復 44px／14px 底線 | UI-015 | IN PROGRESS | 移除互相覆寫的壓縮規則；三個直式基準尺寸無必要文字小於 14px、可用控制小於 44×44px |
 
 ## P1 — 垂直切片穩定後
 

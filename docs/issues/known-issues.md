@@ -29,12 +29,12 @@
 | UI-011 | P1 | DOM 與 Canvas 曾混用系統楷體、微軟正黑及等寬英文字型；不同裝置字模不一致、標題老舊且細筆畫容易顯糊 | VERIFY | source／www 載入同一內建字型並通過 390／320px 排版 gate；再補 Android 實機字型與載入切換走查 | WORK-008 |
 | UI-007 | P1 | 武將詳情長捲、神兵／共鳴／緣分重複；升級鈕在最底；緣分卡套用 44px 三欄 grid 變成直字 | VERIFY | 390×720 詳情頁升級列釘底可見；緣分 chip 橫排可讀；無重複神兵專區 | WORK-008 |
 | UI-012 | P1 | 50 張頭像來源雖為 64×64，但不同 UI 槽位使用 4:5、方形與多套尺寸；張飛 portrait 曾錯用藍衣文士圖，與戰鬥身分不一致 | VERIFY | source／www 使用同一張正確張飛肖像；同類槽位維持正方形尺寸契約，390×720／320×568 與觸控橫向面板確認無裁切、拉伸或錯綁；手機名冊頭像統一 48×48 | WORK-008 |
-| UI-013 | P0 | 2026-08-31 正式 UI smoke 會在可見入口拋出未定義全域：`currentArmyPower()`、`titleUnlocked()`、`ACHIEVEMENTS`、`campaignClears()`；主公軍府、成就、圖鑑、演武、問天樓與副本不可視為可玩 | OPEN | 不注入 QA 假值即可逐一開啟所有可見入口、完成主要操作並關閉；console 無未捕捉例外 | WORK-014 |
-| UI-014 | P1 | 命令面板開啟後焦點仍留在背景頁籤，Tab 可走到背景控制；Escape 關閉後不回原觸發器。登入／教學也讓背景戰鬥按鈕可被鍵盤聚焦 | OPEN | 共用 modal manager 通過初始焦點、focus trap、背景 inert、Escape 與關閉回焦；鍵盤及 TalkBack 走查通過 | WORK-015 |
-| UI-015 | P1 | 最末 UI 壓縮規則把 Boss 操作壓為 88×30px，資源、底欄及必要說明降為 10–13px | OPEN | 390×720、430×932、320×568 所有可操作目標至少 44×44px，必要文字至少 14px，無重疊或裁切 | WORK-016 |
-| UI-016 | P1 | 軍務抽屜一次暴露 11 個入口；設定頁混入公告、重複改名、手動存檔、無版本檢查的假回饋、未配置 IAP 的恢復購買，且改名／回報／重置仍用原生 `prompt`／`confirm` | OPEN | 入口依首章矩陣 Keep／Lock／Hide；假功能與重複入口移除；所有確認與輸入使用遊戲內元件 | WORK-015、WORK-017 |
-| UI-017 | P1 | 主線目標列 DOM 被 `css/ui-overhaul.css` 隱藏；關卡 HUD 另把同一關次重複成「4-5 · 關名 · 5」 | OPEN | 主線目標在三秒測試內可理解且不遮戰場；關卡只保留章－關與名稱，不重複末碼 | WORK-014、WORK-017 |
-| QA-002 | P0 | 2026-08-31 `npm test` 因 top HUD CSS gate 失敗，`npm run test:ui` 因 runtime 未定義全域中止；目前規格與舊證據曾仍宣稱兩者通過 | OPEN | 修正產品與測試後兩個 gate 均通過，文件只引用同次可重現輸出 | WORK-014、WORK-018 |
+| UI-013 | P0 | 2026-08-31 正式 UI smoke 會在可見入口拋出未定義全域：`currentArmyPower()`、`titleUnlocked()`、`ACHIEVEMENTS`、`campaignClears()`；主公軍府、成就、圖鑑、演武、問天樓與副本不可視為可玩 | VERIFY | 不注入 QA 假值即可逐一開啟所有可見入口、完成主要操作並關閉；console 無未捕捉例外 | WORK-014 |
+| UI-014 | P1 | 命令面板開啟後焦點仍留在背景頁籤，Tab 可走到背景控制；Escape 關閉後不回原觸發器。登入／教學也讓背景戰鬥按鈕可被鍵盤聚焦 | VERIFY | 共用 modal manager 通過初始焦點、focus trap、背景 inert、Escape 與關閉回焦；鍵盤及 TalkBack 走查通過 | WORK-015 |
+| UI-015 | P1 | 最末 UI 壓縮規則把 Boss 操作壓為 88×30px，資源、底欄及必要說明降為 10–13px | VERIFY | 390×720、430×932、320×568 所有可操作目標至少 44×44px，必要文字至少 14px，無重疊或裁切 | WORK-016 |
+| UI-016 | P1 | 軍務抽屜一次暴露 11 個入口；設定頁混入公告、重複改名、手動存檔、無版本檢查的假回饋、未配置 IAP 的恢復購買，且改名／回報／重置仍用原生 `prompt`／`confirm` | VERIFY | 入口依首章矩陣 Keep／Lock／Hide；假功能與重複入口移除；所有確認與輸入使用遊戲內元件 | WORK-015、WORK-017 |
+| UI-017 | P1 | 主線目標列 DOM 被 `css/ui-overhaul.css` 隱藏；關卡 HUD 另把同一關次重複成「4-5 · 關名 · 5」 | VERIFY | 主線目標在三秒測試內可理解且不遮戰場；關卡只保留章－關與名稱，不重複末碼 | WORK-014、WORK-017 |
+| QA-002 | P0 | 2026-08-31 `npm test` 因 top HUD CSS gate 失敗，`npm run test:ui` 因 runtime 未定義全域中止；目前規格與舊證據曾仍宣稱兩者通過 | RESOLVED | 修正產品與測試後兩個 gate 均通過，文件只引用同次可重現輸出 | WORK-014、WORK-018 |
 
 ## 本輪 UI 全面稽核（2026-08-31）
 
