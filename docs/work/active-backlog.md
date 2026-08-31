@@ -42,6 +42,7 @@
 | WORK-013 | 建立垂直切片自動、視覺與實機驗收包 | QA-001 | IN PROGRESS | Boss draw、勝敗、death／removed、settlement、panel persistence 與固定尺寸證據齊全 |
 | WORK-015 | 建立共用 modal／dialog manager，修正焦點、背景 inert 與原生對話 | UI-014、UI-016 | IN PROGRESS | 開啟聚焦、Tab trap、Escape、回焦與巢狀保護通過；`prompt`／`confirm` 不再出現在玩家路徑 |
 | WORK-016 | 收斂 UI token 與 CSS cascade，恢復 44px／14px 底線 | UI-015 | IN PROGRESS | 移除互相覆寫的壓縮規則；三個直式基準尺寸無必要文字小於 14px、可用控制小於 44×44px；另以 `npm run test:ui` 逐一檢查 50 名武將詳情的 stat ledger 與 disabled 對比，人工 Android／WebView／TalkBack 仍待補 |
+| WORK-019 | 依品質重置流程執行第一章四層驗收並限制完成宣告 | QA-003 | READY | 先完成 baseline，再由真人玩家、資深企劃、資深美術、資深 UI、工程 QA 各自判定；每輪只修 3–5 項並以同條件 before／after 重測，同 commit 證據齊全且 P0／P1 為零 |
 
 ## P1 — 垂直切片穩定後
 

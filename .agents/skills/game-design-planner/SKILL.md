@@ -128,3 +128,19 @@ description: Design or improve web-game mechanics, core loops, combat rules, pro
 - 有立即 feedback 嗎？
 - 有沒有純數值假成長？
 - 新系統真的增加玩法嗎？
+
+## Senior Planning Review
+
+逐畫面與系統獨立輸出 Keep／Remove／Simplify／Fix，檢查唯一主要任務、下一步、重複入口、無決策資訊、等待時間、唯一最佳解、無意義資源與純數值假成長。
+
+審查必須連回實際玩家證據：10 秒內是否知道下一步、第一分鐘是否有真正決策、失敗後是否理解原因。若沒有真人盲測，標記缺少證據，不以企劃推論補成 PASS。
+
+優先驗收第一章垂直切片；範圍外功能做 Hide／Lock 決策，不用更多 UI 掩蓋核心循環問題。
+
+## Live Event Planning Gate
+
+活動頁開始設計前，先定義玩家目標、核心操作、參與理由、起訖／補領時間與時區、任務條件、進度算法、獎勵表、領取上限、資源來源／消耗，以及不參加活動的正常路徑。
+
+活動必須增加可理解的玩法或選擇，不能只是換皮登入、假倒數、假排行或更多領取按鈕。後端、時間來源、獎勵與防重複機制未成立時，入口必須 Hide 或誠實 Lock。
+
+企劃輸出需涵蓋 preview／open／locked／completed／claimed／ended／catch-up、首次／中期／錯過玩家與活動結束後資料處理，並交給 UI 與 QA 建立對應狀態和案例。

@@ -141,3 +141,11 @@ Art Director 提供：
 ### VFX Style
 ### AI STYLE LOCK
 ### Do / Don't
+
+## Senior Art Review
+
+以固定尺寸完整圖包審查，不只看單張最好看的畫面。至少涵蓋 320×568、390×720、430×932，以及四兵種、長短名字、已擁有／未解鎖、戰鬥全生命週期與勝敗結算。
+
+逐項標記 Keep／Adjust／Replace，檢查 palette、rendering、edge、perspective、light、material、detail、scale、角色辨識與跨資產一致性。黑框／方塊、錯圖、武器脫手、角色風格不同遊戲或介面明顯像網站，直接 FAIL。
+
+Art Review 與 UI Review 必須各自判定；美術不得用「排版沒重疊」替代風格品質，UI 也不得自行宣稱角色素材完成。

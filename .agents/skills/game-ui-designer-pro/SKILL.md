@@ -452,3 +452,19 @@ UI 必須同時通過：
 
 任何重要項目失敗：
 不要只做裝飾修補。
+
+## Senior UI Review Evidence
+
+Review 不只量 overflow。每個主要介面需檢查 normal、pressed、selected、disabled、loading、error、locked、資源不足、completed／claimed 與滿級狀態（適用者），並看頂部、中段、底部及捲動過程。
+
+固定用 320×568、390×720、430×932，角色樣本涵蓋四兵種、長短名字、已擁有、未解鎖與滿級預覽；自動化全量角色與人工代表角色均需執行，兩者不互相代替。
+
+UI Review 必須獨立於 Art Review 輸出 PASS／PASS WITH ISSUES／FAIL。任一必要文字看不見、主要操作不明、三秒測試失敗、觸控不可靠或介面比戰場搶眼，判定 FAIL。
+
+## Live Event Page Gate
+
+活動頁同樣使用既有 Visual Contract。活動可以有主題角色、背景與重點色，但三秒內必須看懂目的、剩餘時間、進度、主要獎勵與唯一主要 CTA，且不能變成通用活動網站或另一款遊戲。
+
+開始實作前必須取得企劃的真實起訖／補領時間、時區、任務、進度、獎勵、領取限制與錯誤路徑。完整設計 preview、open、locked、insufficient、completed、claimed、sold out、ended、loading、error、offline 與 retry（適用者）。
+
+倒數、價格、進度、任務與獎勵由 DOM／資料驅動，不烘焙進圖片。任何假倒數、假排行、假可領取、未配置服務或狀態缺失，UI Gate 為 FAIL。

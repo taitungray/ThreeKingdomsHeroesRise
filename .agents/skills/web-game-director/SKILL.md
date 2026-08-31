@@ -159,3 +159,11 @@ description: Orchestrate complete Web/H5 game work across gameplay design, game 
 
 有任何重要項目失敗：
 不可宣稱完成。
+
+## Independent Quality Review
+
+最終品質審查必須分成資深玩家盲測、資深企劃、資深美術／UI、工程與自動化 QA 四層。不得把自動化、DOM 存在、無 overflow 或單張截圖當成整體品質通過。
+
+每個角色要獨立輸出 PASS／PASS WITH ISSUES／FAIL、證據與最高優先問題。同一人模擬多角色時要分段標記；沒有真人參與不得宣稱完成玩家盲測。任一角色的 P0／P1 或必要證據缺失，總監結論只能是 FAIL。
+
+先鎖定垂直切片，每輪只批准最高優先 3–5 項修正，再用同版本重測。完整流程依專案 `docs/standards/game-quality-review.md`。
