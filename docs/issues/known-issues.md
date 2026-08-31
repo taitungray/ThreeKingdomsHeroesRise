@@ -32,10 +32,10 @@
 | UI-013 | P0 | 2026-08-31 正式 UI smoke 會在可見入口拋出未定義全域：`currentArmyPower()`、`titleUnlocked()`、`ACHIEVEMENTS`、`campaignClears()`；主公軍府、成就、圖鑑、演武、問天樓與副本不可視為可玩 | VERIFY | 不注入 QA 假值即可逐一開啟所有可見入口、完成主要操作並關閉；console 無未捕捉例外 | WORK-014 |
 | UI-014 | P1 | 命令面板開啟後焦點仍留在背景頁籤，Tab 可走到背景控制；Escape 關閉後不回原觸發器。登入／教學也讓背景戰鬥按鈕可被鍵盤聚焦 | VERIFY | 共用 modal manager 通過初始焦點、focus trap、背景 inert、Escape 與關閉回焦；鍵盤及 TalkBack 走查通過 | WORK-015 |
 | UI-015 | P1 | 最末 UI 壓縮規則把 Boss 操作壓為 88×30px，資源、底欄及必要說明降為 10–13px | VERIFY | 390×720、430×932、320×568 所有可操作目標至少 44×44px，必要文字至少 14px，無重疊或裁切 | WORK-016 |
-| UI-016 | P1 | 軍務抽屜一次暴露 11 個入口；設定頁混入公告、重複改名、手動存檔、無版本檢查的假回饋、未配置 IAP 的恢復購買，且改名／回報／重置仍用原生 `prompt`／`confirm` | VERIFY | 入口依首章矩陣 Keep／Lock／Hide；假功能與重複入口移除；所有確認與輸入使用遊戲內元件 | WORK-015、WORK-017 |
+| UI-016 | P1 | 軍務抽屜入口與部分設定功能已收斂，但仍需人工確認首章資訊層級、WebView 操作與所有入口責任 | VERIFY | 未配置 IAP 商品在 Web 版隱藏；改名／回報／重置使用遊戲內元件；完成 Android／WebView／TalkBack 人工走查 | WORK-015、WORK-017 |
 | UI-017 | P1 | 主線目標列 DOM 被 `css/ui-overhaul.css` 隱藏；關卡 HUD 另把同一關次重複成「4-5 · 關名 · 5」 | VERIFY | 主線目標在三秒測試內可理解且不遮戰場；關卡只保留章－關與名稱，不重複末碼 | WORK-014、WORK-017 |
 | QA-002 | P0 | 2026-08-31 `npm test` 因 top HUD CSS gate 失敗，`npm run test:ui` 因 runtime 未定義全域中止；目前規格與舊證據曾仍宣稱兩者通過 | RESOLVED | 修正產品與測試後兩個 gate 均通過，文件只引用同次可重現輸出 | WORK-014、WORK-018 |
-| QA-003 | P0 | 過去曾把 source／`www` 自動化、全 50 名角色 overflow 與固定截圖通過描述成「全部介面已測」，但缺少真人玩家盲測及資深企劃、資深美術／UI 的獨立品質判定 | OPEN | 第一章垂直切片依四層品質規範完成同 commit 證據；各角色獨立判定且 P0／P1 為零 | WORK-019 |
+| QA-003 | P0 | 自動化回歸已補齊 source／`www` UI、戰鬥生命週期與多模式結算，但仍缺少真人玩家盲測及 Android／WebView／TalkBack 的獨立品質判定 | OPEN | `node scripts/browser-lifecycle-smoke.js` 與 `--www` 已通過；第一章仍需四層同 commit 證據且 P0／P1 為零 | WORK-019 |
 
 ## 本輪 UI 全面稽核（2026-08-31）
 
@@ -76,7 +76,7 @@
 | 全遊戲字型 | 內建 `Huninn Game`；DOM／按鈕／HUD／結算／Canvas 共用字模，數字啟用等寬特性，OFL 授權隨檔保存 | 仍需補 Android 實機字型載入及戰鬥飄字人工走查 |
 | UI-005 | P1 | 武將詳情有頭像／屬性重疊，戰法頁出現溢出的 `ACTIVE ARMY PASSIVE` 內部英文標籤 | VERIFY | 武將詳情與戰法頁於基準尺寸無重疊、溢出或內部英文標籤 | WORK-008、WORK-010 |
 | GAMEPLAY-001 | P0 | 3×3 位置會影響實戰與 lane bonus，但編隊 UI 只能增減成員，沒有可用的換位操作 | VERIFY | 玩家可編輯、保存與還原位置，且站位差異有可重現戰果 | WORK-009 |
-| GAMEPLAY-002 | P1 | 演武、塔與副本目前主要以總戰力門檻立即判定結果，沒有進入正式戰鬥 | VERIFY | 可見的戰鬥型副模式至少一個使用完整戰鬥、勝敗與獎勵流程；其餘隱藏 | WORK-101、WORK-105 |
+| GAMEPLAY-002 | P1 | 演武、塔與副本已接入正式戰鬥入口，但每個副模式仍缺少獨立實戰勝敗、死亡與重試證據 | VERIFY | 每個可見副模式保留完整戰鬥、勝敗與獎勵流程，並補齊固定尺寸實戰證據 | WORK-101、WORK-105 |
 | ECON-001 | P1 | 裝備可免費輪換全部資料，商城本地兌換多為一次性且按鈕仍寫「領取」，缺少真實取得與持續消耗 | VERIFY | 裝備有擁有／掉落／比較；商城行為與文案一致並有可測試消耗循環 | WORK-011、WORK-104 |
 | DATA-001 | P0 | 敵將組合引用 `huangzhong`，但敵將資料沒有同 ID，預覽、篩選與實戰可能落入 fallback | VERIFY | 所有關卡敵將 ID 通過完整性檢查，預覽與實戰身份一致 | WORK-003 |
 | CONTENT-001 | P1 | 章節卡片使用歷史章名，但首關名稱由循環前綴生成，出現桃園結義對應官渡烽煙等語意錯配 | VERIFY | 第一章 10 關及後續開放章節的章名、關名、敵人與 Boss 一致 | WORK-012 |

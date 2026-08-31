@@ -295,6 +295,7 @@ const defaultSave = () => ({
   formation: ["liubei", "guanyu", "zhangfei", "zhaoyun"],
   positions: { liubei: 7, guanyu: 3, zhangfei: 5, zhaoyun: 4 },
   tactics: { snake: 1, wall: 1, wind: 1 },
+  equippedTactic: 'snake',
   equipment: createEquipmentDefaults(),
   ownedEquipment: createOwnedEquipment(),
   mailClaimed: false,
@@ -500,12 +501,12 @@ function heroStarCost(heroId) {
 
 function heroSkillLevel(heroId) {
   ensureCycleState();
-  return Math.max(1, Math.min(5, Number(save.skillLevels?.[heroId]) || 1));
+  return Math.max(1, Math.min(10, Number(save.skillLevels?.[heroId]) || 1));
 }
 
 function heroSkillCost(heroId) {
   const level = heroSkillLevel(heroId);
-  if (level >= 5) return null;
+  if (level >= 10) return null;
   return { gold: 140 + level * 100, food: 70 + level * 45 };
 }
 
@@ -554,8 +555,9 @@ function ensureCycleState() {
   if (!save.troopMastery) save.troopMastery = { "步兵": 0, "騎兵": 0, "弓兵": 0, "謀士": 0 };
   for (const hero of HEROES) {
     save.heroProgress[hero.id] = { stars: 1, breakthrough: 0, shards: 0, ...(save.heroProgress[hero.id] || {}) };
-    save.skillLevels[hero.id] = Math.max(1, Math.min(5, Number(save.skillLevels?.[hero.id]) || 1));
+    save.skillLevels[hero.id] = Math.max(1, Math.min(10, Number(save.skillLevels?.[hero.id]) || 1));
   }
+  if (!TACTICS.some((tactic) => tactic.id === save.equippedTactic)) save.equippedTactic = TACTICS[0]?.id || '';
   const eventPeriod = localWeekKey();
   if (!save.eventState || save.eventState.period !== eventPeriod) save.eventState = { period: eventPeriod, progress: Object.fromEntries(LOCAL_EVENTS.map((event) => [event.id, 0])), claimed: [] };
   save.eventState.progress = { ...Object.fromEntries(LOCAL_EVENTS.map((event) => [event.id, 0])), ...(save.eventState.progress || {}) };

@@ -2,8 +2,9 @@
 "use strict";
 (function () {
   const native = () => Boolean(window.Capacitor?.isNativePlatform?.());
+  const bridge = () => window.Capacitor?.Plugins?.Purchase;
   window.TaoyuanIAP = Object.freeze({
-    isAvailable: native,
+    isAvailable: () => native() && Boolean(bridge()?.purchase),
     purchase: async (productId) => {
       if (!native()) return { ok: false, reason: "native-required", productId };
       const bridge = window.Capacitor?.Plugins?.Purchase;

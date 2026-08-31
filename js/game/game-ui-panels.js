@@ -169,13 +169,18 @@ function achievementData() {
 
 function renderShop() {
   ensureCycleState();
-  const cards = SHOP_ITEMS.map((item) => {
+  const nativeAvailable = Boolean(window.TaoyuanIAP?.isAvailable?.());
+  // Native products have no truthful purchase path in the web/PWA build.
+  // Keep them out of the first-chapter shop instead of showing dead cards.
+  const visibleItems = SHOP_ITEMS.filter((item) => !item.requiresNativePurchase || nativeAvailable);
+  const cards = visibleItems.map((item) => {
     const claimed = isShopClaimed(item);
     const nativeLocked = Boolean(item.requiresNativePurchase && !window.TaoyuanIAP.isAvailable());
     const buttonText = nativeLocked ? "App 專屬" : claimed ? "已兌換" : "兌換";
     return '<article class="shop-card tone-' + item.tone + '" data-shop-item="' + item.id + '"><div class="shop-badge" aria-hidden="true">' + (item.tone === "legend" ? "秘" : "商") + '</div><div><h3>' + item.name + '</h3><p>' + item.desc + '</p><small>費用 ' + rewardHtml(item.cost, true) + ' · 獲得 ' + rewardHtml(item.reward, true) + '</small></div><button class="' + (claimed || nativeLocked ? "stone-button" : "seal-button") + ' panel-action" type="button" data-action="shop-buy" data-shop="' + item.id + '"' + (claimed || nativeLocked ? " disabled" : "") + '>' + buttonText + '</button></article>';
   }).join("");
   setPanel(UI_TEXT.shop, '<p class="section-caption">軍需所取得，不設虛假永久買賣。</p><div class="shop-list">' + cards + '</div><p class="panel-footnote">原生商店商品未配置正式 SKU 時會自動保持停用。</p>');
+  if (!nativeAvailable) document.querySelector('.shop-list + .panel-footnote')?.remove();
 }
 
 function buyShopItem(itemId) {

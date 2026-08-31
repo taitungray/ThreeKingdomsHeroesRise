@@ -280,6 +280,14 @@ async function main() {
       if (!routeState.drawerClosed || !routeState.panelOpen || !routeState.title.includes(expectedTitle)) {
         failures.push(`drawer route ${route}: did not open expected panel [${routeState.title}]`);
       }
+      if (route === 'shop') {
+        const shopContract = await page.evaluate(() => {
+          const nativeIds = new Set(['starter-pack', 'monthly-pass', 'no-ads']);
+          const nativeCards = [...document.querySelectorAll('[data-shop-item]')].filter((card) => nativeIds.has(card.dataset.shopItem));
+          return { nativeCards: nativeCards.length, staleFootnote: Boolean(document.querySelector('.shop-list + .panel-footnote')) };
+        });
+        if (shopContract.nativeCards || shopContract.staleFootnote) failures.push('shop: unavailable native IAP cards or stale fallback text is visible');
+      }
       await page.evaluate(() => window.TaoyuanBattle.closePanel());
       await page.waitForTimeout(50);
     }

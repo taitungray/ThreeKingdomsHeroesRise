@@ -190,6 +190,35 @@
   color: #33261a;
 }
 
+/* Check-in cards previously rendered the `today` and `cleared` classes with
+   the same paper surface, so players could not tell the current claim from
+   an already-collected day.  Keep the state visible with border, surface and
+   text changes in addition to the status label. */
+.checkin-cell {
+  border: 1px solid #8a7048;
+  text-align: center;
+}
+
+.checkin-cell.today {
+  border-color: #a23b2d;
+  background: linear-gradient(180deg, #fff0b9, #d5ad61);
+  color: #4b2d1c;
+  box-shadow: inset 0 0 0 1px #f0c070, 0 0 0 1px #a23b2d66;
+}
+
+.checkin-cell.cleared {
+  border-color: #6e946d;
+  background: linear-gradient(180deg, #e5edc8, #b9c990);
+  color: #304023;
+  box-shadow: inset 0 0 0 1px #c9dd9b, 0 2px 0 #42583e66;
+}
+
+.checkin-cell.cleared .reward-chip {
+  border-color: #7d9b62;
+  color: #304023;
+  background: #d8e6ac;
+}
+
 /* Disabled controls remain legible: saturation is communicated by the
    muted iron surface and border, never by darkening the text itself. */
 .seal-button:disabled,
@@ -208,10 +237,72 @@
   -webkit-text-fill-color: #d8d7c8;
 }
 
+/* Boss readiness is a separate control, so it needs the same readable
+   disabled contract as seal/stone actions.  The legacy HUD rule used a
+   grayscale+brightness filter that made the label disappear on dark phones. */
+#bossButton:disabled {
+  filter: none;
+  opacity: 1;
+  color: #e6e2cf;
+  -webkit-text-fill-color: #e6e2cf;
+  border-color: #89907e;
+  background: linear-gradient(180deg, #596255, #3d473e);
+  box-shadow: inset 0 0 0 1px #aeb6a2, 0 2px 0 #222a23;
+  text-shadow: 0 1px 2px #182018;
+}
+
+#bossButton:disabled small,
+#bossButton:disabled strong {
+  color: #d8d7c8 !important;
+  -webkit-text-fill-color: #d8d7c8;
+}
+
+/* Locked heroes stay visibly locked through the badge/button, not through a
+   blanket filter that muddies their portrait and makes names unreadable. */
+.hero-card.locked {
+  filter: none;
+  border-color: #8b806c;
+  background: linear-gradient(180deg, #e4dfcf, #b9b29e);
+}
+
+.hero-card.locked .hero-name {
+  color: #5a4635;
+}
+
+.hero-card.locked .hero-role,
+.hero-card.locked .hero-power {
+  color: #635c50;
+}
+
 @media (max-width: 360px) {
   .detail-hero .stat-list {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     column-gap: 8px;
+  }
+
+  /* Seven reward cells at 320px leave less than an icon's width.  A compact
+     4+3 grid preserves the check-in overview while keeping every reward chip
+     inside its cell instead of painting past the panel edge. */
+  .checkin-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .checkin-cell {
+    min-height: 88px;
+    padding-inline: 4px;
+  }
+
+  .checkin-cell .reward-chip {
+    max-width: 100%;
+    gap: 2px;
+    padding-inline: 4px;
+  }
+
+  .checkin-cell .reward-chip b {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 }
 

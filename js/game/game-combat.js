@@ -379,6 +379,15 @@ function makeEnemy(index, boss = false) {
       enemyGeneralId = dung.bossGeneral || "dongzhuo";
     }
   }
+  if (runtime.mode === 'trial') {
+    const trialList = typeof HERO_FATE_TRIALS !== 'undefined' ? HERO_FATE_TRIALS : (window.HERO_FATE_TRIALS || []);
+    const trialData = trialList.find((item) => item.id === runtime.trialId);
+    if (trialData) {
+      modePowerScale = Math.max(0.8, (trialData.power || 2200) / 1800);
+      if (!boss && trialData.enemies?.length) enemyType = trialData.enemies[index % trialData.enemies.length];
+      if (boss && trialData.boss) enemyGeneralId = trialData.boss;
+    }
+  }
 
   const enemyProfiles = {
     bandit: { role: "步兵", hp: 105, atk: 11, def: 3.5, speed: 13, range: 27, color: "#8f3630" },
@@ -397,7 +406,7 @@ function makeEnemy(index, boss = false) {
     id: "enemy-" + Date.now() + "-" + index,
     team: "enemy",
     type: enemyType,
-    enemyGeneralId: boss ? (runtime.mode === "dungeon" ? enemyGeneralId : config?.bossGeneral || enemyGeneralId) : enemyGeneralId,
+    enemyGeneralId: boss ? (runtime.mode === 'dungeon' || runtime.mode === 'trial' ? enemyGeneralId : config?.bossGeneral || enemyGeneralId) : enemyGeneralId,
     x: spawnX,
     y: spawnY,
     targetY,
@@ -455,14 +464,19 @@ function spawnWave(boss = false, showTransition = true) {
   const waveNumber = boss ? 4 : runtime.waveClears + 1;
   if (showTransition && !boss) beginWaveTransition("第 " + waveNumber + " 波");
   runtime.entryUnits = true;
-  const count = boss ? 1 + Math.min(4, activeStageNumber()) : config?.enemyCount || 4 + Math.min(7, activeStageNumber() + runtime.waveClears);
+  let count = config?.enemyCount || 4 + Math.min(7, activeStageNumber() + runtime.waveClears);
+  if (boss) count = runtime.mode === 'arena' ? 5 : 1 + Math.min(4, activeStageNumber());
   for (let i = 0; i < count; i += 1) runtime.enemies.push(makeEnemy(i, boss && i === 0));
   runtime.entryUnits = false;
   if (boss) hideEnemyPreview();
   else showEnemyPreview(activeStageNumber(), waveNumber);
   if (boss) {
     const chapter = chapterForStage();
-    $("bossName").textContent = enemyGeneralById(config?.bossGeneral)?.name || chapter.boss;
+    const trialList = typeof HERO_FATE_TRIALS !== 'undefined' ? HERO_FATE_TRIALS : (window.HERO_FATE_TRIALS || []);
+    const trialData = runtime.mode === 'trial' ? trialList.find((item) => item.id === runtime.trialId) : null;
+    const bossDisplayName = trialData?.bossName || enemyGeneralById(config?.bossGeneral)?.name || chapter.boss;
+    runtime.bossDisplayName = bossDisplayName;
+    $("bossName").textContent = bossDisplayName;
     // Boss arrival owns the single central narrative slot. Clear dialogue first
     // so the banner, preview and bottom dialogue never stack over the battle.
     $("dialogueBox")?.classList.remove("show");
@@ -474,7 +488,7 @@ function spawnWave(boss = false, showTransition = true) {
     void banner.offsetWidth;
     banner.classList.add("show");
     scheduleGameTimer(() => banner.setAttribute("aria-hidden", "true"), 1800);
-    addLog("遭遇首領「" + chapter.boss + "」。");
+    addLog("遭遇首領「" + bossDisplayName + "」。");
     beep(95, 0.3, "sawtooth", 0.04);
     window.TaoyuanAudio?.sfx?.("boss");
   }
@@ -810,7 +824,6 @@ function useHeroSkill(unit, target) {
   } else if (hero.role === "\u5f13\u5175" || hero.role === "\u8b00\u58eb") {
     enemies.slice(0, 4).forEach((enemy) => {
       fireProjectile(unit, enemy, hero.accent, { skill: true });
-      applyDamage(unit, enemy, 1.4, .25, { skill: true });
     });
   } else {
     (closeEnemies.length ? closeEnemies : [target]).forEach((enemy) => applyDamage(unit, enemy, 1.7, .24, { skill: true }));

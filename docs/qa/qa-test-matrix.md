@@ -95,11 +95,13 @@ npm test
 npm run test:ui
 node scripts/repro-combat-freeze.js
 npm run test:combat-browser
+node scripts/browser-lifecycle-smoke.js
 node build.js
 npm run test:combat-browser:www
+node scripts/browser-lifecycle-smoke.js --www
 ```
 
-需要同步產物時再執行 `node build.js`。兩個瀏覽器命令使用固定 QA 訪客存檔，專測戰鬥而不混入首次登入／教學流程；首次登入與教學需另列功能案例。瀏覽器視覺與實機測試只在任務要求或發布 gate 執行，並保留環境與畫面證據。
+需要同步產物時再執行 `node build.js`。瀏覽器命令使用固定 QA 訪客存檔，專測 UI、戰鬥與生命週期而不混入首次登入／教學流程；首次登入與教學需另列功能案例。瀏覽器視覺與實機測試只在任務要求或發布 gate 執行，並保留環境與畫面證據。
 
 ## 7. 判定
 

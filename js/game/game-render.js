@@ -1428,7 +1428,9 @@ function drawUnitNameTag(unit, x, visualY) {
   const y = Math.round(visualY - 66);
   ctx.save();
   const general = ENEMY_GENERALS.find(g => g.id === unit.enemyGeneralId);
-  const name = general?.name || "敵首領";
+  const trialList = typeof HERO_FATE_TRIALS !== 'undefined' ? HERO_FATE_TRIALS : (window.HERO_FATE_TRIALS || []);
+  const trial = runtime.mode === 'trial' ? trialList.find((item) => item.id === runtime.trialId) : null;
+  const name = trial?.bossName || general?.name || "敵首領";
   ctx.font = "bold 9.5px 'DFKai-SB', 'KaiTi', sans-serif";
   ctx.textAlign = "center";
   ctx.strokeStyle = "#240604";
