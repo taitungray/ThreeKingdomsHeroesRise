@@ -41,7 +41,7 @@
 | 狀態 | 功能斷言 | 視覺斷言 |
 |---|---|---|
 | idle | action 為 null、座標穩定 | 完整全身；無 portrait／半身 bust、黑框、灰綠／褐色矩形底塊、棋盤島或雙身體；臉、甲片與兵器在 390×720 可辨識 |
-| move／entry | 到達 target lane 前不攻擊；只有實際位移才推進 move frame | 左右腳交替、接地幀清楚、停下不滑行，朝向正確、無整體彈跳或拉伸 |
+| move／entry | 到達 target lane 前不攻擊；只有實際位移才推進 move frame | 剪影朝右、runtime 鏡像後朝位移方向前進（禁止倒退走）；左右腳交替、接地幀清楚、停下不滑行，無整體彈跳或拉伸 |
 | anticipation | action 單一且 frame 合法 | 身體與兵器只畫一次，蓄力方向正確 |
 | contact | 傷害只 resolve 一次 | 命中點、兵器尖端與目標關係合理 |
 | recovery | action 按時結束 | 不殘留第二把兵器、手臂或 trail |
@@ -49,13 +49,14 @@
 | death | 停止攻擊與選目標 | 兵器跟隨／隱藏，無跳格或復活一 frame |
 | removed | 從 runtime 移除 | 屍體、影子、血條、VFX、兵器完全消失 |
 
-資產自動檢查至少涵蓋：96px v3 基線與 128px v4 試製尺寸、WebP、alpha、每個 cell 的有效像素範圍與外緣不透明色帶、move 每格單一 alpha component、manifest 路徑、重複 ID、五階段攻擊與四幀步態像素指紋差異、foot／hand anchor，以及正常 runtime 路徑不得引用 portrait／半身 combat body。指紋、component 與外緣門檻只能防止重複站姿、跨角色碎片及大面積髒底回歸，不能代替細節可讀性、動作品質、腳底接地與握點視覺證據。
+資產自動檢查至少涵蓋：96px v3 基線與 128px v4 試製尺寸、WebP、alpha、每個 cell 的有效像素範圍與外緣不透明色帶、move 每格單一 alpha component、manifest 路徑、重複 ID、五階段攻擊與四幀步態像素指紋差異、foot／hand anchor、產生器 flop set 必須為空（現行母圖已朝右），以及正常 runtime 路徑不得引用 portrait／半身 combat body。指紋、component 與外緣門檻只能防止重複站姿、跨角色碎片及大面積髒底回歸，不能代替細節可讀性、動作品質、腳底接地與握點視覺證據。皮膚／質量朝向啟發式不可作為 flop 依據。
 
 ## 4. UI、輸入與響應式
 
 - 390×720 完整跑勝／敗；430×932、320×568、短高橫向檢查 HUD、面板、結算與旋轉提示。
 - 觸控、滑鼠、鍵盤各走一次主要操作；Tab、Enter／Space、Escape、modal focus trap 與焦點返回。
-- 自動、速度、首領、右側四快捷、更多抽屜、五底欄、面板關閉都不遮擋且不重複觸發。
+- 自動、速度、首領、右側四快捷、更多抽屜、五底欄、頂欄主公牌、面板關閉都不遮擋且不重複觸發。主公牌點一次必須打開主公軍府，經驗數字單行且不疊字。
+- 武將詳情：390×720 打開當下可見升級列；緣分 chip 橫排可讀，不得直字擠欄；無獨立「專屬神兵真名共鳴」重複塊。
 - 敵將預告、波次、Boss 橫幅、對話與結算依序顯示，不同中央 overlay 不同時存在。
 - `prefers-reduced-motion` 下關閉裝飾 motion 與全畫面 shake，戰鬥結果不變。
 

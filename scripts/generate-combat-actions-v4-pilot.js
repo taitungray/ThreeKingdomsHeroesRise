@@ -65,17 +65,6 @@ function removeConnectedBackground(data, width, height) {
     data[index * 4 + 3] = visited[index] ? 0 : 255;
   }
 
-  // WebP compression around a baked checkerboard can create closed pale
-  // islands that a border flood cannot reach. Remove those neutral pixels
-  // globally before scaling; the dark authored outline protects white cloth,
-  // silver armor and weapon highlights from being hollowed out.
-  for (let index = 0; index < width * height; index += 1) {
-    const offset = index * 4;
-    const high = Math.max(data[offset], data[offset + 1], data[offset + 2]);
-    const low = Math.min(data[offset], data[offset + 1], data[offset + 2]);
-    if (high >= 205 && high - low <= 42) data[offset + 3] = 0;
-  }
-
   // Remove only pale pixels touching the extracted exterior. This keeps white
   // cloth and Zhao Yun's silver highlights while clearing generated mattes.
   for (let pass = 0; pass < 2; pass += 1) {
@@ -139,7 +128,7 @@ async function removeSmallAlphaIslands(pngBuffer, minimumPixels = 96, keepLarges
   return sharp(data, { raw: info }).png().toBuffer();
 }
 
-async function extractFrames(sourcePath, columnCount) {
+async function extractFrames(sourcePath, columnCount, flopIds = new Set()) {
   assert.ok(fs.existsSync(sourcePath), `missing v4 pilot master: ${path.basename(sourcePath)}`);
   const metadata = await sharp(sourcePath).metadata();
   assert.ok(metadata.width >= 1200 && metadata.height >= 960, `${path.basename(sourcePath)} resolution is too small`);
@@ -169,7 +158,7 @@ async function extractFrames(sourcePath, columnCount) {
         }
       }
 
-      const normalized = await sharp(data, { raw: info })
+      let pipeline = sharp(data, { raw: info })
         .trim({ background: { r: 0, g: 0, b: 0, alpha: 0 } })
         .resize(cellSize - 4, cellSize - 4, {
           fit: "contain",
@@ -183,7 +172,10 @@ async function extractFrames(sourcePath, columnCount) {
           left: 2,
           right: 2,
           background: { r: 0, g: 0, b: 0, alpha: 0 }
-        })
+        });
+      // Runtime facing invariant: all source frames must face right.
+      if (flopIds.has(heroId)) pipeline = pipeline.flop();
+      const normalized = await pipeline
         .png()
         .toBuffer();
       // Movement cells keep one connected body/weapon silhouette. A detached
@@ -195,8 +187,20 @@ async function extractFrames(sourcePath, columnCount) {
   return result;
 }
 
+async function safeWriteFile(filePath, buffer, maxRetries = 5) {
+  for (let i = 0; i < maxRetries; i += 1) {
+    try {
+      fs.writeFileSync(filePath, buffer);
+      return;
+    } catch (e) {
+      if (i === maxRetries - 1) throw e;
+      await new Promise((resolve) => setTimeout(resolve, 80 * (i + 1)));
+    }
+  }
+}
+
 async function writeActionSheet(id, frames) {
-  assert.equal(frames.length, actionRows, `${id} needs five v4 attack phases`);
+  assert.equal(frames.length, 5, `${id} needs five v4 action phases`);
   const composites = [];
   for (let row = 0; row < actionRows; row += 1) {
     for (let column = 0; column < actionColumns; column += 1) {
@@ -204,21 +208,22 @@ async function writeActionSheet(id, frames) {
     }
   }
   const outputName = `attack-${id}-v4.webp`;
-  await sharp({
+  const buf = await sharp({
     create: {
       width: actionColumns * cellSize,
       height: actionRows * cellSize,
       channels: 4,
       background: { r: 0, g: 0, b: 0, alpha: 0 }
     }
-  }).composite(composites).webp({ lossless: true }).toFile(path.join(characterDir, outputName));
+  }).composite(composites).webp({ lossless: true }).toBuffer();
+  await safeWriteFile(path.join(characterDir, outputName), buf);
   return `assets/characters/${outputName}`;
 }
 
 async function writeMoveStrip(id, frames) {
   assert.equal(frames.length, 4, `${id} needs four v4 movement phases`);
   const outputName = `move-${id}-v4.webp`;
-  await sharp({
+  const buf = await sharp({
     create: {
       width: frames.length * cellSize,
       height: cellSize,
@@ -227,15 +232,17 @@ async function writeMoveStrip(id, frames) {
     }
   }).composite(frames.map((input, column) => ({ input, left: column * cellSize, top: 0 })))
     .webp({ lossless: true })
-    .toFile(path.join(characterDir, outputName));
+    .toBuffer();
+  await safeWriteFile(path.join(characterDir, outputName), buf);
   return `assets/characters/${outputName}`;
 }
 
 async function main() {
   const attackManifest = JSON.parse(fs.readFileSync(attackManifestPath, "utf8"));
   const moveManifest = JSON.parse(fs.readFileSync(moveManifestPath, "utf8"));
-  const actionFrames = await extractFrames(actionMasterPath, 5);
-  const moveFrames = await extractFrames(moveMasterPath, 4);
+  const actionFrames = await extractFrames(actionMasterPath, 5, new Set());
+  // v4 move master already faces RIGHT for all four pilots; flopping guanyu caused LEFT sheets and moonwalking.
+  const moveFrames = await extractFrames(moveMasterPath, 4, new Set());
 
   for (const id of pilotRows.keys()) {
     const attackAsset = attackManifest.assets.find((asset) => asset.id === id);

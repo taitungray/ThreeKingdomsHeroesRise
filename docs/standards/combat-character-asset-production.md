@@ -68,6 +68,12 @@
 | `chapter1-enemies-move-master-v3.webp` | 5×4 | bandit、brute、cavalry、張角、董卓 | 同上 |
 | `core-heroes-action-master-v4.webp` | 4×5 | 劉備、關羽、張飛、趙雲 | v4 128px 試製；順序同 v3 attack |
 | `core-heroes-move-master-v4.webp` | 4×4 | 劉備、關羽、張飛、趙雲 | v4 128px 試製；順序同 v3 move |
+| `named-lubu-action-master-v3.webp` | 1×5 | 呂布 | 專屬攻擊五階段；金甲、雉尾、方天畫戟 |
+| `named-zhugeliang-action-master-v3.webp` | 1×5 | 諸葛亮 | 專屬攻擊五階段；綠袍、綸巾、羽扇 |
+| `named-diaochan-action-master-v3.webp` | 1×5 | 貂蟬 | 專屬攻擊五階段；紫粉袍、雙環 |
+| `named-lubu-move-master-v3.webp` | 1×4 | 呂布 | 專屬四幀步態 |
+| `named-zhugeliang-move-master-v3.webp` | 1×4 | 諸葛亮 | 專屬四幀步態 |
+| `named-diaochan-move-master-v3.webp` | 1×4 | 貂蟬 | 專屬四幀步態 |
 
 格數與順序是硬契約；master 實際像素尺寸可因 ImageGen 輸出略有差異。產生器目前要求寬至少 1200px、高至少 960px，再依總寬／總高等比例切格，禁止手寫不透明的任意裁切座標。
 
@@ -75,8 +81,10 @@
 
 - 一格只能有一個完整角色或一名完整騎兵與坐騎。
 - 全列使用相同腳底 baseline、身體尺度、視角與光源。
-- 四周保留透明安全邊；角色與相鄰格不得互相跨格。
-- 原始剪影統一朝右；敵方 master 由產生器 flop 成朝右來源，runtime 再依 `facing` 鏡像。
+- 運行期資產剪影統一朝右（Facing RIGHT，以利運行期依 `unit.facing` 水平鏡像縮放）：
+  - 現行全部 v3／v4 attack 與 move 母圖已朝右（含張角、董卓、趙雲、黃忠、盜賊、力士、騎兵）。產生器 flop set 必須為空。
+  - 皮膚／質量啟發式會把長兵器、金刃、弓與馬體誤判朝左；禁止依該啟發式 flop，否則 clone 全表倒退走。runtime `MOVE_SHEET_FACE_LEFT` 應為空。
+  - `check-combat-assets.js` 斷言產生器四個 flop set 皆空；像素啟發式只抽樣無長兵器的剪影。
 - 同一列不可因動作改變臉、髮色、頭冠、甲型、衣色或武器種類。
 
 ### 五階段攻擊定義
@@ -161,7 +169,7 @@ ImageGen 完成後先檢查：
 5. 清除左右各 10px 安全 gutter，避免相鄰長兵器或 VFX 擦入本格。
 6. 透明 trim 後以 nearest kernel 等比縮入：v3 為 92×92、v4 為 124×124，位置靠 bottom。
 7. 劉備目前有一段 identity palette correction，將錯誤金色衣甲校回 jade-green；新增例外必須資料化或註解原因。
-8. 敵軍來源 flop 成統一朝右。
+8. 現行母圖已朝右，產生器不得 flop 任何列。
 9. 放入 96×96 或 128×128 透明 cell，保留 2px 安全邊並維持 foot-center。
 10. 以 lossless WebP 輸出並更新 manifest。
 
@@ -186,7 +194,7 @@ ImageGen master 目前可能是無 alpha 的白色／棋盤狀扁平背景；這
 
 ### 獨立 v3 武將 archetype
 
-`liubei`、`guanyu`、`zhangfei`、`zhaoyun`、`huangzhong`、`sunshang`、`caocao`、`xiahoudun`。
+`liubei`、`guanyu`、`zhangfei`、`zhaoyun`、`huangzhong`、`sunshang`、`caocao`、`xiahoudun`、`lubu`、`zhugeliang`、`diaochan`。
 
 ### 128px v4 戰鬥試製
 
@@ -296,7 +304,7 @@ npm run test:combat-browser
 
 ## 12. 已知限制
 
-- 目前只有劉備、關羽、張飛、趙雲使用 128px v4 試製；另有八名武將具獨立 96px v3 archetype，其餘武將仍共用 `visual`／兵種全身 alias。
+- 目前只有劉備、關羽、張飛、趙雲使用 128px v4 試製；另有 11 名武將具獨立 96px v3 archetype（含呂布／諸葛亮／貂蟬專屬母圖），其餘武將仍共用 `visual`／兵種全身 alias。
 - archer 與 strategist 暫時借用黃忠與張角的全身圖，尚未有獨立普通敵人身份。
 - attack sheet 雖有八個方向欄，現階段是單一 authored 方向複製並由 runtime 左右鏡像，不是八方向獨立作畫。
 - ImageGen master 仍可能輸出扁平白底／棋盤背景，必須依後處理去背，不能跳過 asset gate。

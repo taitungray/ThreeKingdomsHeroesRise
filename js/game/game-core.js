@@ -117,12 +117,15 @@ function createEquipmentDefaults() {
 }
 
 function createOwnedEquipment() {
-  const owned = { weapon: [], armor: [], mount: [], accessory: [] };
+  // Starter pool only: starting four heroes' loadouts + basic foot/grey.
+  // Later gear must come from drops / shop, not a free full catalog.
+  const owned = { weapon: [], armor: [], mount: ["foot"], accessory: [] };
   const add = (slotId, itemId) => {
     if (!itemId || owned[slotId].includes(itemId)) return;
     owned[slotId].push(itemId);
   };
-  for (const loadout of Object.values(PAPER_DOLL_DEFAULTS)) {
+  for (const heroId of ["liubei", "guanyu", "zhangfei", "zhaoyun"]) {
+    const loadout = PAPER_DOLL_DEFAULTS[heroId] || PAPER_DOLL_DEFAULTS.locked;
     add("weapon", loadout.weapon);
     add("armor", loadout.armor);
     add("mount", loadout.mount);
@@ -177,6 +180,7 @@ const WEEKLY_TASKS = GAME_DATA.weeklyTasks || [];
 const CHECKIN_REWARDS = GAME_DATA.checkinRewards || [];
 const SHOP_ITEMS = GAME_DATA.shopItems || [];
 const ARENA_OPPONENTS = GAME_DATA.arenaOpponents || [];
+const ACHIEVEMENTS = GAME_DATA.achievements || [];
 const TUTORIAL_STEPS = GAME_DATA.tutorialSteps || [];
 const STORY_BEATS = GAME_DATA.storyBeats || [];
 const SKILL_SPECS = GAME_DATA.skillSpecs || {};
@@ -427,7 +431,36 @@ function avatarFrameById(id) {
 }
 
 function avatarFrameUnlocked(frame) {
-  return Boolean(frame) && save.maxStage > (Number(frame.unlockStage) || 0);
+  if (!frame) return false;
+  if (frame.trialId) {
+    return Boolean(save.trialClears?.[frame.trialId]);
+  }
+  return save.maxStage > (Number(frame.unlockStage) || 0);
+}
+
+function campaignClears() {
+  return Math.max(1, Number(save.maxStage) || Number(save.stage) || 1);
+}
+
+function titleUnlocked(title) {
+  if (!title) return false;
+  if (title.type === "stage") return campaignClears() >= (Number(title.value) || 1);
+  if (title.type === "heroes") return HEROES.filter(isUnlocked).length >= (Number(title.value) || 1);
+  if (title.type === "arena") return (Number(save.arena?.wins) || 0) >= (Number(title.value) || 1);
+  if (title.type === "trial") return Boolean(save.trialClears && Object.keys(save.trialClears).length >= (Number(title.value) || 1));
+  return false;
+}
+
+function currentArmyPower() {
+  return (save.formation || []).reduce((sum, id) => {
+    if (typeof heroCalculatedPower === "function") return sum + heroCalculatedPower(id);
+    const hero = heroById(id);
+    if (!hero) return sum;
+    const equipment = typeof heroEquipmentStats === "function" ? heroEquipmentStats(id) : { atk: 0, hp: 0, def: 0 };
+    const level = save.heroLevels?.[id] || 1;
+    const growth = typeof heroGrowthMultiplier === "function" ? heroGrowthMultiplier(id) : 1;
+    return sum + Math.round(((hero.atk + (equipment.atk || 0)) * 7 + hero.hp + (equipment.hp || 0) + (hero.def + (equipment.def || 0)) * 12) * (1 + level * 0.13) * growth);
+  }, 0);
 }
 
 function heroProgression(heroId) {

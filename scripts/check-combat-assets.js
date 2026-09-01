@@ -115,6 +115,45 @@ async function alphaComponentCounts(file, cellSize, columns) {
   return counts;
 }
 
+async function assertMoveFacingRight(file, cellSize, id, archetype) {
+  // Polearms, gold blades, bows and horse mass sit opposite the face.
+  // Skin/mass heuristics call those silhouettes LEFT even when masters face RIGHT;
+  // flopping to satisfy the heuristic is what caused combat moonwalking.
+  const skipArchetypes = new Set([
+    "guanyu", "zhaoyun", "zhangfei", "huangzhong", "lubu",
+    "bandit", "brute", "cavalry",
+    "boss-dongzhuo", "boss-lvbu", "boss-menghuo", "boss-zhangjiao"
+  ]);
+  if (skipArchetypes.has(archetype) || skipArchetypes.has(String(id).replace(/ v4$/, ""))) return;
+  const { data, info } = await sharp(file).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+  let skinL = 0;
+  let skinR = 0;
+  let massL = 0;
+  let massR = 0;
+  const midX = cellSize / 2;
+  for (let y = 0; y < cellSize; y += 1) {
+    for (let x = 0; x < cellSize; x += 1) {
+      const idx = (y * info.width + x) * 4;
+      const r = data[idx];
+      const g = data[idx + 1];
+      const b = data[idx + 2];
+      const a = data[idx + 3];
+      if (a > 30) {
+        if (x < midX) massL += 1;
+        else massR += 1;
+        if (y < cellSize * 0.5 && r > 140 && g > 90 && b > 55 && r > g && g > b) {
+          if (x < midX) skinL += 1;
+          else skinR += 1;
+        }
+      }
+    }
+  }
+  const facing = (Math.abs(skinR - skinL) >= 10)
+    ? (skinR >= skinL ? "RIGHT" : "LEFT")
+    : (massR >= massL ? "RIGHT" : "LEFT");
+  assert.equal(facing, "RIGHT", `${id} movement sprite must face RIGHT by default for runtime facing mirroring`);
+}
+
 async function runCombatAssetChecks() {
   const attackManifest = JSON.parse(fs.readFileSync(path.join(characterRoot, "attack-manifest.json"), "utf8"));
   assert.equal(attackManifest.version, 6, "runtime expects the v4 pilot attack manifest");
@@ -152,6 +191,7 @@ async function runCombatAssetChecks() {
     metrics.cells.forEach((ratio, index) => {
       assert.ok(ratio > 0.04, `${asset.id} high-detail cell ${index} is too sparse`);
       assert.ok(ratio < 0.7, `${asset.id} high-detail cell ${index} may contain a rectangular background`);
+      assert.ok(metrics.edgeCells[index] < 110, `${asset.id} high-detail cell ${index} has opaque edge bands or dirty background blocks`);
     });
     const signatures = await phaseSignatures(file, attackManifest.detailCellSize);
     assert.ok(new Set(signatures).size >= 3, `${asset.id} high-detail sheet needs distinct attack phases`);
@@ -193,6 +233,7 @@ async function runCombatAssetChecks() {
     });
     const signatures = await stripFrameSignatures(file, moveManifest.cellSize, moveManifest.columns);
     assert.equal(new Set(signatures).size, 4, `${asset.id} must contain four distinct gait poses`);
+    await assertMoveFacingRight(file, moveManifest.cellSize, asset.id, asset.archetype);
   }
 
   const ultraDetailMoves = moveManifest.assets.filter((asset) => asset.ultraDetailPath);
@@ -211,7 +252,22 @@ async function runCombatAssetChecks() {
     assert.equal(new Set(signatures).size, 4, `${asset.id} v4 move strip must contain four distinct gait poses`);
     const componentCounts = await alphaComponentCounts(file, moveManifest.ultraDetailCellSize, moveManifest.columns);
     assert.ok(componentCounts.every((count) => count === 1), `${asset.id} v4 move strip must not contain detached cross-cell weapon fragments: ${componentCounts.join(",")}`);
+    await assertMoveFacingRight(file, moveManifest.ultraDetailCellSize, `${asset.id} v4`, asset.archetype);
   }
+
+  const v4PilotSource = fs.readFileSync(path.join(root, "scripts", "generate-combat-actions-v4-pilot.js"), "utf8");
+  assert.ok(
+    /extractFrames\(moveMasterPath, 4, new Set\(\)\)/.test(v4PilotSource),
+    "v4 move masters already face RIGHT; flopping any row makes combat moonwalk"
+  );
+  const v3GenSource = fs.readFileSync(path.join(root, "scripts", "generate-combat-actions-v3.js"), "utf8");
+  assert.ok(
+    /authoredFrameBuffers\(coreMoveMasterPath, coreRows, 4, 180, 4, new Set\(\)\)/.test(v3GenSource)
+      && /authoredFrameBuffers\(supportMoveMasterPath, supportRows, 4, 180, 4, new Set\(\)\)/.test(v3GenSource)
+      && /authoredFrameBuffers\(enemyMoveMasterPath, enemyRows, 5, 180, 4, new Set\(\)\)/.test(v3GenSource)
+      && /authoredFrameBuffers\(enemyMasterPath, enemyRows, 5, 180, 5, new Set\(\)\)/.test(v3GenSource),
+    "all current v3 attack/move masters already face RIGHT; any generator flop inverts gait"
+  );
 
   const weaponManifest = JSON.parse(fs.readFileSync(path.join(characterRoot, "combat-weapon-manifest.json"), "utf8"));
   assert.deepEqual(weaponManifest.canvas, { width: 64, height: 64 }, "combat weapon canvas must be 64x64");
@@ -225,6 +281,39 @@ async function runCombatAssetChecks() {
     assert.deepEqual([metrics.width, metrics.height], [64, 64], `${asset.id} weapon dimensions are invalid`);
     assert.ok(metrics.opaqueRatio > 0.02 && metrics.opaqueRatio < 0.45, `${asset.id} weapon alpha coverage is suspicious`);
   }
+
+  const UNIQUE_CORE_HERO_IDS = [
+    "liubei", "guanyu", "zhangfei", "zhaoyun", "huangzhong", "sunshang",
+    "caocao", "xiahoudun", "zhugeliang", "diaochan", "lubu"
+  ];
+  const coreFingerprints = new Map();
+  for (const id of UNIQUE_CORE_HERO_IDS) {
+    const asset = attackManifest.assets.find((entry) => entry.id === id);
+    assert.ok(asset, `missing attack manifest entry for core hero ${id}`);
+    assert.equal(asset.archetype, id, `${id} must use its own combat archetype, not a clone of ${asset.archetype}`);
+    const file = path.join(root, asset.detailPath);
+    const { data } = await sharp(file).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+    const fingerprint = crypto.createHash("sha256").update(data).digest("hex");
+    const cloneOf = [...coreFingerprints.entries()].find(([, hash]) => hash === fingerprint)?.[0];
+    assert.ok(!cloneOf, `${id} v3 attack sheet must not be a pixel clone of ${cloneOf}`);
+    coreFingerprints.set(id, fingerprint);
+  }
+
+  // Runtime AUTHORED_ACTION_SPRITES must resolve to real on-disk sheets (no invisible bosses).
+  const renderSource = fs.readFileSync(path.join(root, "js", "game", "game-render.js"), "utf8");
+  const authoredMatch = renderSource.match(/AUTHORED_ACTION_SPRITES = new Set\(\[([\s\S]*?)\]\)/);
+  assert.ok(authoredMatch, "AUTHORED_ACTION_SPRITES declaration missing");
+  const authoredIds = [...authoredMatch[1].matchAll(/"([^"]+)"/g)].map((match) => match[1]);
+  assert.ok(authoredIds.length >= 59, "authored combat roster unexpectedly small");
+  for (const id of authoredIds) {
+    const ultra = ["liubei", "guanyu", "zhangfei", "zhaoyun"].includes(id);
+    const attackName = `attack-${id}-${ultra ? "v4" : "v3"}.webp`;
+    const moveName = `move-${id}-${ultra ? "v4" : "v3"}.webp`;
+    assert.ok(fs.existsSync(path.join(characterRoot, attackName)), `AUTHORED id ${id} missing ${attackName}`);
+    assert.ok(fs.existsSync(path.join(characterRoot, moveName)), `AUTHORED id ${id} missing ${moveName}`);
+  }
+  assert.ok(renderSource.includes("BOSS_ACTION_SPRITE_BY_GENERAL"), "boss generals must map to existing action sheets");
+  assert.ok(!/"boss-yuanshao"|"boss-zhurong"|"boss-simayi"/.test(authoredMatch[1]), "missing boss sheets must not stay in AUTHORED_ACTION_SPRITES");
 
   console.log(`Combat asset check passed: ${attackManifest.assets.length} legacy attack sheets, ${detailAssets.length} high-detail attack sheets, ${ultraDetailAssets.length} ultra-detail v4 pilots, ${moveManifest.assets.length} high-detail move strips and ${weaponManifest.assets.length} weapons.`);
 }

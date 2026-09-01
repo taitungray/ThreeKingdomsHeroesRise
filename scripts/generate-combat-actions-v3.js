@@ -38,14 +38,16 @@ const enemyRows = new Map([
   ["boss-dongzhuo", 4]
 ]);
 
-function isBackgroundCandidate(r, g, b, alpha, minimum = 222, tolerance = 7) {
+function isBackgroundCandidate(r, g, b, alpha, minimum = 180, tolerance = 55) {
   if (alpha <= 10) return true;
   const high = Math.max(r, g, b);
   const low = Math.min(r, g, b);
-  return high >= minimum && high - low <= tolerance;
+  if (high >= minimum && high - low <= tolerance) return true;
+  // ImageGen chroma key: hot magenta, only flood-filled from edges.
+  return r >= 200 && b >= 180 && g <= 80 && r - g >= 120 && b - g >= 100;
 }
 
-function removeConnectedCheckerboard(data, width, height, minimum = 222, tolerance = 7) {
+function removeConnectedCheckerboard(data, width, height, minimum = 180, tolerance = 55) {
   const visited = new Uint8Array(width * height);
   const queue = new Int32Array(width * height);
   let head = 0;
@@ -81,30 +83,67 @@ function removeConnectedCheckerboard(data, width, height, minimum = 222, toleran
   }
 
   for (let index = 0; index < visited.length; index += 1) {
-    const offset = index * 4;
-    data[offset + 3] = visited[index] ? 0 : 255;
+    data[index * 4 + 3] = visited[index] ? 0 : 255;
   }
 
-  // Remove the pale antialias fringe adjacent to the extracted checkerboard.
-  for (let pass = 0; pass < 2; pass += 1) {
+  // Remove the pale antialias fringe / white halo adjacent to alpha (3 passes)
+  for (let pass = 0; pass < 3; pass += 1) {
     const remove = [];
-    for (let y = 1; y < height - 1; y += 1) {
-      for (let x = 1; x < width - 1; x += 1) {
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
         const index = y * width + x;
         const offset = index * 4;
         if (data[offset + 3] === 0) continue;
         const high = Math.max(data[offset], data[offset + 1], data[offset + 2]);
         const low = Math.min(data[offset], data[offset + 1], data[offset + 2]);
-        if (high < 226 || high - low > 11) continue;
-        const touchesAlpha = data[offset - 1] === 0
-          || data[offset + 7] === 0
+        const isPale = (high >= 190 && high - low <= 38) || (high >= 225 && high - low <= 50);
+        if (!isPale) continue;
+        const touchesAlpha = (x === 0 || x === width - 1 || y === 0 || y === height - 1)
+          || data[offset - 4 + 3] === 0
+          || data[offset + 4 + 3] === 0
           || data[offset - width * 4 + 3] === 0
-          || data[offset + width * 4 + 3] === 0;
+          || data[offset + width * 4 + 3] === 0
+          || data[offset - (width + 1) * 4 + 3] === 0
+          || data[offset - (width - 1) * 4 + 3] === 0
+          || data[offset + (width - 1) * 4 + 3] === 0
+          || data[offset + (width + 1) * 4 + 3] === 0;
         if (touchesAlpha) remove.push(offset + 3);
       }
     }
     for (const alphaOffset of remove) data[alphaOffset] = 0;
   }
+
+  // Remove isolated white specks / stray protrusion pixels
+  for (let pass = 0; pass < 2; pass += 1) {
+    const remove = [];
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const index = y * width + x;
+        const offset = index * 4;
+        if (data[offset + 3] === 0) continue;
+        let alphaNeighbors = 0;
+        for (let dy = -1; dy <= 1; dy += 1) {
+          for (let dx = -1; dx <= 1; dx += 1) {
+            if (dx === 0 && dy === 0) continue;
+            const nx = x + dx;
+            const ny = y + dy;
+            if (nx < 0 || ny < 0 || nx >= width || ny >= height || data[(ny * width + nx) * 4 + 3] === 0) {
+              alphaNeighbors += 1;
+            }
+          }
+        }
+        if (alphaNeighbors >= 6) {
+          remove.push(offset + 3);
+        } else if (alphaNeighbors >= 5) {
+          const high = Math.max(data[offset], data[offset + 1], data[offset + 2]);
+          const low = Math.min(data[offset], data[offset + 1], data[offset + 2]);
+          if (high >= 180 && high - low <= 45) remove.push(offset + 3);
+        }
+      }
+    }
+    for (const alphaOffset of remove) data[alphaOffset] = 0;
+  }
+
   return data;
 }
 
@@ -119,17 +158,6 @@ function applyIdentityPalette(data, heroId) {
       data[offset + 1] = Math.min(210, Math.round(g * 1.08));
       data[offset + 2] = Math.round(g * 0.66);
     }
-  }
-}
-
-function removePaleBackgroundIslands(data) {
-  // WebP compression can close off pale checkerboard squares from the border
-  // flood-fill. Clear those neutral islands globally; dark pixel outlines keep
-  // white cloth and silver highlights attached to the authored silhouette.
-  for (let offset = 0; offset < data.length; offset += 4) {
-    const high = Math.max(data[offset], data[offset + 1], data[offset + 2]);
-    const low = Math.min(data[offset], data[offset + 1], data[offset + 2]);
-    if (high >= 205 && high - low <= 42) data[offset + 3] = 0;
   }
 }
 
@@ -173,7 +201,7 @@ async function removeSmallAlphaIslands(pngBuffer, minimumPixels = 96, keepLarges
   return sharp(data, { raw: info }).png().toBuffer();
 }
 
-async function authoredFrameBuffers(sourcePath, heroRows, rowCount = 4, backgroundMinimum = 222, columnCount = 5) {
+async function authoredFrameBuffers(sourcePath, heroRows, rowCount = 4, backgroundMinimum = 180, columnCount = 5, flopIds = new Set()) {
   assert.ok(fs.existsSync(sourcePath), `missing generated action master: ${path.basename(sourcePath)}`);
   const master = sharp(sourcePath).ensureAlpha();
   const metadata = await master.metadata();
@@ -194,8 +222,7 @@ async function authoredFrameBuffers(sourcePath, heroRows, rowCount = 4, backgrou
         .ensureAlpha()
         .raw()
         .toBuffer({ resolveWithObject: true });
-      removeConnectedCheckerboard(data, info.width, info.height, backgroundMinimum, 12);
-      if (backgroundMinimum >= 200) removePaleBackgroundIslands(data);
+      removeConnectedCheckerboard(data, info.width, info.height, backgroundMinimum, 55);
       applyIdentityPalette(data, heroId);
       // The generated master can let an adjacent pose's long VFX graze a
       // cell boundary. Clear only the safe outer gutter before trimming.
@@ -213,12 +240,13 @@ async function authoredFrameBuffers(sourcePath, heroRows, rowCount = 4, backgrou
           kernel: sharp.kernel.nearest,
           background: { r: 0, g: 0, b: 0, alpha: 0 }
         });
-      // Runtime facing assumes every source silhouette faces right.
-      if (enemyRows.has(heroId)) framePipeline = framePipeline.flop();
+      // Current v3 masters already face RIGHT. Never flop a row to satisfy a
+      // skin/mass heuristic — that inverts gait and causes combat moonwalking.
+      if (flopIds.has(heroId)) framePipeline = framePipeline.flop();
       const frame = await framePipeline.png().toBuffer();
       // A four-frame gait must contain one connected body/weapon silhouette;
-      // detached pixels are usually a neighboring cell's weapon fragment.
-      frames.push(await removeSmallAlphaIslands(frame, 96, columnCount === 4));
+      // detached pixels are usually a neighboring cell's weapon fragment or stray speck.
+      frames.push(await removeSmallAlphaIslands(frame, 40, columnCount === 4));
     }
     result.set(heroId, frames);
   }
@@ -271,6 +299,18 @@ async function normalizedCoreFrames(frames) {
   }).composite([{ input: frame, left: 2, top: 3 }]).png().toBuffer()));
 }
 
+async function safeWriteFile(filePath, buffer, maxRetries = 5) {
+  for (let i = 0; i < maxRetries; i += 1) {
+    try {
+      fs.writeFileSync(filePath, buffer);
+      return;
+    } catch (e) {
+      if (i === maxRetries - 1) throw e;
+      await new Promise((resolve) => setTimeout(resolve, 80 * (i + 1)));
+    }
+  }
+}
+
 async function writeSheet(asset, frames) {
   const composites = [];
   for (let row = 0; row < rows; row += 1) {
@@ -281,38 +321,54 @@ async function writeSheet(asset, frames) {
     }
   }
   const outputName = `attack-${asset.id}-v3.webp`;
-  await sharp({
+  const buf = await sharp({
     create: {
       width: columns * cellSize,
       height: rows * cellSize,
       channels: 4,
       background: { r: 0, g: 0, b: 0, alpha: 0 }
     }
-  }).composite(composites).webp({ lossless: true }).toFile(path.join(characterDir, outputName));
+  }).composite(composites).webp({ lossless: true }).toBuffer();
+  await safeWriteFile(path.join(characterDir, outputName), buf);
   return `assets/characters/${outputName}`;
 }
 
 async function writeMoveSheet(asset, frames) {
   const composites = frames.map((frame, column) => ({ input: frame, left: column * cellSize, top: 0 }));
   const outputName = `move-${asset.id}-v3.webp`;
-  await sharp({
+  const buf = await sharp({
     create: {
       width: frames.length * cellSize,
       height: cellSize,
       channels: 4,
       background: { r: 0, g: 0, b: 0, alpha: 0 }
     }
-  }).composite(composites).webp({ lossless: true }).toFile(path.join(characterDir, outputName));
+  }).composite(composites).webp({ lossless: true }).toBuffer();
+  await safeWriteFile(path.join(characterDir, outputName), buf);
   return `assets/characters/${outputName}`;
 }
 
 async function main() {
   const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
+  // Attack masters already face RIGHT, including Zhang Jiao and Dong Zhuo.
+  // Do not flop; runtime mirrors with unit.facing only.
+  const NAMED_UNIQUE_HEROES = ["lubu", "zhugeliang", "diaochan"];
   const authored = new Map([
-    ...await authoredFrameBuffers(masterPath, coreRows),
-    ...await authoredFrameBuffers(supportMasterPath, supportRows),
-    ...await authoredFrameBuffers(enemyMasterPath, enemyRows, 5, 40)
+    ...await authoredFrameBuffers(masterPath, coreRows, 4, 180, 5, new Set()),
+    ...await authoredFrameBuffers(supportMasterPath, supportRows, 4, 180, 5, new Set()),
+    ...await authoredFrameBuffers(enemyMasterPath, enemyRows, 5, 180, 5, new Set())
   ]);
+  for (const id of NAMED_UNIQUE_HEROES) {
+    const actionMap = await authoredFrameBuffers(
+      path.join(characterDir, `named-${id}-action-master-v3.webp`),
+      new Map([[id, 0]]),
+      1,
+      180,
+      5,
+      new Set()
+    );
+    authored.set(id, actionMap.get(id));
+  }
   // First-chapter ranged/support enemies previously fell back to portrait
   // cards. Reuse complete full-body archetypes until their unique masters are
   // authored, so no bust or card art can enter the combat Canvas.
@@ -333,20 +389,33 @@ async function main() {
     core: "assets/characters/core-heroes-action-master-v3.webp",
     support: "assets/characters/support-heroes-action-master-v3.webp",
     chapter1Enemies: "assets/characters/chapter1-enemies-action-master-v3.webp",
-    authoredHeroes: [...coreRows.keys(), ...supportRows.keys()],
+    authoredHeroes: [...coreRows.keys(), ...supportRows.keys(), ...NAMED_UNIQUE_HEROES],
     authoredEnemies: [...enemyRows.keys(), "archer", "strategist"],
     fallback: "full-body authored visual archetype; portrait-card combat art is forbidden"
   };
   manifest.frames = ["anticipation", "windup", "contact", "follow-through", "recovery"];
   fs.writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`, "utf8");
 
+  // Move masters (core / support / chapter-1 enemies / named heroes) already
+  // face RIGHT. Empty flop sets. Runtime only mirrors by unit.facing.
   const authoredMoves = new Map([
-    ...await authoredFrameBuffers(coreMoveMasterPath, coreRows, 4, 40, 4),
-    ...await authoredFrameBuffers(supportMoveMasterPath, supportRows, 4, 40, 4),
-    ...await authoredFrameBuffers(enemyMoveMasterPath, enemyRows, 5, 40, 4)
+    ...await authoredFrameBuffers(coreMoveMasterPath, coreRows, 4, 180, 4, new Set()),
+    ...await authoredFrameBuffers(supportMoveMasterPath, supportRows, 4, 180, 4, new Set()),
+    ...await authoredFrameBuffers(enemyMoveMasterPath, enemyRows, 5, 180, 4, new Set())
   ]);
   authoredMoves.set("archer", authoredMoves.get("huangzhong"));
   authoredMoves.set("strategist", authoredMoves.get("boss-zhangjiao"));
+  for (const id of NAMED_UNIQUE_HEROES) {
+    const moveMap = await authoredFrameBuffers(
+      path.join(characterDir, `named-${id}-move-master-v3.webp`),
+      new Map([[id, 0]]),
+      1,
+      180,
+      4,
+      new Set()
+    );
+    authoredMoves.set(id, moveMap.get(id));
+  }
 
   // Load game data to resolve full roster: 50 heroes, 5 enemies, 7 bosses (62 units)
   const vm = require("node:vm");
@@ -354,7 +423,7 @@ async function main() {
   vm.runInNewContext(fs.readFileSync(path.join(root, "data", "game-data.js"), "utf8"), dataContext, { filename: "game-data.js" });
   const gameData = dataContext.window.THREE_KINGDOMS_DATA;
 
-  const AUTHORED_HERO_ARCHETYPES = new Set([...coreRows.keys(), ...supportRows.keys()]);
+  const AUTHORED_HERO_ARCHETYPES = new Set([...coreRows.keys(), ...supportRows.keys(), ...NAMED_UNIQUE_HEROES]);
   const ROLE_ARCHETYPE_FALLBACK = { "步兵": "guanyu", "騎兵": "zhaoyun", "弓兵": "huangzhong", "謀士": "caocao" };
 
   const allUnits = [];
@@ -453,11 +522,11 @@ async function main() {
     core: "assets/characters/core-heroes-action-master-v3.webp",
     support: "assets/characters/support-heroes-action-master-v3.webp",
     chapter1Enemies: "assets/characters/chapter1-enemies-action-master-v3.webp",
-    authoredHeroes: [...coreRows.keys(), ...supportRows.keys()],
+    authoredHeroes: [...coreRows.keys(), ...supportRows.keys(), ...NAMED_UNIQUE_HEROES],
     authoredEnemies: [...enemyRows.keys(), "archer", "strategist"],
     allHeroesCount: gameData.heroes.length,
     allUnitsCount: allUnits.length,
-    archetypeMappingRule: "hero.visual -> hero.role fallback (infantry: guanyu, cavalry: zhaoyun, archer: huangzhong, strategist: caocao); unapproved bosses: boss-dongzhuo"
+    archetypeMappingRule: "unique named heroes (lubu/zhugeliang/diaochan) keep own masters; others: hero.visual -> hero.role fallback (infantry: guanyu, cavalry: zhaoyun, archer: huangzhong, strategist: caocao); unapproved bosses: boss-dongzhuo"
   };
   manifest.frames = ["anticipation", "windup", "contact", "follow-through", "recovery"];
   manifest.assets = updatedAttackAssets;

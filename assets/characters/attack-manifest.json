@@ -91,21 +91,21 @@
     {
       "id": "zhugeliang",
       "kind": "hero",
-      "archetype": "caocao",
+      "archetype": "zhugeliang",
       "path": "assets/characters/attack-zhugeliang-v2.webp",
       "detailPath": "assets/characters/attack-zhugeliang-v3.webp"
     },
     {
       "id": "diaochan",
       "kind": "hero",
-      "archetype": "caocao",
+      "archetype": "diaochan",
       "path": "assets/characters/attack-diaochan-v2.webp",
       "detailPath": "assets/characters/attack-diaochan-v3.webp"
     },
     {
       "id": "lubu",
       "kind": "hero",
-      "archetype": "zhaoyun",
+      "archetype": "lubu",
       "path": "assets/characters/attack-lubu-v2.webp",
       "detailPath": "assets/characters/attack-lubu-v3.webp"
     },
@@ -126,7 +126,7 @@
     {
       "id": "pangtong",
       "kind": "hero",
-      "archetype": "caocao",
+      "archetype": "zhugeliang",
       "path": "assets/characters/attack-pangtong-v2.webp",
       "detailPath": "assets/characters/attack-pangtong-v3.webp"
     },
@@ -140,14 +140,14 @@
     {
       "id": "lusu",
       "kind": "hero",
-      "archetype": "caocao",
+      "archetype": "zhugeliang",
       "path": "assets/characters/attack-lusu-v2.webp",
       "detailPath": "assets/characters/attack-lusu-v3.webp"
     },
     {
       "id": "luxun",
       "kind": "hero",
-      "archetype": "caocao",
+      "archetype": "zhugeliang",
       "path": "assets/characters/attack-luxun-v2.webp",
       "detailPath": "assets/characters/attack-luxun-v3.webp"
     },
@@ -196,7 +196,7 @@
     {
       "id": "jiangwei",
       "kind": "hero",
-      "archetype": "caocao",
+      "archetype": "zhugeliang",
       "path": "assets/characters/attack-jiangwei-v2.webp",
       "detailPath": "assets/characters/attack-jiangwei-v3.webp"
     },
@@ -231,7 +231,7 @@
     {
       "id": "zhenji",
       "kind": "hero",
-      "archetype": "caocao",
+      "archetype": "diaochan",
       "path": "assets/characters/attack-zhenji-v2.webp",
       "detailPath": "assets/characters/attack-zhenji-v3.webp"
     },
@@ -294,7 +294,7 @@
     {
       "id": "zhangliang",
       "kind": "hero",
-      "archetype": "caocao",
+      "archetype": "zhugeliang",
       "path": "assets/characters/attack-zhangliang-v2.webp",
       "detailPath": "assets/characters/attack-zhangliang-v3.webp"
     },
@@ -343,7 +343,7 @@
     {
       "id": "fazheng",
       "kind": "hero",
-      "archetype": "caocao",
+      "archetype": "zhugeliang",
       "path": "assets/characters/attack-fazheng-v2.webp",
       "detailPath": "assets/characters/attack-fazheng-v3.webp"
     },
@@ -357,21 +357,21 @@
     {
       "id": "zhurong",
       "kind": "hero",
-      "archetype": "huangzhong",
+      "archetype": "diaochan",
       "path": "assets/characters/attack-zhurong-v2.webp",
       "detailPath": "assets/characters/attack-zhurong-v3.webp"
     },
     {
       "id": "daqiao",
       "kind": "hero",
-      "archetype": "caocao",
+      "archetype": "diaochan",
       "path": "assets/characters/attack-daqiao-v2.webp",
       "detailPath": "assets/characters/attack-daqiao-v3.webp"
     },
     {
       "id": "xiaoqiao",
       "kind": "hero",
-      "archetype": "caocao",
+      "archetype": "diaochan",
       "path": "assets/characters/attack-xiaoqiao-v2.webp",
       "detailPath": "assets/characters/attack-xiaoqiao-v3.webp"
     },
@@ -458,7 +458,10 @@
       "huangzhong",
       "sunshang",
       "caocao",
-      "xiahoudun"
+      "xiahoudun",
+      "lubu",
+      "zhugeliang",
+      "diaochan"
     ],
     "authoredEnemies": [
       "bandit",
@@ -471,7 +474,7 @@
     ],
     "allHeroesCount": 50,
     "allUnitsCount": 59,
-    "archetypeMappingRule": "hero.visual -> hero.role fallback (infantry: guanyu, cavalry: zhaoyun, archer: huangzhong, strategist: caocao); unapproved bosses: boss-dongzhuo",
+    "archetypeMappingRule": "unique named heroes (lubu/zhugeliang/diaochan) keep own masters; others: hero.visual -> hero.role fallback (infantry: guanyu, cavalry: zhaoyun, archer: huangzhong, strategist: caocao); unapproved bosses: boss-dongzhuo",
     "pilotCore": "assets/characters/core-heroes-action-master-v4.webp",
     "ultraDetailHeroes": [
       "liubei",
