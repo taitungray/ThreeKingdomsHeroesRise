@@ -17,3 +17,6 @@ google-services.json
 .env
 .env.*
 screenshots/
+debug_facing/
+scripts/.tmp-*/
+artifacts/ui-*.png
