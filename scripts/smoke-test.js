@@ -85,7 +85,7 @@ const gameSource = runtimeModules.map((file) => {
   assert.ok(fs.existsSync(modulePath), `runtime module missing: ${file}`);
   return fs.readFileSync(modulePath, "utf8");
 }).join("\n");
-for (const marker of ["function spawnResourceDrops", "function updateResourceDrops", "function drawResourceDrops", "runtime.drops", "function roleAdvantage", "function targetPriorityScore", "function damageSummary", "function heroSkillCost", "function drawWeatherOverlay", "function damageStatsHtml", "data-action=\"hero-skill\"", "function startStage", "function enemyGeneralById", "function showEnemyPreview", "enemyPreviewList", "enemy-preview-role", "waveGeneralIndex", "runtime.enemyPreviewTimer = setTimeout", "function beginWaveTransition", "showTransition && !boss", "playSpeed", "function drawWaveTransitionOverlay", "function toggleRailDrawer", "stageCompactLabel", "waveChip", "rightRailDrawer", "function activeStageNumber", "function stageDefinition", "function waveCleared", "function partyDefeated", "skillCooldown", "function showOfflineReward", "function renderAchievements", "function renderCollection", "function renderEvents", "function upgradeHeroStar", "function breakthroughHero", "function renderFrameSection", "function heroProgression", "function renderDungeons", "function challengeTower", "function sweepStage", "function refineHeroEquipment", "function refillStamina", "function drawCompactHeroDetails", "function drawHealthBar", "const spriteX = unit.scale < 1", "const gait = unit.moving ? walkCycle : 0", "function drawMountLeg", "function drawSkillEnergyBar", "const y = Math.round(visualY +", "const ALLY_UNIT_SCALE = 1.22", "const ENEMY_UNIT_SCALE = 1.12", "const BOSS_UNIT_SCALE = 1.68", "function directionIndex", "attackSpritePath", "const useAttackSprite", "const attackPaths", "attackFrame", "function directionLocalAngle", "function drawAttackPose", "function characterAnimationState", "function applyCombatBodyMotion", "function drawCombatBodySprite", "const actionTransform = Boolean(unit.action && !useAttackSprite)", "unit.type !== \"boss\"", "const boss = unit.type === \"boss\""]) {
+for (const marker of ["function spawnResourceDrops", "function updateResourceDrops", "function drawResourceDrops", "runtime.drops", "function roleAdvantage", "function targetPriorityScore", "function damageSummary", "function heroSkillCost", "function drawWeatherOverlay", "function damageStatsHtml", "data-action=\"hero-skill\"", "function startStage", "function enemyGeneralById", "function showEnemyPreview", "enemyPreviewList", "enemy-preview-role", "waveGeneralIndex", "runtime.enemyPreviewTimer = setTimeout", "function beginWaveTransition", "showTransition && !boss", "playSpeed", "function drawWaveTransitionOverlay", "function toggleRailDrawer", "stageCompactLabel", "waveChip", "rightRailDrawer", "function activeStageNumber", "function stageDefinition", "function waveCleared", "function partyDefeated", "skillCooldown", "function showOfflineReward", "function renderAchievements", "function renderCollection", "function renderEvents", "function upgradeHeroStar", "function breakthroughHero", "function renderFrameSection", "function heroProgression", "function renderDungeons", "function challengeTower", "function sweepStage", "function refineHeroEquipment", "function refillStamina", "function drawCompactHeroDetails", "function drawHealthBar", "const spriteX = unit.scale < 1", "const gait = unit.moving ? walkCycle : 0", "function drawMountLeg", "function drawSkillEnergyBar", "const y = Math.round(visualY +", "const ALLY_UNIT_SCALE = 0.915", "const ENEMY_UNIT_SCALE = 0.84", "const BOSS_UNIT_SCALE = 1.26", "function directionIndex", "attackSpritePath", "const useAttackSprite", "const attackPaths", "attackFrame", "function directionLocalAngle", "function drawAttackPose", "function characterAnimationState", "function applyCombatBodyMotion", "function drawCombatBodySprite", "const actionTransform = Boolean(unit.action && !useAttackSprite)", "unit.type !== \"boss\"", "const boss = unit.type === \"boss\""]) {
   assert.ok(gameSource.includes(marker), `game loop marker missing: ${marker}`);
 }
 assert.ok(fs.statSync(path.join(root, "game.js")).size < 2000, "legacy game.js should stay a small compatibility marker");
@@ -152,7 +152,16 @@ assert.ok(gameSource.includes("keepPanel") && gameSource.includes("if (!options.
 assert.ok(gameSource.includes("function accountDisplayName") && gameSource.includes("displayName"), "settings account label must fall back from username to displayName");
 assert.ok(gameSource.includes("formation-slot-swap") && gameSource.includes("function swapFormationSlots"), "formation UI must expose an explicit slot-swap action");
 assert.ok(gameSource.includes("ownedEquipment") && gameSource.includes("function cycleOwnedEquipment"), "equipment cycling must stay inside the owned inventory");
+assert.ok(gameSource.includes('for (const heroId of ["liubei", "guanyu", "zhangfei", "zhaoyun"])'), "starter owned equipment must begin from the opening four heroes, not the full catalog");
+assert.ok(gameSource.includes("BOSS_ACTION_SPRITE_BY_GENERAL") && gameSource.includes('yuanshao: "yuanshao"') && gameSource.includes('zhurong: "zhurong"') && gameSource.includes('simayi: "simayi"'), "boss generals without dedicated sheets must alias to existing hero sheets");
+assert.ok(!gameSource.includes('"boss-yuanshao"') && !gameSource.includes('"boss-zhurong"') && !gameSource.includes('"boss-simayi"'), "deleted boss sheets must not remain in AUTHORED_ACTION_SPRITES");
+assert.ok(gameSource.includes("sliceGate") && gameSource.includes("通關第 "), "meta modes must gate behind chapter-1 progress");
+assert.ok(gameSource.includes('arena: "演武場"'), "arena panel title must match 演武場");
+assert.ok(chapter1[9].name.includes("渠帥") && chapter1.every((stage) => !["yanliang", "wenchou"].includes(stage.enemyGenerals[0])), "chapter-1 opening stages must stay 黃巾-themed without 河北猛將 as lead enemies");
 assert.ok(gameSource.includes("兌換") && !gameSource.includes("ACTIVE ARMY PASSIVE"), "shop copy uses 兌換 and tactics must not leak internal English");
+assert.ok(gameSource.includes("function isShopClaimed") && gameSource.includes("item.repeatable"), "shop claim state must distinguish one-time and repeatable items");
+assert.ok(styleSource.includes(".mode-banner") && styleSource.includes(".tactic-card") && styleSource.includes(".enemy-preview"), "command panels need mode/tactic/enemy-preview surface styles");
+assert.ok(styleSource.includes(".stage-banner") && styleSource.includes("鐵木軍帳"), "HUD restyle markers must remain for the lacquer/ironwood direction");
 assert.ok(!gameSource.includes("桃園初陳") && !gameSource.includes("玉璇") && !gameSource.includes("連環妁殺") && !gameSource.includes("\u6226") && !gameSource.includes("战"), "known Traditional-Chinese typos and simplified chars must stay removed");
 assert.ok(gameSource.includes("runtime.mode === \"tower\"") && gameSource.includes("runtime.mode === \"arena\"") && gameSource.includes("runtime.mode === \"dungeon\""), "tower, arena and dungeon all reuse full real combat loop");
 assert.ok(gameSource.includes("function reducedMotionActive") && gameSource.includes("function applyLocalImpact"), "hit feedback must be local and honor reduced motion");
@@ -164,13 +173,31 @@ assert.ok(gameSource.includes("useMoveSprite") && gameSource.includes("moveComba
 assert.ok(gameSource.includes("const ULTRA_DETAIL_ACTION_SPRITES") && gameSource.includes("ULTRA_DETAIL_ACTION_SPRITE_CELL_SIZE = 128") && gameSource.includes('"-v4.webp" : "-v3.webp"'), "runtime must select 128px v4 battle assets only for the pilot roster");
 assert.ok(gameSource.includes("combatSpriteId") && gameSource.includes("Resolve one identity for this draw"), "combat animation states must share one locked character sprite identity");
 assert.ok(gameSource.includes("Restore the unit-local translate/scale before drawing world-space bars"), "drawUnit must restore its local Canvas transform before drawing HUD bars");
+const renderSource = fs.readFileSync(path.join(root, "js", "game", "game-render.js"), "utf8");
+assert.ok(fs.existsSync(path.join(root, "assets", "fonts", "jf-openhuninn-2.1.ttf")), "bundled Traditional-Chinese game font missing");
+assert.ok(fs.existsSync(path.join(root, "assets", "fonts", "OFL-jf-openhuninn-2.1.txt")), "bundled font license missing");
+assert.ok(styleSource.includes('@font-face') && styleSource.includes('"Huninn Game"'), "CSS must register the bundled Huninn Game font");
+assert.ok(renderSource.includes("CANVAS_UI_FONT") && renderSource.includes("CANVAS_NUMBER_FONT"), "Canvas text must use the shared bundled font contract");
+assert.ok(!renderSource.includes("DFKai-SB") && !renderSource.includes("KaiTi") && !renderSource.includes("ui-monospace"), "Canvas must not fall back to platform Kai or monospace fonts");
+assert.equal((renderSource.match(/function drawHealthBar\(/g) || []).length, 1, "drawHealthBar must have exactly one declaration");
+assert.equal((renderSource.match(/function drawSkillEnergyBar\(/g) || []).length, 1, "drawSkillEnergyBar must have exactly one declaration");
+assert.ok(!renderSource.includes("barW * 0.65"), "HP and energy must not share one dual-width strip");
+assert.ok(renderSource.includes("visualY + healthOffset + 9"), "energy bar must sit below the HP bar");
+assert.ok(!renderSource.includes("integrated directly into the red/blue dual bar"), "energy bar must draw as its own row, not merge into HP");
 assert.ok(gameSource.includes("playSpeed") && !gameSource.includes('toFixed(1) + "K"'), "speed HUD and resource counts must stay whole numbers");
 assert.ok(gameSource.includes("entryY + delta * 420") && gameSource.includes("spawnWait"), "enemy entry must descend toward targetY and spawning must have a watchdog");
 assert.ok(gameSource.includes("runtime.hitStop = 0"), "hitStop must not throttle the combat simulation");
 assert.ok(gameSource.includes("Battle loop frame failed"), "battle loop must recover from frame errors instead of hard-stopping");
-assert.ok(styleSource.includes("flex-wrap: nowrap") && styleSource.includes("overflow: hidden"), "stage meta must stay inside the top HUD");
+assert.ok(styleSource.includes("white-space: nowrap") && styleSource.includes("text-overflow: ellipsis") && styleSource.includes(".stage-banner"), "stage banner must stay single-line inside the top HUD");
 
 const indexSource = fs.readFileSync(path.join(root, "index.html"), "utf8");
+assert.ok(indexSource.includes('rel="preload"') && indexSource.includes("jf-openhuninn-2.1.ttf"), "game font must preload before first HUD/Canvas draw");
+assert.ok((indexSource.includes("日務") || indexSource.includes("日常軍務")) && !indexSource.includes(">排行<"), "軍務入口必須存在，且演武不得誤標為排行");
+assert.ok(indexSource.includes('id="railMoreButton"') && indexSource.includes("更多") && indexSource.includes('data-panel="shop"'), "right-rail must keep ≤4 shortcuts plus 更多 drawer with 行商");
+assert.ok(!indexSource.includes(">精煉<"), "right-rail must not fake a 精煉 shortcut that opens heroes");
+assert.ok(!indexSource.includes("BATTLE REPORT"), "settlement must not use English ribbon copy");
+assert.ok(gameSource.includes("lord-office") && gameSource.includes("lord-stat-chip") && gameSource.includes("title-equip") && gameSource.includes("frame-equip") && !gameSource.includes("lord-quick-row"), "lord office must expose identity actions without duplicate shortcuts");
+assert.ok(gameSource.includes('$("settlementTitle")') && gameSource.includes("戰功告捷"), "settlement modal must render Traditional Chinese victory copy");
 const dataPosition = indexSource.indexOf("data/game-data.js");
 const modulePositions = runtimeModules.map((file) => indexSource.indexOf(`js/game/${file}`));
 const cloudPosition = indexSource.indexOf("js/cloud-save.js");
@@ -205,10 +232,20 @@ assert.ok(!styleSource.includes("linear-gradient(135deg, #d9c28f0b") && !styleSo
 assert.ok(styleSource.includes(".header-ornament { display: none; }"), "command-panel headers must hide the diamond ornament");
 assert.ok(!styleSource.includes(".detail-hero, .hero-progression, .stat-list, .hero-skill-card, .paper-doll-panel, .formation-summary, .tactic-card, .campaign-card, .task-card, .checkin-day, .shop-card, .arena-banner, .arena-card, .mail-card, .story-card, .rank-table, .setting-list, .achievement-item {"), "settlement-style diagonal wash must not paint every command card");
 assert.ok(styleSource.includes(".detail-hero {") && styleSource.includes("grid-template-columns: 96px minmax(0, 1fr)"), "hero detail must keep avatar and stats on a non-overlapping grid");
+const heroDetailSource = fs.readFileSync(path.join(root, "js", "game", "game-ui-heroes.js"), "utf8");
+const heroDetailFn = heroDetailSource.slice(heroDetailSource.indexOf("function renderHeroDetail"), heroDetailSource.indexOf("function renderFormation"));
+assert.ok(heroDetailFn.includes("hero-detail-dock") && heroDetailFn.includes('data-action="hero-level"'), "hero detail must pin the level-up action in a dock, not after lore/equipment");
+assert.ok(heroDetailFn.includes("hero-bond-chip") && !heroDetailFn.includes("collection-card"), "hero-detail bonds must use chips, not the 44px icon-card grid");
+assert.ok(!heroDetailFn.includes("專屬神兵真名共鳴") && heroDetailFn.includes("hero-bio-fold"), "signature weapon merges into equipment; biography stays folded");
+assert.ok(styleSource.includes(".hero-detail-dock") && styleSource.includes(".panel-content:has(.hero-detail)"), "hero detail CSS must freeze the upgrade dock while the body scrolls");
 assert.ok(styleSource.includes("@media (max-width: 360px)") && styleSource.includes("compact-hud"), "narrow viewports must use a compact HUD that keeps resource digits visible");
 assert.ok(styleSource.includes("--type-body") && styleSource.includes(".panel-action"), "panel type scale and claim actions must be defined");
 assert.ok(!indexSource.includes("FIRST MARCH"), "tutorial eyebrow must use Traditional Chinese");
 assert.ok(indexSource.includes("rail-drawer-head") && indexSource.includes("軍務") && indexSource.includes("id=\"railDrawerClose\""), "more-menu must be a command list, not a second icon column");
 assert.ok(styleSource.includes("Native mobile-game HUD") && styleSource.includes(".rail-drawer-list"), "native HUD restyle markers missing");
+assert.ok(gameSource.includes('else if (type === "profile") renderLord()'), "openPanel('profile') must render the lord sheet");
+assert.ok(!gameSource.includes("再點一次開啟主公詳情"), "lord card must open the profile panel on the first click");
+assert.ok(styleSource.includes(".exp-track small") && styleSource.includes("lord-exp-overlay"), "lord exp fraction must overlay the bar on a single line");
+assert.ok(indexSource.includes('id="expText"') && indexSource.includes("exp-track") && /exp-track[\s\S]*id="expText"/.test(indexSource), "exp text must live inside the exp track");
 runDocChecks();
 console.log(`Smoke test passed: ${data.heroes.length} heroes, ${data.stages.length} stages, ${data.paperDollSlots.length} paper-doll slots.`);

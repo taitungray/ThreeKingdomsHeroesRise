@@ -1,10 +1,10 @@
 /* Combat: units, waves, damage, skills and progression */
 "use strict";
 
-// Battlefield sprite scale: baseline readable size; bosses keep ceremonial bulk.
-const ALLY_UNIT_SCALE = 1.22;
-const ENEMY_UNIT_SCALE = 1.12;
-const BOSS_UNIT_SCALE = 1.68;
+// Battlefield sprite scale: scaled down 25% for balanced battlefield spacing.
+const ALLY_UNIT_SCALE = 0.915;
+const ENEMY_UNIT_SCALE = 0.84;
+const BOSS_UNIT_SCALE = 1.26;
 const ENEMY_SPAWN_Y = 175;
 const BOSS_SPAWN_Y = 205;
 
@@ -448,7 +448,7 @@ function makeEnemy(index, boss = false) {
     deathTime: 0,
     deathSpin: 0,
     dead: false,
-    scale: boss ? BOSS_UNIT_SCALE : ENEMY_UNIT_SCALE + Math.random() * 0.08,
+    scale: boss ? BOSS_UNIT_SCALE : ENEMY_UNIT_SCALE + Math.random() * 0.06,
     color: boss ? "#6f2b26" : profile.color,
     accent: boss ? "#d29f3a" : "#b34935",
     role: boss ? "步兵" : profile.role
@@ -1030,10 +1030,10 @@ function updateUnit(unit, targets, delta) {
     const gaitRate = unit.type === "boss" ? 3.8 : unit.role === "騎兵" || unit.type === "cavalry" ? 7.2 : 6.2;
     unit.movePhase = ((Number(unit.movePhase) || 0) + delta * gaitRate) % 4;
     unit.moveFrame = Math.floor(unit.movePhase);
-    unit.stepTimer -= delta;
+    unit.stepTimer = (Number(unit.stepTimer) || 0) - delta;
     if (unit.stepTimer <= 0) {
-      unit.stepTimer = 0.18 + Math.random() * 0.08;
-      addEffect("dust", unit.x, unit.y + 2, "#978b6c", { radius: 8, life: 0.25 });
+      unit.stepTimer = 0.22 + Math.random() * 0.1;
+      addEffect("dust", unit.x, unit.y + 2, "#978b6c", { radius: 7, life: 0.22 });
     }
     unit.x = clamp(unit.x, 30, 360);
     unit.y = clamp(unit.y, 115, 560);

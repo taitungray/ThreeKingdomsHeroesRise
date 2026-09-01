@@ -117,12 +117,15 @@ function createEquipmentDefaults() {
 }
 
 function createOwnedEquipment() {
-  const owned = { weapon: [], armor: [], mount: [], accessory: [] };
+  // Starter pool only: starting four heroes' loadouts + basic foot/grey.
+  // Later gear must come from drops / shop, not a free full catalog.
+  const owned = { weapon: [], armor: [], mount: ["foot"], accessory: [] };
   const add = (slotId, itemId) => {
     if (!itemId || owned[slotId].includes(itemId)) return;
     owned[slotId].push(itemId);
   };
-  for (const loadout of Object.values(PAPER_DOLL_DEFAULTS)) {
+  for (const heroId of ["liubei", "guanyu", "zhangfei", "zhaoyun"]) {
+    const loadout = PAPER_DOLL_DEFAULTS[heroId] || PAPER_DOLL_DEFAULTS.locked;
     add("weapon", loadout.weapon);
     add("armor", loadout.armor);
     add("mount", loadout.mount);
@@ -440,7 +443,7 @@ function avatarFrameById(id) {
 
 function avatarFrameUnlocked(frame) {
   if (!frame) return false;
-  if (frame.trialId) return Boolean(save.trials?.cleared?.includes(frame.trialId));
+  if (frame.trialId) return Boolean(save.trialClears?.[frame.trialId] || save.trials?.cleared?.includes(frame.trialId));
   return save.maxStage > (Number(frame.unlockStage) || 0);
 }
 
@@ -448,9 +451,9 @@ function heroCombatPower(heroId) {
   const hero = heroById(heroId);
   if (!hero) return 0;
   const level = Math.max(1, Number(save.heroLevels?.[heroId]) || 1);
-  const equipment = heroEquipmentStats(heroId);
-  const growth = heroGrowthMultiplier(heroId);
-  const base = ((hero.atk + equipment.atk) * 7 + hero.hp + equipment.hp + (hero.def + equipment.def) * 12);
+  const equipment = typeof heroEquipmentStats === "function" ? heroEquipmentStats(heroId) : { atk: 0, hp: 0, def: 0 };
+  const growth = typeof heroGrowthMultiplier === "function" ? heroGrowthMultiplier(heroId) : 1;
+  const base = ((hero.atk + (equipment.atk || 0)) * 7 + hero.hp + (equipment.hp || 0) + (hero.def + (equipment.def || 0)) * 12);
   return Math.round(base * (1 + level * 0.13) * growth);
 }
 
@@ -460,25 +463,28 @@ function currentArmyPower() {
 
 function campaignClears() {
   const recorded = Object.keys(save.stageStars || {}).filter((stageId) => Number(save.stageStars[stageId]) > 0).length;
-  return Math.max(recorded, Math.max(0, Number(save.stage || 1) - 1));
+  return Math.max(recorded, Math.max(0, Number(save.stage || 1) - 1), Math.max(0, Number(save.maxStage || 1) - 1));
 }
 
 function titleUnlocked(title) {
   if (!title) return false;
   const target = Math.max(0, Number(title.value) || 0);
-  if (title.type === 'stage') return campaignClears() >= target;
-  if (title.type === 'heroes') return HEROES.filter(isUnlocked).length >= target;
-  if (title.type === 'arena') return Number(save.arena?.wins || 0) >= target;
-  if (title.type === 'trial') {
+  if (title.type === "stage") return campaignClears() >= target;
+  if (title.type === "heroes") return HEROES.filter(isUnlocked).length >= target;
+  if (title.type === "arena") return Number(save.arena?.wins || 0) >= target;
+  if (title.type === "trial") {
     const trialId = title.trialId || ({
-      'title-guanyu-loyalty': 'trial-guanyu',
-      'title-zhaoyun-changsheng': 'trial-zhaoyun',
-      'title-zhugeliang-wisdom': 'trial-zhugeliang',
-      'title-caocao-hero': 'trial-caocao',
-      'title-lubu-unrivaled': 'trial-lubu',
-      'title-zhouyu-wind': 'trial-zhouyu'
+      "title-guanyu-loyalty": "trial-guanyu",
+      "title-zhaoyun-changsheng": "trial-zhaoyun",
+      "title-zhugeliang-wisdom": "trial-zhugeliang",
+      "title-caocao-hero": "trial-caocao",
+      "title-lubu-unrivaled": "trial-lubu",
+      "title-zhouyu-wind": "trial-zhouyu"
     })[title.id];
-    return Boolean(trialId && save.trials?.cleared?.includes(trialId));
+    return Boolean(
+      (trialId && (save.trials?.cleared?.includes(trialId) || save.trialClears?.[trialId])) ||
+      (save.trialClears && Object.keys(save.trialClears).length >= (target || 1))
+    );
   }
   return false;
 }

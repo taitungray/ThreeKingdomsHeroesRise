@@ -23,16 +23,16 @@ const ENEMY_GENERAL_SETS = [
 ];
 const BOSS_GENERAL_IDS = ["zhangjiao", "dongzhuo", "lvbu", "yuanshao", "menghuo", "zhurong", "simayi"];
 const CHAPTER1_STAGE_SPECS = [
-  { name: "鉅鹿起事", enemyGenerals: ["zhangjiao", "yanliang", "wenchou"], bossGeneral: "zhangjiao" },
-  { name: "黃巾伏兵", enemyGenerals: ["zhangjiao", "yanliang", "taishici"], bossGeneral: "zhangjiao" },
-  { name: "鉅鹿野外", enemyGenerals: ["zhangjiao", "wenchou", "yanliang"], bossGeneral: "zhangjiao" },
-  { name: "破黃巾營", enemyGenerals: ["yanliang", "wenchou", "zhangjiao"], bossGeneral: "zhangjiao" },
-  { name: "渠帥來襲", enemyGenerals: ["zhangjiao", "yanliang", "wenchou"], bossGeneral: "zhangjiao" },
-  { name: "涿郡桃林", enemyGenerals: ["zhangjiao", "yanliang", "taishici"], bossGeneral: "zhangjiao" },
-  { name: "結義誓師", enemyGenerals: ["dongzhuo", "wenchou", "zhangjiao"], bossGeneral: "dongzhuo" },
-  { name: "義軍初陣", enemyGenerals: ["zhangjiao", "yanliang", "wenchou"], bossGeneral: "zhangjiao" },
-  { name: "涿郡夜巡", enemyGenerals: ["yanliang", "taishici", "zhangjiao"], bossGeneral: "zhangjiao" },
-  { name: "黃巾力士", enemyGenerals: ["zhangjiao", "wenchou", "yanliang"], bossGeneral: "zhangjiao" }
+  { name: "鉅鹿起事", enemyGenerals: ["zhangjiao", "taishici", "huangzhong"], bossGeneral: "zhangjiao" },
+  { name: "黃巾伏兵", enemyGenerals: ["zhangjiao", "huangzhong", "taishici"], bossGeneral: "zhangjiao" },
+  { name: "鉅鹿野外", enemyGenerals: ["zhangjiao", "taishici", "huangzhong"], bossGeneral: "zhangjiao" },
+  { name: "破黃巾營", enemyGenerals: ["zhangjiao", "huangzhong", "taishici"], bossGeneral: "zhangjiao" },
+  { name: "渠帥來襲", enemyGenerals: ["zhangjiao", "taishici", "huangzhong"], bossGeneral: "zhangjiao" },
+  { name: "涿郡桃林", enemyGenerals: ["zhangjiao", "dongzhuo", "taishici"], bossGeneral: "zhangjiao" },
+  { name: "結義誓師", enemyGenerals: ["dongzhuo", "zhangjiao", "huangzhong"], bossGeneral: "dongzhuo" },
+  { name: "義軍初陣", enemyGenerals: ["zhangjiao", "dongzhuo", "taishici"], bossGeneral: "zhangjiao" },
+  { name: "涿郡夜巡", enemyGenerals: ["dongzhuo", "zhangjiao", "huangzhong"], bossGeneral: "dongzhuo" },
+  { name: "渠帥末路", enemyGenerals: ["zhangjiao", "dongzhuo", "taishici"], bossGeneral: "zhangjiao" }
 ];
 window.THREE_KINGDOMS_DATA = {
   enemyGenerals: ENEMY_GENERALS,
@@ -404,6 +404,16 @@ window.THREE_KINGDOMS_DATA.titles = [
   { id: "title-zhouyu-wind", name: "江左風流", desc: "通關周瑜傳奇試煉「赤壁烈火燎原」", type: "trial", value: 1 }
 ];
 window.THREE_KINGDOMS_DATA.tower = { name: "問天樓", basePower: 2700, powerStep: 260, stamina: 4 };
+
+window.THREE_KINGDOMS_DATA.achievements = [
+  { id: "peach-first", title: "桃園初陣", desc: "通關第 1 關", type: "stage", target: 1, gold: 300, food: 80 },
+  { id: "turban-break", title: "破巾先鋒", desc: "通關第 10 關", type: "stage", target: 10, gold: 800, jade: 3 },
+  { id: "chain-kill", title: "連環斬殺", desc: "累計擊殺 100 名敵軍", type: "kills", target: 100, gold: 500, shards: 4 },
+  { id: "veteran", title: "百戰精兵", desc: "通關第 25 關", type: "stage", target: 25, gold: 1500, jade: 8 },
+  { id: "red-cliff-fire", title: "赤壁火計", desc: "通關第 30 關", type: "stage", target: 30, gold: 1800, jade: 10 },
+  { id: "hero-gather", title: "群英來投", desc: "結識 12 名武將", type: "heroes", target: 12, gold: 700, shards: 6 },
+  { id: "arena-four", title: "演武無雙", desc: "演武獲勝 4 場", type: "arena", target: 4, gold: 900, jade: 5 }
+];
 
 window.THREE_KINGDOMS_DATA.avatarFrames = [
   { id: "plain", name: "義勇素框", desc: "桃園義軍的本色", color: "#c6a654", unlockStage: 0 },

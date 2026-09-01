@@ -77,19 +77,19 @@
     {
       "id": "zhugeliang",
       "kind": "hero",
-      "archetype": "caocao",
+      "archetype": "zhugeliang",
       "path": "assets/characters/move-zhugeliang-v3.webp"
     },
     {
       "id": "diaochan",
       "kind": "hero",
-      "archetype": "caocao",
+      "archetype": "diaochan",
       "path": "assets/characters/move-diaochan-v3.webp"
     },
     {
       "id": "lubu",
       "kind": "hero",
-      "archetype": "zhaoyun",
+      "archetype": "lubu",
       "path": "assets/characters/move-lubu-v3.webp"
     },
     {
@@ -107,7 +107,7 @@
     {
       "id": "pangtong",
       "kind": "hero",
-      "archetype": "caocao",
+      "archetype": "zhugeliang",
       "path": "assets/characters/move-pangtong-v3.webp"
     },
     {
@@ -119,13 +119,13 @@
     {
       "id": "lusu",
       "kind": "hero",
-      "archetype": "caocao",
+      "archetype": "zhugeliang",
       "path": "assets/characters/move-lusu-v3.webp"
     },
     {
       "id": "luxun",
       "kind": "hero",
-      "archetype": "caocao",
+      "archetype": "zhugeliang",
       "path": "assets/characters/move-luxun-v3.webp"
     },
     {
@@ -167,7 +167,7 @@
     {
       "id": "jiangwei",
       "kind": "hero",
-      "archetype": "caocao",
+      "archetype": "zhugeliang",
       "path": "assets/characters/move-jiangwei-v3.webp"
     },
     {
@@ -197,7 +197,7 @@
     {
       "id": "zhenji",
       "kind": "hero",
-      "archetype": "caocao",
+      "archetype": "diaochan",
       "path": "assets/characters/move-zhenji-v3.webp"
     },
     {
@@ -251,7 +251,7 @@
     {
       "id": "zhangliang",
       "kind": "hero",
-      "archetype": "caocao",
+      "archetype": "zhugeliang",
       "path": "assets/characters/move-zhangliang-v3.webp"
     },
     {
@@ -293,7 +293,7 @@
     {
       "id": "fazheng",
       "kind": "hero",
-      "archetype": "caocao",
+      "archetype": "zhugeliang",
       "path": "assets/characters/move-fazheng-v3.webp"
     },
     {
@@ -305,19 +305,19 @@
     {
       "id": "zhurong",
       "kind": "hero",
-      "archetype": "huangzhong",
+      "archetype": "diaochan",
       "path": "assets/characters/move-zhurong-v3.webp"
     },
     {
       "id": "daqiao",
       "kind": "hero",
-      "archetype": "caocao",
+      "archetype": "diaochan",
       "path": "assets/characters/move-daqiao-v3.webp"
     },
     {
       "id": "xiaoqiao",
       "kind": "hero",
-      "archetype": "caocao",
+      "archetype": "diaochan",
       "path": "assets/characters/move-xiaoqiao-v3.webp"
     },
     {

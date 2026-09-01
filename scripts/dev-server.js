@@ -48,11 +48,23 @@ const server = http.createServer((request, response) => {
   }
   const primary = safeResolve(webRoot, request.url);
   const fallback = fallbackRoot ? safeResolve(fallbackRoot, request.url) : null;
-  const file = primary && fs.existsSync(primary) && fs.statSync(primary).isFile()
+  let file = primary && fs.existsSync(primary) && fs.statSync(primary).isFile()
     ? primary
     : fallback && fs.existsSync(fallback) && fs.statSync(fallback).isFile()
       ? fallback
       : null;
+
+  if (!file && request.url) {
+    // If a boss-* sheet was requested and does not exist, fall back to the base hero sheet or boss-dongzhuo
+    const bossMatch = request.url.match(/\/(attack|move)-boss-([a-z0-9]+)-(v[0-9]+)\.webp/);
+    if (bossMatch) {
+      const altHero = path.resolve(webRoot, "assets", "characters", `${bossMatch[1]}-${bossMatch[2]}-${bossMatch[3]}.webp`);
+      const altDongzhuo = path.resolve(webRoot, "assets", "characters", `${bossMatch[1]}-boss-dongzhuo-${bossMatch[3]}.webp`);
+      if (fs.existsSync(altHero) && fs.statSync(altHero).isFile()) file = altHero;
+      else if (fs.existsSync(altDongzhuo) && fs.statSync(altDongzhuo).isFile()) file = altDongzhuo;
+    }
+  }
+
   if (!file) {
     response.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });
     response.end("Not found");

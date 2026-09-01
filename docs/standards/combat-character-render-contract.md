@@ -20,7 +20,7 @@
 | mount | 48×32 WebP | 腳底／鞍座契約 | 騎乘時 body 與 mount 不互相穿透 |
 | Boss body | 64×76 WebP source 或核准 96px action cell | 腳底中心 | 不得只是普通敵人等比放大 |
 | attack sheet | 8 方向 × 5 階段；96px `v3` 基線或 128px `v4` 試製 WebP | 腳底中心 | 每格需有完整 body coverage、透明邊、可辨識臉／甲／武器與階段差異；64px 舊圖及灰綠／褐色矩形底塊不得進入核准路徑 |
-| move strip | 4 階段 × 1 列；96px `v3` 基線或 128px `v4` 試製 WebP | 腳底中心 | 左右腳交替、重心通過、首尾可循環；不得用整體跳動冒充跨步 |
+| move strip | 4 階段 × 1 列；96px `v3` 基線或 128px `v4` 試製 WebP | 腳底中心 | 剪影朝右；runtime 以 `unit.facing` 鏡像。左右腳交替、重心通過、首尾可循環；不得用整體跳動冒充跨步 |
 
 實際 manifest 若改變尺寸或錨點，必須同步 renderer、產生器、測試與本契約，不能只改單一消費端。
 
@@ -31,6 +31,8 @@ ImageGen 提示、master sheet row／column、後處理、命名、alias 與重�
 建議順序：地面影子 → mount → body → armor／角色細節 → combat weapon → action VFX → hit flash／狀態 → 血條與文字。不同技能可調整局部 VFX，但不可讓兵器與 body 重複繪製。
 
 每個 `ctx.save()` 必須在同一責任範圍內配對 `ctx.restore()`；單位 local transform 結束後才繪製 world-space 血條與 HUD。測試需監控 transform 不得逐單位／逐幀累積。
+
+血條與技能氣條是 HUD，不是角色身體。我方腳下血條在上、氣條在下，必須分列；禁止後宣告覆寫把兩條併成同一 Y 的紅藍雙色條。
 
 ## 生命週期
 

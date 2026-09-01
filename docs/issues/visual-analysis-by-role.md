@@ -1,8 +1,10 @@
 # 角色畫面視覺分析與優化方案
 
+> **狀態：過時參考（2026-08-28）。** 現行契約以 `docs/standards/combat-character-asset-production.md`、`attack-manifest.json` v6、`ATTACK_SPRITES_APPROVED = true` 與 `docs/issues/known-issues.md` 為準。下文「無幀動畫／32px body 主路徑」等結論已失效，勿當完成證明。
+
 > 分析範圍：所有角色相關的戰場渲染、資產品質、動畫表現、UI 頭像與肖像
 > 分析日期：2026-08-28
-> 證據等級：`已確認`（所有結論基於直接檢查的程式碼和影像檔案）
+> 證據等級：`已確認`（所有結論基於直接檢查的程式碼和影像檔案）——**僅反映當時工作樹**
 
 ---
 

@@ -27,6 +27,9 @@ const ASSETS = window.TaoyuanAssets || {
 };
 window.TaoyuanAssets = ASSETS;
 
+const CANVAS_UI_FONT = "'Huninn Game', 'Microsoft JhengHei UI', 'Microsoft JhengHei', sans-serif";
+const CANVAS_NUMBER_FONT = "'Huninn Game', Arial, sans-serif";
+
 const TERRAIN_TILE_BY_CHAPTER = [0, 1, 2, 3, 4, 6, 7, 2, 8, 14, 9, 10, 6, 13, 11, 12, 15, 14, 13, 10];
 const VFX_ASSET_BY_TYPE = { afterimage: 2, dust: 12, impact: 15, shockwave: 14, charge: 1, slash: 0, ring: 10, bolt: 4, status: 5, combo: 14, rally: 10, guard: 9, stun: 8, volley: 3, rune: 11, petal: 6, soul: 13, meteor: 7 };
 // V3 sheets remain the 96 px baseline. The first four playable battle units use
@@ -47,10 +50,22 @@ const AUTHORED_ACTION_SPRITES = new Set([
   "daqiao", "xiaoqiao",
   // 5 Enemies
   "bandit", "brute", "cavalry", "archer", "strategist",
-  // 7 Bosses
-  "boss-zhangjiao", "boss-dongzhuo", "boss-lvbu", "boss-yuanshao", "boss-menghuo", "boss-zhurong", "boss-simayi"
+  // 4 authored Boss sheets on disk (missing boss sheets alias to hero sheets below)
+  "boss-zhangjiao", "boss-dongzhuo", "boss-lvbu", "boss-menghuo"
 ]);
+// Boss generals without dedicated boss-* sheets reuse the matching hero full-body sheets.
+const BOSS_ACTION_SPRITE_BY_GENERAL = Object.freeze({
+  zhangjiao: "boss-zhangjiao",
+  dongzhuo: "boss-dongzhuo",
+  lvbu: "boss-lvbu",
+  menghuo: "boss-menghuo",
+  yuanshao: "yuanshao",
+  zhurong: "zhurong",
+  simayi: "simayi"
+});
 const ULTRA_DETAIL_ACTION_SPRITES = new Set(["liubei", "guanyu", "zhangfei", "zhaoyun"]);
+// Move strips are authored facing RIGHT. Runtime only mirrors by unit.facing.
+const MOVE_SHEET_FACE_LEFT = new Set();
 const HERO_ROLE_ACTION_FALLBACK = Object.freeze({ "弓兵": "huangzhong", "謀士": "caocao", "騎兵": "zhaoyun", "步兵": "guanyu" });
 const ENEMY_BODY_BY_TYPE = { bandit: "bandit", brute: "brute", cavalry: "cavalry", archer: "archer", strategist: "strategist" };
 const ENEMY_GENERAL_BODY_ALIASES = { zhangjiao: "zhangjiao", dongzhuo: "dongzhuo", lvbu: "lvbu", yuanshao: "yuanshao", yanliang: "yanliang", wenchou: "wenchou", taishici: "taishici", huangzhong: "huangzhong", menghuo: "menghuo", zhurong: "zhurong", simayi: "simayi" };
@@ -79,8 +94,10 @@ function attackCombatSpriteId(unit) {
     return HERO_ROLE_ACTION_FALLBACK[unit.hero?.role] || "liubei";
   }
   if (unit.type === "boss") {
-    const identity = "boss-" + (unit.enemyGeneralId || "zhangjiao");
-    return AUTHORED_ACTION_SPRITES.has(identity) ? identity : "boss-dongzhuo";
+    const generalId = unit.enemyGeneralId || "zhangjiao";
+    const mapped = BOSS_ACTION_SPRITE_BY_GENERAL[generalId];
+    if (mapped && AUTHORED_ACTION_SPRITES.has(mapped)) return mapped;
+    return "boss-dongzhuo";
   }
   return AUTHORED_ACTION_SPRITES.has(unit.type) ? unit.type : "bandit";
 }
@@ -111,10 +128,28 @@ function terrainTileAsset(chapterIndex) {
 function drawTerrainTileLayer(chapterIndex) {
   const tile = terrainTileAsset(chapterIndex);
   if (!tile) return;
+  // The source tiles are authored as small 96px material swatches, not as a
+  // visible checkerboard.  Mirror and stagger larger cells so the battlefield
+  // reads as one continuous ground plane instead of a stack of square cards.
+  const tileSize = 160;
   ctx.save();
-  ctx.globalAlpha = 0.48;
-  for (let y = 0; y < 720; y += 96) {
-    for (let x = 0; x < 390; x += 96) ctx.drawImage(tile, x, y, 96, 96);
+  ctx.globalAlpha = 0.34;
+  ctx.globalCompositeOperation = "source-over";
+  ctx.imageSmoothingEnabled = false;
+  for (let row = -1; row <= Math.ceil(720 / tileSize); row += 1) {
+    const y = row * tileSize;
+    const rowOffset = (Math.abs(row) % 2) * -tileSize * 0.5;
+    for (let column = -2; column <= Math.ceil(390 / tileSize) + 1; column += 1) {
+      const x = column * tileSize + rowOffset;
+      const tileHash = Math.abs(column * 92821 + row * 68917 + chapterIndex * 1013);
+      const flipX = tileHash % 3 === 0 ? -1 : 1;
+      const flipY = tileHash % 5 === 0 ? -1 : 1;
+      ctx.save();
+      ctx.translate(x + (flipX < 0 ? tileSize : 0), y + (flipY < 0 ? tileSize : 0));
+      ctx.scale(flipX, flipY);
+      ctx.drawImage(tile, 0, 0, tileSize, tileSize);
+      ctx.restore();
+    }
   }
   ctx.restore();
 }
@@ -138,15 +173,15 @@ function drawBackground() {
   ctx.fillRect(0, 0, 390, 720);
 
   ctx.save();
-  ctx.globalAlpha = 0.45;
+  ctx.globalAlpha = 0.26;
   ctx.strokeStyle = chapter.path;
-  ctx.lineWidth = 104;
+  ctx.lineWidth = 116;
   ctx.lineCap = "round";
   ctx.beginPath();
   ctx.moveTo(185, 86);
   ctx.bezierCurveTo(255, 230, 118, 340, 210, 620);
   ctx.stroke();
-  ctx.globalAlpha = 0.25;
+  ctx.globalAlpha = 0.12;
   ctx.strokeStyle = "#d5c699";
   ctx.lineWidth = 4;
   ctx.stroke();
@@ -567,7 +602,7 @@ function drawMountVfx(mount, unit, walkCycle) {
     drawPixelRect(21 + drift, -4, 5, 3, mount.mane || "#141622");
     ctx.globalAlpha = 1;
   } else if (unit.moving) {
-    ctx.globalAlpha = 0.2;
+    ctx.globalAlpha = 0.18;
     drawPixelRect(-24, 0, 6, 2, "#d3c09c");
     drawPixelRect(20, 2, 5, 2, "#b8a98d");
     ctx.globalAlpha = 1;
@@ -1384,54 +1419,16 @@ function drawEnemyBody(unit, body, accent, idleCycle) {
   }
 }
 
-function drawHealthBar(unit, x, visualY) {
-  const isAlly = unit.team === "ally";
-  const isBoss = unit.type === "boss";
-  const max = Math.max(1, unit.maxHp || 1);
-  const cur = clamp(unit.hp, 0, max);
-  const ratio = cur / max;
-  const barW = isBoss ? 42 : isAlly ? 34 : 26;
-  const barH = isBoss ? 5 : 4;
-
-  // Positioned neatly directly under the unit feet (as seen in screenshots)
-  const y = Math.round(visualY + (isBoss ? 7 : 4));
-
-  // Blue energy charge ratio (allies charge attack count, enemies / bosses have constant mini blue bar)
-  const ready = (unit.attackCount || 0) >= 5 && (unit.skillCooldown || 0) <= 0;
-  const energyRatio = isAlly ? (ready ? 1 : clamp((unit.attackCount || 0) / 5, 0.2, 1)) : 0.6;
-  const hpW = Math.round(barW * 0.65);
-  const energyW = barW - hpW;
-
-  ctx.save();
-  // Outer black border
-  ctx.fillStyle = "#0c0a08";
-  ctx.fillRect(x - barW / 2 - 1, y - 1, barW + 2, barH + 2);
-
-  // HP background & Red fill (left 65% of bar)
-  ctx.fillStyle = "#2c0b08";
-  ctx.fillRect(x - barW / 2, y, hpW, barH);
-  ctx.fillStyle = isAlly ? "#df3626" : "#dc2828";
-  ctx.fillRect(x - barW / 2, y, Math.round(hpW * ratio), barH);
-
-  // Energy background & Blue fill (right 35% of bar)
-  ctx.fillStyle = "#091c34";
-  ctx.fillRect(x - barW / 2 + hpW, y, energyW, barH);
-  ctx.fillStyle = ready ? "#42a4ff" : "#1f6ec4";
-  ctx.fillRect(x - barW / 2 + hpW, y, Math.round(energyW * energyRatio), barH);
-
-  ctx.restore();
-}
-
 function drawUnitNameTag(unit, x, visualY) {
   // Clean minimal nametag only for boss units
   if (!unit || unit.dead || unit.type !== "boss") return;
   const y = Math.round(visualY - 66);
   ctx.save();
   const general = ENEMY_GENERALS.find(g => g.id === unit.enemyGeneralId);
-  const trialList = typeof HERO_FATE_TRIALS !== 'undefined' ? HERO_FATE_TRIALS : (window.HERO_FATE_TRIALS || []);
-  const trial = runtime.mode === 'trial' ? trialList.find((item) => item.id === runtime.trialId) : null;
+  const trialList = typeof HERO_FATE_TRIALS !== "undefined" ? HERO_FATE_TRIALS : (window.HERO_FATE_TRIALS || []);
+  const trial = runtime.mode === "trial" ? trialList.find((item) => item.id === runtime.trialId) : null;
   const name = trial?.bossName || general?.name || "敵首領";
-  ctx.font = "bold 9.5px 'DFKai-SB', 'KaiTi', sans-serif";
+  ctx.font = "700 9.5px " + CANVAS_UI_FONT;
   ctx.textAlign = "center";
   ctx.strokeStyle = "#240604";
   ctx.lineWidth = 2.5;
@@ -1441,17 +1438,13 @@ function drawUnitNameTag(unit, x, visualY) {
   ctx.restore();
 }
 
-function drawSkillEnergyBar(unit, x, visualY) {
-  // Energy bar is now integrated directly into the red/blue dual bar at feet
-}
-
 function drawStatusBadges(unit, x, y) {
   const statuses = (unit.statuses || []).filter((status) => status.duration > 0);
   if (!statuses.length) return;
   const colors = { burn: "#ef7a40", slow: "#81c6d6", stun: "#f5d05a", mark: "#e875ac", fragile: "#d29f3a", guard: "#9fc6e8", haste: "#7be0a5", silence: "#9d8eaa", ward: "#d7b84f" };
   ctx.save();
   ctx.textAlign = "center";
-  ctx.font = "700 7px ui-monospace, Consolas, monospace";
+  ctx.font = "700 7px " + CANVAS_NUMBER_FONT;
   statuses.slice(0, 3).forEach((status, index) => {
     const px = x - 10 + index * 10;
     ctx.fillStyle = colors[status.type] || "#ddd";
@@ -1644,8 +1637,11 @@ function drawMoveSpriteFrame(unit, image) {
   const frame = clamp(Math.floor(Number(unit.moveFrame) || 0), 0, 3);
   const cellSize = combatSpriteCellSize(unit);
   const renderSize = combatSpriteRenderSize(unit);
+  const spriteId = attackCombatSpriteId(unit);
+  const invert = MOVE_SHEET_FACE_LEFT.has(spriteId);
   ctx.save();
   ctx.imageSmoothingEnabled = false;
+  if (invert) ctx.scale(-1, 1);
   ctx.drawImage(
     image,
     frame * cellSize,
@@ -1709,7 +1705,7 @@ function drawUnit(unit) {
   if (!Number.isFinite(unit.motionY)) unit.motionY = 0;
   if (!Number.isFinite(unit.kickX)) unit.kickX = 0;
   if (!Number.isFinite(unit.kickY)) unit.kickY = 0;
-  if (!Number.isFinite(unit.scale) || unit.scale <= 0) unit.scale = unit.team === "ally" ? 1.22 : 1;
+  if (!Number.isFinite(unit.scale) || unit.scale <= 0) unit.scale = unit.team === "ally" ? 0.915 : 0.84;
   if (!Number.isFinite(unit.facing) || unit.facing === 0) unit.facing = unit.team === "ally" ? -1 : 1;
   const walkCycle = Math.sin(runtime.elapsed * 15 + unit.x * 0.08);
   const idleCycle = Math.sin(runtime.elapsed * 3.2 + unit.x * 0.03);
@@ -1991,7 +1987,7 @@ function drawEffects({ groundOnly = false } = {}) {
       ctx.save();
       const bounce = Math.sin(progress * Math.PI) * 6;
       ctx.translate(effect.x, effect.y - progress * 24 - bounce);
-      ctx.font = "900 " + Math.round(18 + progress * 6) + "px ui-monospace, Consolas, monospace";
+      ctx.font = "900 " + Math.round(18 + progress * 6) + "px " + CANVAS_NUMBER_FONT;
       ctx.textAlign = "center";
       ctx.strokeStyle = "#24160c";
       ctx.lineWidth = 4;
@@ -2138,7 +2134,7 @@ function drawEffects({ groundOnly = false } = {}) {
     ctx.save();
     ctx.translate(number.x, number.y - numberProgress * 18);
     if (number.angle) ctx.rotate(number.angle * (1 - numberProgress));
-    ctx.font = (number.size >= 24 ? "800 " : "700 ") + Math.round(number.size * scale) + "px ui-monospace, Consolas, monospace";
+    ctx.font = (number.size >= 24 ? "800 " : "700 ") + Math.round(number.size * scale) + "px " + CANVAS_NUMBER_FONT;
     ctx.textAlign = "center";
     ctx.lineWidth = number.size >= 24 ? 4 : 2;
     ctx.strokeStyle = number.size >= 24 ? "#3a170f" : "#25140d";
@@ -2160,7 +2156,7 @@ function drawResourceDrops() {
   };
   ctx.save();
   ctx.textAlign = "center";
-  ctx.font = "700 11px ui-monospace, Consolas, monospace";
+  ctx.font = "700 11px " + CANVAS_NUMBER_FONT;
   for (const drop of runtime.drops) {
     const style = styles[drop.kind] || styles.gold;
     const alpha = clamp(drop.life / 0.4, 0, 1);
@@ -2201,7 +2197,7 @@ function drawBattleTitle() {
   ctx.globalAlpha = 0.10;
   ctx.translate(195, 260);
   ctx.rotate(-0.1);
-  ctx.font = stageName.length > 8 ? "bold 43px DFKai-SB, KaiTi, serif" : "bold 54px DFKai-SB, KaiTi, serif";
+  ctx.font = stageName.length > 8 ? "700 43px " + CANVAS_UI_FONT : "700 54px " + CANVAS_UI_FONT;
   ctx.textAlign = "center";
   ctx.fillStyle = "#151810";
   ctx.fillText(stageName, 0, 0);
@@ -2217,7 +2213,7 @@ function drawWaveTransitionOverlay() {
   ctx.save();
   ctx.globalAlpha = alpha * 0.92;
   ctx.textAlign = "center";
-  ctx.font = "900 " + Math.round(34 * bounce) + "px DFKai-SB, KaiTi, serif";
+  ctx.font = "900 " + Math.round(34 * bounce) + "px " + CANVAS_UI_FONT;
   ctx.lineWidth = 5;
   ctx.strokeStyle = "#2a1810";
   ctx.strokeText(transition.label, 195, 248);
@@ -2271,11 +2267,11 @@ function drawSkillCutIn() {
   }
 
   ctx.textAlign = "left";
-  ctx.font = "bold 13px DFKai-SB, KaiTi, serif";
+  ctx.font = "700 13px " + CANVAS_UI_FONT;
   ctx.fillStyle = "#ffdd80";
   ctx.fillText("【無雙奧義】" + (cutIn.hero?.name || "名將"), avatarX + 32, 211);
 
-  ctx.font = "900 20px DFKai-SB, KaiTi, serif";
+  ctx.font = "900 20px " + CANVAS_UI_FONT;
   ctx.strokeStyle = "#240e06";
   ctx.lineWidth = 3.5;
   ctx.strokeText((cutIn.skillName || "大招") + "！", avatarX + 32, 235);
@@ -2294,7 +2290,7 @@ function drawUnitShouts() {
   ctx.save();
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  ctx.font = "bold 11px sans-serif";
+  ctx.font = "700 11px " + CANVAS_UI_FONT;
 
   for (const unit of units) {
     const shout = unit.shout;
