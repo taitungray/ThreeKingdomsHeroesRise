@@ -1,6 +1,12 @@
 /* Render: Canvas sprites, effects and frame loop */
 "use strict";
 
+const RUNTIME_ASSET_REVISION = "20260902e";
+function revisionedAssetPath(path) {
+  if (!path || /^(?:data:|blob:|https?:)/i.test(path)) return path;
+  return path + (path.includes("?") ? "&" : "?") + "asset=" + RUNTIME_ASSET_REVISION;
+}
+
 const ASSETS = window.TaoyuanAssets || {
   cache: new Map(),
   load(path) {
@@ -11,7 +17,7 @@ const ASSETS = window.TaoyuanAssets || {
     return new Promise((resolve) => {
       image.onload = () => resolve(image);
       image.onerror = () => { this.cache.delete(path); resolve(null); };
-      image.src = path;
+      image.src = revisionedAssetPath(path);
     });
   },
   preload(paths = []) { return Promise.all(paths.map((path) => this.load(path))); },
@@ -32,10 +38,10 @@ const CANVAS_NUMBER_FONT = "'Huninn Game', Arial, sans-serif";
 
 const TERRAIN_TILE_BY_CHAPTER = [0, 1, 2, 3, 4, 6, 7, 2, 8, 14, 9, 10, 6, 13, 11, 12, 15, 14, 13, 10];
 const VFX_ASSET_BY_TYPE = { afterimage: 2, dust: 12, impact: 15, shockwave: 14, charge: 1, slash: 0, ring: 10, bolt: 4, status: 5, combo: 14, rally: 10, guard: 9, stun: 8, volley: 3, rune: 11, petal: 6, soul: 13, meteor: 7 };
-// V3 sheets remain the 96 px baseline. The first four playable battle units use
-// a 128 px v4 pilot so facial, armor, cloth and hand/weapon detail survives the
-// final Canvas scale. Eight columns keep the directional contract stable while
-// the runtime facing transform mirrors the authored full-body silhouette.
+const RESTRAINED_VFX_BLEND = new Set(["afterimage", "dust", "impact", "slash"]);
+// V3 sheets are the active 96 px baseline. The baked checkerboard in the current
+// v4 pilot masters leaves matte bands around weapons and silver armour, so those
+// reference sheets stay out of runtime until they are re-authored with real alpha.
 const ATTACK_SPRITES_APPROVED = true;
 const DETAIL_ACTION_SPRITE_CELL_SIZE = 96;
 const ULTRA_DETAIL_ACTION_SPRITE_CELL_SIZE = 128;
@@ -63,7 +69,7 @@ const BOSS_ACTION_SPRITE_BY_GENERAL = Object.freeze({
   zhurong: "zhurong",
   simayi: "simayi"
 });
-const ULTRA_DETAIL_ACTION_SPRITES = new Set(["liubei", "guanyu", "zhangfei", "zhaoyun"]);
+const ULTRA_DETAIL_ACTION_SPRITES = new Set();
 // Move strips are authored facing RIGHT. Runtime only mirrors by unit.facing.
 const MOVE_SHEET_FACE_LEFT = new Set();
 const HERO_ROLE_ACTION_FALLBACK = Object.freeze({ "弓兵": "huangzhong", "謀士": "caocao", "騎兵": "zhaoyun", "步兵": "guanyu" });
@@ -119,7 +125,7 @@ function combatSpriteCellSize(unit) {
     : DETAIL_ACTION_SPRITE_CELL_SIZE;
 }
 function combatSpriteRenderSize(unit) {
-  return ULTRA_DETAIL_ACTION_SPRITES.has(attackCombatSpriteId(unit)) ? 80 : 72;
+  return unit.type === "boss" ? 96 : 72;
 }
 function terrainTileAsset(chapterIndex) {
   const tileId = TERRAIN_TILE_BY_CHAPTER[chapterIndex % TERRAIN_TILE_BY_CHAPTER.length] ?? 0;
@@ -337,9 +343,11 @@ function drawMapDecoration(x, y, type) {
 function drawHealthBar(unit, visualX = unit.x + unit.motionX + unit.kickX, visualY = unit.y + unit.motionY + unit.kickY) {
   if (unit.dead || (unit.team === "enemy" && unit.type !== "boss")) return;
   const boss = unit.type === "boss";
-  const width = boss ? 60 : 44;
+  const width = boss ? 64 : 48;
   const x = Math.round(visualX - width / 2);
-  const y = boss ? Math.round(visualY - 62 * unit.scale) : Math.round(visualY + 11 * unit.scale);
+  const y = boss
+    ? Math.round(visualY - combatSpriteRenderSize(unit) + 10)
+    : Math.round(visualY + 11);
   drawPixelRect(x - 1, y - 1, width + 2, 7, "#151310");
   const hpRatio = clamp(unit.hp / unit.maxHp, 0, 1);
   const lagRatio = clamp(Number.isFinite(unit.hpLag) ? unit.hpLag / unit.maxHp : hpRatio, hpRatio, 1);
@@ -351,7 +359,7 @@ function drawHealthBar(unit, visualX = unit.x + unit.motionX + unit.kickX, visua
 
 function drawSkillEnergyBar(unit, visualX, visualY) {
   if (unit.dead || unit.team !== "ally") return;
-  const width = 44;
+  const width = 48;
   const x = Math.round(visualX - width / 2);
   const healthOffset = 11 * unit.scale;
   const y = Math.round(visualY + healthOffset + 9);
@@ -1422,7 +1430,7 @@ function drawEnemyBody(unit, body, accent, idleCycle) {
 function drawUnitNameTag(unit, x, visualY) {
   // Clean minimal nametag only for boss units
   if (!unit || unit.dead || unit.type !== "boss") return;
-  const y = Math.round(visualY - 66);
+  const y = Math.round(visualY - combatSpriteRenderSize(unit) + 22);
   ctx.save();
   const general = ENEMY_GENERALS.find(g => g.id === unit.enemyGeneralId);
   const trialList = typeof HERO_FATE_TRIALS !== "undefined" ? HERO_FATE_TRIALS : (window.HERO_FATE_TRIALS || []);
@@ -1445,12 +1453,13 @@ function drawStatusBadges(unit, x, y) {
   ctx.save();
   ctx.textAlign = "center";
   ctx.font = "700 7px " + CANVAS_NUMBER_FONT;
+  const badgeY = y - combatSpriteRenderSize(unit) + 20;
   statuses.slice(0, 3).forEach((status, index) => {
     const px = x - 10 + index * 10;
     ctx.fillStyle = colors[status.type] || "#ddd";
-    ctx.fillRect(px - 3, y - 44, 6, 6);
+    ctx.fillRect(px - 3, badgeY, 6, 6);
     ctx.fillStyle = "#fff";
-    ctx.fillText(status.type[0].toUpperCase(), px, y - 39);
+    ctx.fillText(status.type[0].toUpperCase(), px, badgeY + 5);
   });
   ctx.restore();
 }
@@ -1480,7 +1489,7 @@ function applyCombatBodyMotion(unit, state, walkCycle, idleCycle, deathProgress,
   if (state === "idle") {
     // Subtle natural breathing bounce (16-bit pixel RPG standard)
     const breathe = Math.sin((runtime.elapsed || 0) * 3.6 + (unit.x || 0) * 0.04);
-    ctx.translate(0, -Math.abs(breathe) * 1.5);
+    ctx.translate(0, Math.round(-Math.abs(breathe) * 1.5));
   } else if (state === "walk") {
     // Fallback bodies keep their feet grounded. Authored move strips provide
     // the real leg cycle; this tiny weight transfer is only for legacy units.
@@ -1490,7 +1499,10 @@ function applyCombatBodyMotion(unit, state, walkCycle, idleCycle, deathProgress,
   } else if (state === "hit") {
     // Sharp knockback stagger and recovery
     const recoil = clamp((Number(unit.hitFlash) || 0) / 0.22, 0, 1);
-    ctx.translate(-Math.cos(unit.hitAngle || 0) * recoil * 5, -recoil * 2);
+    ctx.translate(
+      Math.round(-Math.cos(unit.hitAngle || 0) * recoil * 5),
+      Math.round(-recoil * 2)
+    );
   } else if (state === "skill") {
     const pose = attackPoseProgress(unit);
     ctx.translate(0, -pose * 3);
@@ -1619,7 +1631,7 @@ function drawCombatBodySprite(unit, image, state, walkCycle, idleCycle, deathPro
   applyCombatBodyMotion(unit, state, walkCycle, idleCycle, deathProgress, motionOptions);
 
   ctx.imageSmoothingEnabled = false;
-  if (unit.hitFlash > 0) ctx.filter = "brightness(2.5) saturate(0.3)";
+  if (unit.hitFlash > 0) ctx.filter = "sepia(0.18) saturate(1.22) brightness(1.04)";
   const isBoss = unit.type === "boss";
   const w = isBoss ? 48 : 36;
   const h = isBoss ? 57 : 43;
@@ -1667,7 +1679,7 @@ function drawActionSpriteFrame(unit, image, state, walkCycle, idleCycle, deathPr
   ctx.save();
   applyCombatBodyMotion(unit, state, walkCycle, idleCycle, deathProgress, motionOptions);
   ctx.imageSmoothingEnabled = false;
-  if (unit.hitFlash > 0) ctx.filter = "brightness(2.7) saturate(0.25)";
+  if (unit.hitFlash > 0) ctx.filter = "sepia(0.18) saturate(1.22) brightness(1.04)";
   ctx.drawImage(
     image,
     sourceX,
@@ -1705,7 +1717,7 @@ function drawUnit(unit) {
   if (!Number.isFinite(unit.motionY)) unit.motionY = 0;
   if (!Number.isFinite(unit.kickX)) unit.kickX = 0;
   if (!Number.isFinite(unit.kickY)) unit.kickY = 0;
-  if (!Number.isFinite(unit.scale) || unit.scale <= 0) unit.scale = unit.team === "ally" ? 0.915 : 0.84;
+  if (!Number.isFinite(unit.scale) || unit.scale <= 0) unit.scale = 1;
   if (!Number.isFinite(unit.facing) || unit.facing === 0) unit.facing = unit.team === "ally" ? -1 : 1;
   const walkCycle = Math.sin(runtime.elapsed * 15 + unit.x * 0.08);
   const idleCycle = Math.sin(runtime.elapsed * 3.2 + unit.x * 0.03);
@@ -1726,8 +1738,8 @@ function drawUnit(unit) {
   const deathMax = unit.type === "boss" ? 0.9 : 0.58;
   const deathProgress = unit.dead ? 1 - unit.deathTime / deathMax : 0;
   ctx.save();
-  const spriteX = unit.scale < 1 ? Math.round(unit.renderX * 2) / 2 : unit.renderX;
-  const spriteY = unit.scale < 1 ? Math.round((unit.renderY + bob) * 2) / 2 : unit.renderY + bob;
+  const spriteX = Math.round(unit.renderX);
+  const spriteY = Math.round(unit.renderY + bob);
   ctx.translate(spriteX, spriteY);
 
   ctx.globalAlpha = unit.dead ? 0.2 * (1 - deathProgress) : 0.38;
@@ -1841,14 +1853,6 @@ function drawUnit(unit) {
   // procedural fallback receives a separate equipment layer.
   if (!ATTACK_SPRITES_APPROVED && !spriteImage && !useAttackSprite && !useMoveSprite && !useAuthoredIdle) drawWeapon(unit);
 
-  if (unit.hitFlash > 0) {
-    ctx.globalAlpha = Math.min(0.92, unit.hitFlash * 5);
-    ctx.fillStyle = "#fff6dc";
-    drawPixelRect(-10, unit.type === "boss" ? -42 : -30, 3, 3, ctx.fillStyle);
-    drawPixelRect(7, unit.type === "boss" ? -30 : -22, 4, 2, ctx.fillStyle);
-    drawPixelRect(-4, unit.type === "boss" ? -18 : -13, 2, 4, ctx.fillStyle);
-    ctx.globalAlpha = 1;
-  }
   ctx.restore();
   if (actionTransform) ctx.restore();
   // Restore the unit-local translate/scale before drawing world-space bars.
@@ -1886,6 +1890,7 @@ preloadConfiguredAssets();
 function drawEffects({ groundOnly = false } = {}) {
   ctx.save();
   ctx.globalCompositeOperation = "screen";
+  ctx.imageSmoothingEnabled = false;
   for (const effect of runtime.effects) {
     const isGroundEffect = effect.type === "dust";
     if (groundOnly !== isGroundEffect) continue;
@@ -1895,9 +1900,17 @@ function drawEffects({ groundOnly = false } = {}) {
     const vfxImage = assetIndex === undefined ? null : ASSETS.get("assets/vfx/vfx-" + assetIndex + "-v1.webp");
     if (vfxImage) {
       ctx.save();
-      ctx.globalAlpha = alpha * (effect.type === "status" ? 0.72 : 0.9);
+      ctx.globalCompositeOperation = RESTRAINED_VFX_BLEND.has(effect.type) ? "source-over" : "screen";
+      const assetAlpha = effect.type === "impact" ? 0.4
+        : effect.type === "afterimage" ? 0.42
+          : effect.type === "dust" ? 0.5
+            : effect.type === "slash" ? 0.68
+              : effect.type === "status" ? 0.65
+                : 0.82;
+      ctx.globalAlpha = alpha * assetAlpha;
       ctx.translate(effect.x, effect.y);
       ctx.rotate(effect.angle || 0);
+      if (effect.type === "impact") ctx.filter = "sepia(0.52) saturate(1.55) brightness(0.9)";
       const vfxScale = Math.max(0.45, effect.scale || 1);
       ctx.drawImage(vfxImage, -32 * vfxScale, -32 * vfxScale, 64 * vfxScale, 64 * vfxScale);
       ctx.restore();
@@ -1938,7 +1951,7 @@ function drawEffects({ groundOnly = false } = {}) {
         ctx.rotate(Math.PI / 3);
         ctx.fillStyle = effect.color;
         ctx.fillRect(effect.radius * progress * 0.25, -2, effect.radius * (0.35 + progress * 0.4), Math.max(1, 4 * (1 - progress)));
-        ctx.fillStyle = "#fff";
+        ctx.fillStyle = "#ffe08a";
         ctx.fillRect(effect.radius * progress * 0.35, -1, effect.radius * (0.15 + progress * 0.2), Math.max(1, 2 * (1 - progress)));
       }
       ctx.restore();
@@ -1962,7 +1975,7 @@ function drawEffects({ groundOnly = false } = {}) {
       ctx.beginPath();
       ctx.arc(effect.x, effect.y, effect.radius * (0.28 + progress * 0.45), effect.angle - 1.2, effect.angle + 1.2);
       ctx.stroke();
-      ctx.strokeStyle = "#fffde8";
+      ctx.strokeStyle = "#ffd878";
       ctx.lineWidth = Math.max(1, 2.5 * (1 - progress));
       ctx.beginPath();
       ctx.arc(effect.x, effect.y, effect.radius * (0.42 + progress * 0.65), effect.angle - 1.0, effect.angle + 1.0);
@@ -2064,7 +2077,7 @@ function drawEffects({ groundOnly = false } = {}) {
       for (let i = 0; i < 6; i += 1) {
         const sparkAngle = (i * Math.PI / 3) + (effect.angle || 0);
         const sparkDist = effect.radius * progress;
-        ctx.fillStyle = i % 2 === 0 ? "#ffffff" : (effect.color || "#ffe57f");
+        ctx.fillStyle = i % 2 === 0 ? "#ffe29a" : (effect.color || "#ffe57f");
         ctx.fillRect(Math.cos(sparkAngle) * sparkDist - 1.5, Math.sin(sparkAngle) * sparkDist - 1.5, 3, 3);
       }
       ctx.restore();
@@ -2106,7 +2119,7 @@ function drawEffects({ groundOnly = false } = {}) {
     ctx.stroke();
 
     // Arrow head (pointy tip)
-    ctx.fillStyle = "#ffffff";
+    ctx.fillStyle = projectile.color || "#f0c66d";
     ctx.beginPath();
     ctx.moveTo(7, 0);
     ctx.lineTo(1, -3);

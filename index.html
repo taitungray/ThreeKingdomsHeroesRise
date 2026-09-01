@@ -248,7 +248,7 @@
     }());
     if ("serviceWorker" in navigator && location.protocol !== "file:" && !/[?&]bust=/.test(location.search)) {
       window.addEventListener("load", () => {
-        navigator.serviceWorker.register("sw.js?v=20260829a").catch(() => {});
+        navigator.serviceWorker.register("sw.js?v=20260902e").catch(() => {});
         navigator.serviceWorker.addEventListener("message", (event) => {
           if (event.data?.type !== "TK_SW_UPDATED") return;
           const key = "tk_sw_reloaded_" + (event.data.cache || "v7");

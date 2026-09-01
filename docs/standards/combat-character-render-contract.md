@@ -19,8 +19,8 @@
 | combat weapon | 64×64 WebP | manifest hand anchor | 握點與尖端方向必須資料化 |
 | mount | 48×32 WebP | 腳底／鞍座契約 | 騎乘時 body 與 mount 不互相穿透 |
 | Boss body | 64×76 WebP source 或核准 96px action cell | 腳底中心 | 不得只是普通敵人等比放大 |
-| attack sheet | 8 方向 × 5 階段；96px `v3` 基線或 128px `v4` 試製 WebP | 腳底中心 | 每格需有完整 body coverage、透明邊、可辨識臉／甲／武器與階段差異；64px 舊圖及灰綠／褐色矩形底塊不得進入核准路徑 |
-| move strip | 4 階段 × 1 列；96px `v3` 基線或 128px `v4` 試製 WebP | 腳底中心 | 剪影朝右；runtime 以 `unit.facing` 鏡像。左右腳交替、重心通過、首尾可循環；不得用整體跳動冒充跨步 |
+| attack sheet | 8 方向 × 5 階段；96px `v3` WebP | 腳底中心 | 每格需有完整 body coverage、乾淨 alpha 與頭頂安全距離（≥ 4px），輪廓只能使用素材既有的選擇性同色暗部，不得新增連續純黑貼紙框；臉／甲／武器與階段差異可辨，64px 舊圖及灰綠／褐色矩形底塊不得進入核准路徑 |
+| move strip | 4 階段 × 1 列；96px `v3` WebP | 腳底中心 | 剪影朝右；runtime 以 `unit.facing` 鏡像。左右腳交替、重心通過、首尾可循環；頭、腳、馬匹與兵器不得被 cell 裁切；不得用整體跳動冒充跨步。舊 v4 棋盤 matte 參考檔不得選用；第一章現行來源為通過 alpha gate 的 v4-clean 母圖 |
 
 實際 manifest 若改變尺寸或錨點，必須同步 renderer、產生器、測試與本契約，不能只改單一消費端。
 
@@ -41,7 +41,7 @@ ImageGen 提示、master sheet row／column、後處理、命名、alias 與重�
 | idle | action 為空、座標穩定 | 兵器握點、腳底與影子穩定，無常駐亂晃 |
 | move／entry | 到達 lane 前不攻擊，實際位移才推進 move frame | 朝向正確、左右腳交替、腳底接地，無滑行、整體彈跳或 body 拉伸 |
 | attack | 單一 action 驅動五階段 | body 與 weapon 各畫一次，接觸點與方向一致 |
-| hit | 傷害只 resolve 一次 | 短促可讀，不變成實心白塊或改變 anchor |
+| hit | 傷害只 resolve 一次 | 暖金短閃、後仰與命中火星短促可讀；保留角色色相，不變成純白剪影、脫離方點或改變 anchor |
 | death | 停止選目標與攻擊 | body、weapon、mount 依同一時間軸倒下／淡出 |
 | removed | 從 runtime 移除 | 不殘留屍體、影子、血條、VFX 或兵器 |
 
@@ -56,7 +56,7 @@ ImageGen 提示、master sheet row／column、後處理、命名、alias 與重�
 
 ## 驗收
 
-1. `npm run test:combat-assets` 通過尺寸、格式、alpha、cell coverage、cell 外緣髒色帶、manifest、攻擊階段／四幀步態差異指紋與 anchor 檢查。
+1. `npm run test:combat-assets` 通過尺寸、格式、alpha、cell coverage、cell 外緣髒色帶、亮白至中灰 halo、逐格頭頂安全距離、大型中性白連通塊、manifest、攻擊階段／四幀步態差異指紋與 anchor 檢查。
 2. source 與同步 `www` 的瀏覽器測試確認資產載入、draw call 與 transform 邊界。
 3. 依 [視覺驗收規範](../qa/visual-qa.md) 完成我方、普通敵人、Boss 的逐狀態矩陣。
 4. 任一錯圖、黑框、方塊、雙身體、漂浮兵器、穿模或死亡殘留即判 FAIL。

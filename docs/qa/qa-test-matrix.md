@@ -51,7 +51,7 @@
 | death | 停止攻擊與選目標 | 兵器跟隨／隱藏，無跳格或復活一 frame |
 | removed | 從 runtime 移除 | 屍體、影子、血條、VFX、兵器完全消失 |
 
-資產自動檢查至少涵蓋：96px v3 基線與 128px v4 試製尺寸、WebP、alpha、每個 cell 的有效像素範圍與外緣不透明色帶、move 每格單一 alpha component、manifest 路徑、重複 ID、五階段攻擊與四幀步態像素指紋差異、foot／hand anchor、產生器 flop set 必須為空（現行母圖已朝右），以及正常 runtime 路徑不得引用 portrait／半身 combat body。指紋、component 與外緣門檻只能防止重複站姿、跨角色碎片及大面積髒底回歸，不能代替細節可讀性、動作品質、腳底接地與握點視覺證據。皮膚／質量朝向啟發式不可作為 flop 依據。
+資產自動檢查至少涵蓋：96px v3 基線與舊 128px v4 試製尺寸、第一章 v4-clean 母圖真 alpha、WebP、每個 cell 的有效像素範圍與外緣不透明色帶、move 每格單一 alpha component、manifest 路徑、重複 ID、五階段攻擊與四幀步態像素指紋差異、foot／hand anchor、產生器 flop set 必須為空（現行母圖已朝右），以及正常 runtime 路徑不得引用 portrait／半身 combat body。指紋、component 與外緣門檻只能防止重複站姿、跨角色碎片及大面積髒底回歸，不能代替細節可讀性、動作品質、腳底接地與握點視覺證據。皮膚／質量朝向啟發式不可作為 flop 依據。
 
 ## 4. UI、輸入與響應式
 

@@ -7,12 +7,24 @@ const sharp = require("sharp");
 
 const root = path.resolve(__dirname, "..");
 const characterDir = path.join(root, "assets", "characters");
-const masterPath = path.join(characterDir, "core-heroes-action-master-v3.webp");
+const legacyMasterPath = path.join(characterDir, "core-heroes-action-master-v3.webp");
+const masterPath = fs.existsSync(path.join(characterDir, "core-heroes-action-master-v4-clean.webp"))
+  ? path.join(characterDir, "core-heroes-action-master-v4-clean.webp")
+  : legacyMasterPath;
 const supportMasterPath = path.join(characterDir, "support-heroes-action-master-v3.webp");
-const enemyMasterPath = path.join(characterDir, "chapter1-enemies-action-master-v3.webp");
-const coreMoveMasterPath = path.join(characterDir, "core-heroes-move-master-v3.webp");
+const legacyEnemyMasterPath = path.join(characterDir, "chapter1-enemies-action-master-v3.webp");
+const enemyMasterPath = fs.existsSync(path.join(characterDir, "chapter1-enemies-action-master-v4-clean.webp"))
+  ? path.join(characterDir, "chapter1-enemies-action-master-v4-clean.webp")
+  : legacyEnemyMasterPath;
+const legacyCoreMoveMasterPath = path.join(characterDir, "core-heroes-move-master-v3.webp");
+const coreMoveMasterPath = fs.existsSync(path.join(characterDir, "core-heroes-move-master-v4-clean.webp"))
+  ? path.join(characterDir, "core-heroes-move-master-v4-clean.webp")
+  : legacyCoreMoveMasterPath;
 const supportMoveMasterPath = path.join(characterDir, "support-heroes-move-master-v3.webp");
-const enemyMoveMasterPath = path.join(characterDir, "chapter1-enemies-move-master-v3.webp");
+const legacyEnemyMoveMasterPath = path.join(characterDir, "chapter1-enemies-move-master-v3.webp");
+const enemyMoveMasterPath = fs.existsSync(path.join(characterDir, "chapter1-enemies-move-master-v4-clean.webp"))
+  ? path.join(characterDir, "chapter1-enemies-move-master-v4-clean.webp")
+  : legacyEnemyMoveMasterPath;
 const manifestPath = path.join(characterDir, "attack-manifest.json");
 const moveManifestPath = path.join(characterDir, "move-manifest.json");
 const cellSize = 96;
@@ -37,6 +49,10 @@ const enemyRows = new Map([
   ["boss-zhangjiao", 3],
   ["boss-dongzhuo", 4]
 ]);
+
+function assetPath(filePath) {
+  return path.relative(root, filePath).replaceAll(path.sep, "/");
+}
 
 function isBackgroundCandidate(r, g, b, alpha, minimum = 180, tolerance = 55) {
   if (alpha <= 10) return true;
@@ -86,6 +102,58 @@ function removeConnectedCheckerboard(data, width, height, minimum = 180, toleran
     data[index * 4 + 3] = visited[index] ? 0 : 255;
   }
 
+  // Clear enclosed neutral background holes (e.g. inside bow strings, between legs, under arms)
+  const holeVisited = new Uint8Array(width * height);
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const idx = y * width + x;
+      if (visited[idx] || holeVisited[idx]) continue;
+      const off = idx * 4;
+      const r = data[off];
+      const g = data[off + 1];
+      const b = data[off + 2];
+      const high = Math.max(r, g, b);
+      const low = Math.min(r, g, b);
+      const isNeutralWhite = (high >= 215 && high - low <= 25);
+      const isChromaMagenta = (r >= 200 && b >= 180 && g <= 80 && r - g >= 120 && b - g >= 100);
+      if (!isNeutralWhite && !isChromaMagenta) continue;
+
+      const holeQueue = [idx];
+      holeVisited[idx] = 1;
+      const component = [idx];
+      let hHead = 0;
+      while (hHead < holeQueue.length) {
+        const cIdx = holeQueue[hHead++];
+        const cx = cIdx % width;
+        const cy = Math.floor(cIdx / width);
+        for (const [dx, dy] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) {
+          const nx = cx + dx;
+          const ny = cy + dy;
+          if (nx < 0 || ny < 0 || nx >= width || ny >= height) continue;
+          const nIdx = ny * width + nx;
+          if (visited[nIdx] || holeVisited[nIdx]) continue;
+          const nOff = nIdx * 4;
+          const nr = data[nOff];
+          const ng = data[nOff + 1];
+          const nb = data[nOff + 2];
+          const nHigh = Math.max(nr, ng, nb);
+          const nLow = Math.min(nr, ng, nb);
+          if ((nHigh >= 215 && nHigh - nLow <= 25) || (nr >= 200 && nb >= 180 && ng <= 80 && nr - ng >= 120 && nb - ng >= 100)) {
+            holeVisited[nIdx] = 1;
+            holeQueue.push(nIdx);
+            component.push(nIdx);
+          }
+        }
+      }
+      if (component.length >= 6) {
+        for (const cIdx of component) {
+          visited[cIdx] = 1;
+          data[cIdx * 4 + 3] = 0;
+        }
+      }
+    }
+  }
+
   // Remove the pale antialias fringe / white halo adjacent to alpha (3 passes)
   for (let pass = 0; pass < 3; pass += 1) {
     const remove = [];
@@ -96,7 +164,9 @@ function removeConnectedCheckerboard(data, width, height, minimum = 180, toleran
         if (data[offset + 3] === 0) continue;
         const high = Math.max(data[offset], data[offset + 1], data[offset + 2]);
         const low = Math.min(data[offset], data[offset + 1], data[offset + 2]);
-        const isPale = (high >= 190 && high - low <= 38) || (high >= 225 && high - low <= 50);
+        const isPale = (high >= 170 && high - low <= 28)
+          || (high >= 190 && high - low <= 42)
+          || (high >= 220 && high - low <= 55);
         if (!isPale) continue;
         const touchesAlpha = (x === 0 || x === width - 1 || y === 0 || y === height - 1)
           || data[offset - 4 + 3] === 0
@@ -201,6 +271,42 @@ async function removeSmallAlphaIslands(pngBuffer, minimumPixels = 96, keepLarges
   return sharp(data, { raw: info }).png().toBuffer();
 }
 
+async function toneNeutralBoundaryPixels(pngBuffer) {
+  const { data, info } = await sharp(pngBuffer).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+  const source = Buffer.from(data);
+  for (let y = 0; y < info.height; y += 1) {
+    for (let x = 0; x < info.width; x += 1) {
+      const offset = (y * info.width + x) * 4;
+      if (source[offset + 3] <= 10) continue;
+      let touchesAlpha = false;
+      for (let dy = -1; dy <= 1 && !touchesAlpha; dy += 1) {
+        for (let dx = -1; dx <= 1; dx += 1) {
+          if (!dx && !dy) continue;
+          const nx = x + dx;
+          const ny = y + dy;
+          if (nx < 0 || ny < 0 || nx >= info.width || ny >= info.height
+            || source[(ny * info.width + nx) * 4 + 3] <= 10) {
+            touchesAlpha = true;
+            break;
+          }
+        }
+      }
+      if (!touchesAlpha) continue;
+      const high = Math.max(source[offset], source[offset + 1], source[offset + 2]);
+      const low = Math.min(source[offset], source[offset + 1], source[offset + 2]);
+      if (high < 72 || high - low > 112) continue;
+      // Suppress neutral matte without adding a sticker-like black contour.
+      // Preserve the source hue and cap only its outermost lightness: silver
+      // becomes restrained grey, while saturated gold/red edges stay intact.
+      const factor = Math.min(0.82, 112 / high);
+      data[offset] = Math.round(source[offset] * factor);
+      data[offset + 1] = Math.round(source[offset + 1] * factor);
+      data[offset + 2] = Math.round(source[offset + 2] * factor);
+    }
+  }
+  return sharp(data, { raw: info }).png().toBuffer();
+}
+
 async function authoredFrameBuffers(sourcePath, heroRows, rowCount = 4, backgroundMinimum = 180, columnCount = 5, flopIds = new Set()) {
   assert.ok(fs.existsSync(sourcePath), `missing generated action master: ${path.basename(sourcePath)}`);
   const master = sharp(sourcePath).ensureAlpha();
@@ -234,10 +340,17 @@ async function authoredFrameBuffers(sourcePath, heroRows, rowCount = 4, backgrou
       }
       let framePipeline = sharp(data, { raw: info })
         .trim({ background: { r: 0, g: 0, b: 0, alpha: 0 } })
-        .resize(cellSize - 4, cellSize - 4, {
+        .resize(cellSize - 8, cellSize - 8, {
           fit: "contain",
           position: "bottom",
           kernel: sharp.kernel.nearest,
+          background: { r: 0, g: 0, b: 0, alpha: 0 }
+        })
+        .extend({
+          top: 6,
+          bottom: 2,
+          left: 4,
+          right: 4,
           background: { r: 0, g: 0, b: 0, alpha: 0 }
         });
       // Current v3 masters already face RIGHT. Never flop a row to satisfy a
@@ -246,7 +359,8 @@ async function authoredFrameBuffers(sourcePath, heroRows, rowCount = 4, backgrou
       const frame = await framePipeline.png().toBuffer();
       // A four-frame gait must contain one connected body/weapon silhouette;
       // detached pixels are usually a neighboring cell's weapon fragment or stray speck.
-      frames.push(await removeSmallAlphaIslands(frame, 40, columnCount === 4));
+      const isolated = await removeSmallAlphaIslands(frame, 40, columnCount === 4);
+      frames.push(await toneNeutralBoundaryPixels(isolated));
     }
     result.set(heroId, frames);
   }
@@ -294,9 +408,10 @@ async function fallbackFrames(asset) {
 }
 
 async function normalizedCoreFrames(frames) {
-  return Promise.all(frames.map((frame) => sharp({
-    create: { width: cellSize, height: cellSize, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } }
-  }).composite([{ input: frame, left: 2, top: 3 }]).png().toBuffer()));
+  // Frames are already normalized to the complete 96px cell. The previous
+  // +2/+3 composite translation silently cropped the right and bottom edges,
+  // including weapons, feet and some motion poses.
+  return frames;
 }
 
 async function safeWriteFile(filePath, buffer, maxRetries = 5) {
@@ -386,9 +501,9 @@ async function main() {
   manifest.version = 5;
   manifest.detailCellSize = cellSize;
   manifest.source = {
-    core: "assets/characters/core-heroes-action-master-v3.webp",
+    core: assetPath(masterPath),
     support: "assets/characters/support-heroes-action-master-v3.webp",
-    chapter1Enemies: "assets/characters/chapter1-enemies-action-master-v3.webp",
+    chapter1Enemies: assetPath(enemyMasterPath),
     authoredHeroes: [...coreRows.keys(), ...supportRows.keys(), ...NAMED_UNIQUE_HEROES],
     authoredEnemies: [...enemyRows.keys(), "archer", "strategist"],
     fallback: "full-body authored visual archetype; portrait-card combat art is forbidden"
@@ -518,10 +633,11 @@ async function main() {
 
   manifest.version = 6;
   manifest.detailCellSize = cellSize;
+  delete manifest.ultraDetailCellSize;
   manifest.source = {
-    core: "assets/characters/core-heroes-action-master-v3.webp",
+    core: assetPath(masterPath),
     support: "assets/characters/support-heroes-action-master-v3.webp",
-    chapter1Enemies: "assets/characters/chapter1-enemies-action-master-v3.webp",
+    chapter1Enemies: assetPath(enemyMasterPath),
     authoredHeroes: [...coreRows.keys(), ...supportRows.keys(), ...NAMED_UNIQUE_HEROES],
     authoredEnemies: [...enemyRows.keys(), "archer", "strategist"],
     allHeroesCount: gameData.heroes.length,
@@ -542,9 +658,9 @@ async function main() {
     anchor: "foot-center",
     rendering: { interpolation: "nearest", loop: true },
     sources: {
-      core: "assets/characters/core-heroes-move-master-v3.webp",
+      core: assetPath(coreMoveMasterPath),
       support: "assets/characters/support-heroes-move-master-v3.webp",
-      chapter1Enemies: "assets/characters/chapter1-enemies-move-master-v3.webp"
+      chapter1Enemies: assetPath(enemyMoveMasterPath)
     },
     assets: updatedMoveAssets
   };

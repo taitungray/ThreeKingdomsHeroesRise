@@ -21,6 +21,9 @@ async function alphaMetrics(file, cellSize = null) {
   }
   const cells = [];
   const edgeCells = [];
+  const paleEdgeCells = [];
+  const neutralBlockCells = [];
+  const topMarginCells = [];
   if (cellSize) {
     assert.equal(info.width % cellSize, 0, `${path.basename(file)} width must align to cell size`);
     assert.equal(info.height % cellSize, 0, `${path.basename(file)} height must align to cell size`);
@@ -28,21 +31,97 @@ async function alphaMetrics(file, cellSize = null) {
       for (let left = 0; left < info.width; left += cellSize) {
         let cellOpaque = 0;
         let edgeOpaque = 0;
+        let paleEdge = 0;
+        let firstOpaqueRow = cellSize;
+        const neutralMask = new Uint8Array(cellSize * cellSize);
         for (let y = top; y < top + cellSize; y += 1) {
           for (let x = left; x < left + cellSize; x += 1) {
             if (alphaAt(x, y) <= 10) continue;
             cellOpaque += 1;
             const localX = x - left;
             const localY = y - top;
-            if (localX < 3 || localX >= cellSize - 3 || localY < 3 || localY >= cellSize - 3) edgeOpaque += 1;
+            firstOpaqueRow = Math.min(firstOpaqueRow, localY);
+            // Feet and ground-contact ink may intentionally use the bottom
+            // row. Only the top and side gutters indicate a cropped head or
+            // cross-cell leak.
+            if (localX === 0 || localX === cellSize - 1 || localY === 0) edgeOpaque += 1;
+            const offset = (y * info.width + x) * 4;
+            const high = Math.max(data[offset], data[offset + 1], data[offset + 2]);
+            const low = Math.min(data[offset], data[offset + 1], data[offset + 2]);
+            let touchesAlpha = false;
+            for (let dy = -1; dy <= 1 && !touchesAlpha; dy += 1) {
+              for (let dx = -1; dx <= 1; dx += 1) {
+                if (!dx && !dy) continue;
+                const nx = localX + dx;
+                const ny = localY + dy;
+                if (nx < 0 || ny < 0 || nx >= cellSize || ny >= cellSize
+                  || alphaAt(left + nx, top + ny) <= 10) {
+                  touchesAlpha = true;
+                  break;
+                }
+              }
+            }
+            if (touchesAlpha && high >= 145 && high - low <= 112) paleEdge += 1;
+            if (high >= 235 && low >= 225 && high - low <= 25) {
+              neutralMask[localY * cellSize + localX] = 1;
+            }
           }
+        }
+        const neutralVisited = new Uint8Array(neutralMask.length);
+        const queue = new Int32Array(neutralMask.length);
+        let largestNeutralBlock = 0;
+        for (let start = 0; start < neutralMask.length; start += 1) {
+          if (!neutralMask[start] || neutralVisited[start]) continue;
+          let head = 0;
+          let tail = 0;
+          let componentSize = 0;
+          queue[tail++] = start;
+          neutralVisited[start] = 1;
+          while (head < tail) {
+            const index = queue[head++];
+            componentSize += 1;
+            const x = index % cellSize;
+            const y = Math.floor(index / cellSize);
+            for (let dy = -1; dy <= 1; dy += 1) {
+              for (let dx = -1; dx <= 1; dx += 1) {
+                if (!dx && !dy) continue;
+                const nx = x + dx;
+                const ny = y + dy;
+                if (nx < 0 || ny < 0 || nx >= cellSize || ny >= cellSize) continue;
+                const next = ny * cellSize + nx;
+                if (!neutralMask[next] || neutralVisited[next]) continue;
+                neutralVisited[next] = 1;
+                queue[tail++] = next;
+              }
+            }
+          }
+          largestNeutralBlock = Math.max(largestNeutralBlock, componentSize);
         }
         cells.push(cellOpaque / (cellSize * cellSize));
         edgeCells.push(edgeOpaque);
+        paleEdgeCells.push(paleEdge);
+        neutralBlockCells.push(largestNeutralBlock);
+        topMarginCells.push(firstOpaqueRow);
       }
     }
   }
-  return { width: info.width, height: info.height, opaqueRatio: opaque / (info.width * info.height), cells, edgeCells };
+  return {
+    width: info.width,
+    height: info.height,
+    opaqueRatio: opaque / (info.width * info.height),
+    cells,
+    edgeCells,
+    paleEdgeCells,
+    neutralBlockCells,
+    topMarginCells
+  };
+}
+
+async function assertMasterAlpha(relativePath) {
+  const file = path.join(root, relativePath);
+  assert.ok(fs.existsSync(file), `missing master source: ${relativePath}`);
+  const metadata = await sharp(file).metadata();
+  assert.equal(metadata.hasAlpha, true, `${relativePath} must preserve true alpha after remaster import`);
 }
 
 async function phaseSignatures(file, cellSize) {
@@ -156,13 +235,15 @@ async function assertMoveFacingRight(file, cellSize, id, archetype) {
 
 async function runCombatAssetChecks() {
   const attackManifest = JSON.parse(fs.readFileSync(path.join(characterRoot, "attack-manifest.json"), "utf8"));
-  assert.equal(attackManifest.version, 6, "runtime expects the v4 pilot attack manifest");
+  assert.equal(attackManifest.version, 6, "runtime expects the current high-detail attack manifest");
   assert.equal(attackManifest.cellSize, 64, "attack cell size must remain 64px");
   assert.equal(attackManifest.detailCellSize, 96, "high-detail attack cells must remain 96px");
-  assert.equal(attackManifest.ultraDetailCellSize, 128, "v4 pilot attack cells must use 128px");
+  assert.equal(attackManifest.ultraDetailCellSize, undefined, "inactive v4 pilot metadata must not remain in the runtime attack manifest");
   assert.equal(attackManifest.columns, 8, "attack sheets must contain eight directions");
   assert.equal(attackManifest.rows, 5, "attack sheets must contain five action frames");
   assert.equal(new Set(attackManifest.assets.map((asset) => asset.id)).size, attackManifest.assets.length, "attack asset ids must be unique");
+  await assertMasterAlpha(attackManifest.source.core);
+  await assertMasterAlpha(attackManifest.source.chapter1Enemies);
 
   const sparseCells = [];
   for (const asset of attackManifest.assets) {
@@ -192,35 +273,26 @@ async function runCombatAssetChecks() {
       assert.ok(ratio > 0.04, `${asset.id} high-detail cell ${index} is too sparse`);
       assert.ok(ratio < 0.7, `${asset.id} high-detail cell ${index} may contain a rectangular background`);
       assert.ok(metrics.edgeCells[index] < 110, `${asset.id} high-detail cell ${index} has opaque edge bands or dirty background blocks`);
+      assert.ok(metrics.paleEdgeCells[index] < 8, `${asset.id} high-detail cell ${index} has a light or grey alpha-edge halo`);
+      assert.ok(metrics.neutralBlockCells[index] < 96, `${asset.id} high-detail cell ${index} has an opaque neutral-white background block`);
+      assert.ok(metrics.topMarginCells[index] >= 4, `${asset.id} high-detail cell ${index} has insufficient headroom and may crop the head`);
     });
     const signatures = await phaseSignatures(file, attackManifest.detailCellSize);
     assert.ok(new Set(signatures).size >= 3, `${asset.id} high-detail sheet needs distinct attack phases`);
   }
 
   const ultraDetailAssets = attackManifest.assets.filter((asset) => asset.ultraDetailPath);
-  assert.deepEqual(ultraDetailAssets.map((asset) => asset.id), ["liubei", "guanyu", "zhangfei", "zhaoyun"], "v4 pilot roster must stay limited to the first four battle heroes");
-  for (const asset of ultraDetailAssets) {
-    assert.match(asset.ultraDetailPath, /-v4\.webp$/, `${asset.id} must use a v4 ultra-detail action sheet`);
-    const file = path.join(root, asset.ultraDetailPath);
-    assert.ok(fs.existsSync(file), `missing v4 pilot attack asset: ${asset.ultraDetailPath}`);
-    const metrics = await alphaMetrics(file, attackManifest.ultraDetailCellSize);
-    assert.deepEqual([metrics.width, metrics.height], [1024, 640], `${asset.id} v4 attack dimensions are invalid`);
-    metrics.cells.forEach((ratio, index) => {
-      assert.ok(ratio > 0.12, `${asset.id} v4 attack cell ${index} is too sparse`);
-      assert.ok(ratio < 0.48, `${asset.id} v4 attack cell ${index} may contain a rectangular background`);
-      assert.ok(metrics.edgeCells[index] < 96, `${asset.id} v4 attack cell ${index} has opaque edge bands or dirty background blocks`);
-    });
-    const signatures = await phaseSignatures(file, attackManifest.ultraDetailCellSize);
-    assert.ok(new Set(signatures).size >= 4, `${asset.id} v4 attack sheet needs four or more distinct action phases`);
-  }
+  assert.deepEqual(ultraDetailAssets, [], "baked-checker v4 references must stay out of the runtime attack manifest");
 
   const moveManifest = JSON.parse(fs.readFileSync(path.join(characterRoot, "move-manifest.json"), "utf8"));
-  assert.equal(moveManifest.version, 3, "runtime expects the v4 pilot move manifest");
+  assert.equal(moveManifest.version, 3, "runtime expects the current high-detail move manifest");
   assert.equal(moveManifest.cellSize, 96, "high-detail move cells must remain 96px");
-  assert.equal(moveManifest.ultraDetailCellSize, 128, "v4 pilot move cells must use 128px");
+  assert.equal(moveManifest.ultraDetailCellSize, undefined, "inactive v4 pilot metadata must not remain in the runtime move manifest");
   assert.equal(moveManifest.columns, 4, "move strips must contain four grounded gait frames");
   assert.equal(moveManifest.assets.length, 59, "high-detail move roster must cover 50 heroes, five enemy types and four bosses");
   assert.equal(new Set(moveManifest.assets.map((asset) => asset.id)).size, moveManifest.assets.length, "move asset ids must be unique");
+  await assertMasterAlpha(moveManifest.sources.core);
+  await assertMasterAlpha(moveManifest.sources.chapter1Enemies);
   for (const asset of moveManifest.assets) {
     assert.match(asset.path, /-v3\.webp$/, `${asset.id} must use a v3 move strip`);
     const file = path.join(root, asset.path);
@@ -230,6 +302,9 @@ async function runCombatAssetChecks() {
     metrics.cells.forEach((ratio, index) => {
       assert.ok(ratio > 0.035, `${asset.id} move frame ${index} is too sparse`);
       assert.ok(ratio < 0.7, `${asset.id} move frame ${index} may contain a rectangular background`);
+      assert.ok(metrics.paleEdgeCells[index] < 8, `${asset.id} move frame ${index} has a light or grey alpha-edge halo`);
+      assert.ok(metrics.neutralBlockCells[index] < 96, `${asset.id} move frame ${index} has an opaque neutral-white background block`);
+      assert.ok(metrics.topMarginCells[index] >= 4, `${asset.id} move frame ${index} has insufficient headroom and may crop the head`);
     });
     const signatures = await stripFrameSignatures(file, moveManifest.cellSize, moveManifest.columns);
     assert.equal(new Set(signatures).size, 4, `${asset.id} must contain four distinct gait poses`);
@@ -237,30 +312,23 @@ async function runCombatAssetChecks() {
   }
 
   const ultraDetailMoves = moveManifest.assets.filter((asset) => asset.ultraDetailPath);
-  assert.deepEqual(ultraDetailMoves.map((asset) => asset.id), ["liubei", "guanyu", "zhangfei", "zhaoyun"], "v4 move pilot roster must match the first four battle heroes");
-  for (const asset of ultraDetailMoves) {
-    assert.match(asset.ultraDetailPath, /-v4\.webp$/, `${asset.id} must use a v4 ultra-detail move strip`);
-    const file = path.join(root, asset.ultraDetailPath);
-    assert.ok(fs.existsSync(file), `missing v4 pilot move asset: ${asset.ultraDetailPath}`);
-    const metrics = await alphaMetrics(file, moveManifest.ultraDetailCellSize);
-    assert.deepEqual([metrics.width, metrics.height], [512, 128], `${asset.id} v4 move dimensions are invalid`);
-    metrics.cells.forEach((ratio, index) => {
-      assert.ok(ratio > 0.2 && ratio < 0.48, `${asset.id} v4 move frame ${index} has suspicious alpha coverage`);
-      assert.ok(metrics.edgeCells[index] < 96, `${asset.id} v4 move frame ${index} has opaque edge bands or dirty background blocks`);
-    });
-    const signatures = await stripFrameSignatures(file, moveManifest.ultraDetailCellSize, moveManifest.columns);
-    assert.equal(new Set(signatures).size, 4, `${asset.id} v4 move strip must contain four distinct gait poses`);
-    const componentCounts = await alphaComponentCounts(file, moveManifest.ultraDetailCellSize, moveManifest.columns);
-    assert.ok(componentCounts.every((count) => count === 1), `${asset.id} v4 move strip must not contain detached cross-cell weapon fragments: ${componentCounts.join(",")}`);
-    await assertMoveFacingRight(file, moveManifest.ultraDetailCellSize, `${asset.id} v4`, asset.archetype);
-  }
+  assert.deepEqual(ultraDetailMoves, [], "baked-checker v4 references must stay out of the runtime move manifest");
 
   const v4PilotSource = fs.readFileSync(path.join(root, "scripts", "generate-combat-actions-v4-pilot.js"), "utf8");
+  assert.ok(
+    !/fs\.writeFileSync\((?:attack|move)ManifestPath/.test(v4PilotSource)
+      && !/\.ultraDetailPath\s*=/.test(v4PilotSource),
+    "v4 research generator must not write reference assets back into runtime manifests"
+  );
   assert.ok(
     /extractFrames\(moveMasterPath, 4, new Set\(\)\)/.test(v4PilotSource),
     "v4 move masters already face RIGHT; flopping any row makes combat moonwalk"
   );
   const v3GenSource = fs.readFileSync(path.join(root, "scripts", "generate-combat-actions-v3.js"), "utf8");
+  assert.ok(
+    /toneNeutralBoundaryPixels\(isolated\)/.test(v3GenSource),
+    "v3 generator must tone light and grey mattes without adding an exterior black outline"
+  );
   assert.ok(
     /authoredFrameBuffers\(coreMoveMasterPath, coreRows, 4, 180, 4, new Set\(\)\)/.test(v3GenSource)
       && /authoredFrameBuffers\(supportMoveMasterPath, supportRows, 4, 180, 4, new Set\(\)\)/.test(v3GenSource)
@@ -301,21 +369,24 @@ async function runCombatAssetChecks() {
 
   // Runtime AUTHORED_ACTION_SPRITES must resolve to real on-disk sheets (no invisible bosses).
   const renderSource = fs.readFileSync(path.join(root, "js", "game", "game-render.js"), "utf8");
+  assert.ok(
+    renderSource.includes("const ULTRA_DETAIL_ACTION_SPRITES = new Set();"),
+    "runtime must keep the baked-checker v4 reference sheets disabled"
+  );
   const authoredMatch = renderSource.match(/AUTHORED_ACTION_SPRITES = new Set\(\[([\s\S]*?)\]\)/);
   assert.ok(authoredMatch, "AUTHORED_ACTION_SPRITES declaration missing");
   const authoredIds = [...authoredMatch[1].matchAll(/"([^"]+)"/g)].map((match) => match[1]);
   assert.ok(authoredIds.length >= 59, "authored combat roster unexpectedly small");
   for (const id of authoredIds) {
-    const ultra = ["liubei", "guanyu", "zhangfei", "zhaoyun"].includes(id);
-    const attackName = `attack-${id}-${ultra ? "v4" : "v3"}.webp`;
-    const moveName = `move-${id}-${ultra ? "v4" : "v3"}.webp`;
+    const attackName = `attack-${id}-v3.webp`;
+    const moveName = `move-${id}-v3.webp`;
     assert.ok(fs.existsSync(path.join(characterRoot, attackName)), `AUTHORED id ${id} missing ${attackName}`);
     assert.ok(fs.existsSync(path.join(characterRoot, moveName)), `AUTHORED id ${id} missing ${moveName}`);
   }
   assert.ok(renderSource.includes("BOSS_ACTION_SPRITE_BY_GENERAL"), "boss generals must map to existing action sheets");
   assert.ok(!/"boss-yuanshao"|"boss-zhurong"|"boss-simayi"/.test(authoredMatch[1]), "missing boss sheets must not stay in AUTHORED_ACTION_SPRITES");
 
-  console.log(`Combat asset check passed: ${attackManifest.assets.length} legacy attack sheets, ${detailAssets.length} high-detail attack sheets, ${ultraDetailAssets.length} ultra-detail v4 pilots, ${moveManifest.assets.length} high-detail move strips and ${weaponManifest.assets.length} weapons.`);
+  console.log(`Combat asset check passed: ${attackManifest.assets.length} legacy attack sheets, ${detailAssets.length} active high-detail attack sheets, no v4 runtime references, ${moveManifest.assets.length} active high-detail move strips and ${weaponManifest.assets.length} weapons.`);
 }
 
 if (require.main === module) {

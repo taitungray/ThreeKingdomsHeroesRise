@@ -1,10 +1,11 @@
 /* Combat: units, waves, damage, skills and progression */
 "use strict";
 
-// Battlefield sprite scale: scaled down 25% for balanced battlefield spacing.
-const ALLY_UNIT_SCALE = 0.915;
-const ENEMY_UNIT_SCALE = 0.84;
-const BOSS_UNIT_SCALE = 1.26;
+// Sprite sheets are drawn into integer destination boxes. Keep the outer
+// transform at 1 so nearest-neighbour pixels are not resampled a second time.
+const ALLY_UNIT_SCALE = 1;
+const ENEMY_UNIT_SCALE = 1;
+const BOSS_UNIT_SCALE = 1;
 const ENEMY_SPAWN_Y = 175;
 const BOSS_SPAWN_Y = 205;
 
@@ -448,7 +449,7 @@ function makeEnemy(index, boss = false) {
     deathTime: 0,
     deathSpin: 0,
     dead: false,
-    scale: boss ? BOSS_UNIT_SCALE : ENEMY_UNIT_SCALE + Math.random() * 0.06,
+    scale: boss ? BOSS_UNIT_SCALE : ENEMY_UNIT_SCALE,
     color: boss ? "#6f2b26" : profile.color,
     accent: boss ? "#d29f3a" : "#b34935",
     role: boss ? "步兵" : profile.role

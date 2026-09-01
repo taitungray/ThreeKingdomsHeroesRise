@@ -151,6 +151,11 @@ async function main() {
     }
 
     const first = await page.evaluate(() => window.TaoyuanBattle.peek());
+    const battleScreenshotPath = process.env.COMBAT_QA_BATTLE_SCREENSHOT || "";
+    if (battleScreenshotPath) {
+      fs.mkdirSync(path.dirname(battleScreenshotPath), { recursive: true });
+      await page.screenshot({ path: battleScreenshotPath, fullPage: true });
+    }
     await page.evaluate(() => document.querySelector('[data-panel="settings"]')?.click());
     await page.waitForTimeout(200);
     const panelBefore = await page.evaluate(() => ({
@@ -171,7 +176,7 @@ async function main() {
     const kicked = await page.evaluate(() => window.TaoyuanBattle.kick());
     await page.waitForTimeout(1500);
     let third = await page.evaluate(() => window.TaoyuanBattle.peek());
-    if (third.spawning && third.enemies === 0) {
+    if (third.spawning && third.enemies === 0 && !third.overlays?.settlement) {
       await page.waitForFunction(() => {
         const state = window.TaoyuanBattle?.peek?.();
         return state && (!state.spawning || state.enemies > 0);
@@ -195,7 +200,7 @@ async function main() {
     })));
     const assetState = await page.evaluate(() => {
       const heroes = (window.THREE_KINGDOMS_DATA?.heroes || []).slice(0, 4).map((hero) => {
-        const path = "assets/characters/attack-" + hero.id + "-v4.webp";
+        const path = "assets/characters/attack-" + hero.id + "-v3.webp";
         const image = window.TaoyuanAssets?.cache?.get(path);
         return { id: hero.id, path, loaded: Boolean(image?.complete && image?.naturalWidth), width: image?.naturalWidth || 0, height: image?.naturalHeight || 0 };
       });
@@ -211,15 +216,17 @@ async function main() {
     }
 
     await browser.close();
-    console.log(JSON.stringify({ target: serveBuiltOutput ? "www" : "source", browserExecutable: browserExecutable || "playwright-bundled", screenshotPath: screenshotPath || null, uiState, assetState, drawStats, panelBefore, panelAfter, bossPeek, first, second, kicked, third, moved, pageErrors: pageErrors.slice(0, 12), localRequestFailures, externalRequestFailures }, null, 2));
+    console.log(JSON.stringify({ target: serveBuiltOutput ? "www" : "source", browserExecutable: browserExecutable || "playwright-bundled", battleScreenshotPath: battleScreenshotPath || null, screenshotPath: screenshotPath || null, uiState, assetState, drawStats, panelBefore, panelAfter, bossPeek, first, second, kicked, third, moved, pageErrors: pageErrors.slice(0, 12), localRequestFailures, externalRequestFailures }, null, 2));
 
     if (!moved) throw new Error("units/elapsed did not change — AI freeze confirmed in browser");
-    if (third.spawning && third.enemies === 0) throw new Error("spawning remained stuck with no enemies beyond the allowed transition window");
+    if (third.spawning && third.enemies === 0 && !third.overlays?.settlement) {
+      throw new Error("spawning remained stuck with no enemies beyond the allowed transition window");
+    }
     if (!drawStats) throw new Error("combat draw instrumentation was unavailable");
     if ((drawStats.body || 0) > 0) throw new Error("legacy portrait/body art entered the approved high-detail Canvas path");
     if ((drawStats.move || 0) < 1) throw new Error("four-frame movement strips loaded but were never drawn to the Canvas");
     if ((drawStats.action || 0) < 1) throw new Error("five-phase action sheets loaded but were never drawn to the Canvas");
-    if (!assetState.heroes.every((hero) => hero.loaded && hero.width === 1024 && hero.height === 640)) {
+    if (!assetState.heroes.every((hero) => hero.loaded && hero.width === 768 && hero.height === 480)) {
       throw new Error("starting high-detail hero sheets were not fully loaded: " + JSON.stringify(assetState.heroes));
     }
     if (!panelBefore || panelBefore.hidden) throw new Error("QA could not open a command panel before stage transition");
@@ -237,8 +244,11 @@ async function main() {
       return Math.max(Math.abs(a), Math.abs(b), Math.abs(c), Math.abs(d)) > 3.5 || e < -100 || e > 490 || f < -150 || f > 800;
     });
     if (escapedDraws.length) throw new Error("combat draw transforms escaped the Canvas; save/restore may be unbalanced: " + JSON.stringify(escapedDraws));
-    for (const id of ["loadingScreen", "authScreen", "tutorialLayer", "panelBackdrop", "settlementModal", "offlineModal"]) {
+    for (const id of ["loadingScreen", "authScreen", "tutorialLayer", "panelBackdrop", "offlineModal"]) {
       if (uiState[id] && uiState[id].display !== "none") throw new Error(`${id} still blocks the battle during browser QA`);
+    }
+    if (uiState.settlementModal?.display !== "none" && !third.overlays?.settlement) {
+      throw new Error("settlementModal is visible without a completed battle result");
     }
     if (localRequestFailures.length) throw new Error("local game resources failed: " + JSON.stringify(localRequestFailures));
     if (pageErrors.length) throw new Error("browser console/page errors: " + pageErrors.slice(0, 5).join(" | "));

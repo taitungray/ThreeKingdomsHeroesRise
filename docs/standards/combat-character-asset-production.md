@@ -1,6 +1,6 @@
 # 戰鬥人物圖片製作方式與規格
 
-狀態：MANDATORY STANDARD。更新日期：2026-08-29。本文件是戰鬥人物圖片從 AI 母圖、切格、去背、正規化、manifest 到 Canvas 消費的單一製作規範；角色運行期圖層與生命週期仍以 [戰鬥角色渲染契約](combat-character-render-contract.md) 為準，整體視覺語言仍以 [遊戲美術規範](game-art-bible.md) 為準。
+狀態：MANDATORY STANDARD。更新日期：2026-09-02。本文件是戰鬥人物圖片從 AI 母圖、切格、去背、正規化、manifest 到 Canvas 消費的單一製作規範；角色運行期圖層與生命週期仍以 [戰鬥角色渲染契約](combat-character-render-contract.md) 為準，整體視覺語言仍以 [遊戲美術規範](game-art-bible.md) 為準。
 
 ## 1. 適用範圍與目前管線
 
@@ -13,9 +13,8 @@
 → 內建 ImageGen 高解析 master sheet
 → 儲存為 workspace 內 lossless WebP master
 → scripts/generate-combat-actions-v3.js（96px 基線）
-→ scripts/generate-combat-actions-v4-pilot.js（128px 首四將試製）
 → 邊界連通去背／白邊清理／分格／trim／腳底對齊
-→ 96px v3 基線或 128px v4 試製 attack sheet 與 move strip
+→ 96px v3 attack sheet 與 move strip
 → attack-manifest.json／move-manifest.json
 → js/game/game-render.js 預載、抽格與鏡像
 → 資產 gate、smoke、無視窗 Chrome 與人工視覺 QA
@@ -66,8 +65,12 @@
 | `core-heroes-move-master-v3.webp` | 4×4 | 劉備、關羽、張飛、趙雲 | left-contact、left-pass、right-contact、right-pass |
 | `support-heroes-move-master-v3.webp` | 4×4 | 黃忠、孫尚香、曹操、夏侯惇 | 同上 |
 | `chapter1-enemies-move-master-v3.webp` | 5×4 | bandit、brute、cavalry、張角、董卓 | 同上 |
-| `core-heroes-action-master-v4.webp` | 4×5 | 劉備、關羽、張飛、趙雲 | v4 128px 試製；順序同 v3 attack |
-| `core-heroes-move-master-v4.webp` | 4×4 | 劉備、關羽、張飛、趙雲 | v4 128px 試製；順序同 v3 move |
+| `core-heroes-action-master-v4-clean.webp` | 4×5 | 劉備、關羽、張飛、趙雲 | 2026-09-02 重製候選；真 alpha、限制色盤、供 v3 產生器選用 |
+| `core-heroes-move-master-v4-clean.webp` | 4×4 | 劉備、關羽、張飛、趙雲 | 2026-09-02 重製候選；真 alpha、四幀步態、供 v3 產生器選用 |
+| `chapter1-enemies-action-master-v4-clean.webp` | 5×5 | bandit、brute、cavalry、張角、董卓 | 2026-09-02 重製候選；真 alpha、供 v3 產生器選用 |
+| `chapter1-enemies-move-master-v4-clean.webp` | 5×4 | bandit、brute、cavalry、張角、董卓 | 2026-09-02 重製候選；真 alpha、四幀步態、供 v3 產生器選用 |
+| `core-heroes-action-master-v4.webp` | 4×5 | 劉備、關羽、張飛、趙雲 | 舊待重製參考；烙入棋盤 matte，不得接入 runtime |
+| `core-heroes-move-master-v4.webp` | 4×4 | 劉備、關羽、張飛、趙雲 | 舊待重製參考；烙入棋盤 matte，不得接入 runtime |
 | `named-lubu-action-master-v3.webp` | 1×5 | 呂布 | 專屬攻擊五階段；金甲、雉尾、方天畫戟 |
 | `named-zhugeliang-action-master-v3.webp` | 1×5 | 諸葛亮 | 專屬攻擊五階段；綠袍、綸巾、羽扇 |
 | `named-diaochan-action-master-v3.webp` | 1×5 | 貂蟬 | 專屬攻擊五階段；紫粉袍、雙環 |
@@ -160,20 +163,58 @@ ImageGen 完成後先檢查：
 
 ## 5. 後處理與輸出
 
-96px 基線腳本是 `scripts/generate-combat-actions-v3.js`；128px 首四將試製腳本是 `scripts/generate-combat-actions-v4-pilot.js`。`npm run generate:combat-actions` 會先重建基線，再疊加 v4 試製；只重建單一層可分別使用 `generate:combat-actions:base` 或 `generate:combat-actions:pilot`。主要步驟：
+96px runtime 基線腳本是 `scripts/generate-combat-actions-v3.js`，`npm run generate:combat-actions` 與 `generate:combat-actions:base` 都只重建這一層。`npm run prepare:combat-remaster` 會執行 `scripts/prepare-first-chapter-remaster.js`，將核准的 ImageGen 候選轉成 lossless WebP；產生器在檔案存在時優先使用四套 `*-v4-clean.webp`，不存在才回退到 v3 母圖。`scripts/generate-combat-actions-v4-pilot.js`／`generate:combat-actions:pilot` 仍僅供待重製研究，不得把 pilot 輸出寫回 runtime manifest。主要步驟：
 
 1. 確認六張 master 存在且解析度符合下限。
 2. 依 row／column 比例切出每格，不依固定 master 尺寸硬編座標。
 3. `ensureAlpha()` 後，從四邊以 flood-fill 找出相連的近中性高亮背景。
-4. 將相連背景 alpha 清為 0，再做兩輪淡色 antialias fringe 清理。
+4. 將相連背景 alpha 清為 0，再做三輪淡色 antialias fringe 清理；最終 frame 只將既有 alpha 邊界上的亮白至中灰 matte 依原色相等比暗化，不得向透明區新增像素或建立統一黑色 keyline。
 5. 清除左右各 10px 安全 gutter，避免相鄰長兵器或 VFX 擦入本格。
-6. 透明 trim 後以 nearest kernel 等比縮入：v3 為 92×92、v4 為 124×124，位置靠 bottom。
+6. 透明 trim 後以 nearest kernel 等比縮入：v3 為 88×88，位置靠 bottom；縮放只做一次。
 7. 劉備目前有一段 identity palette correction，將錯誤金色衣甲校回 jade-green；新增例外必須資料化或註解原因。
 8. 現行母圖已朝右，產生器不得 flop 任何列。
-9. 放入 96×96 或 128×128 透明 cell，保留 2px 安全邊並維持 foot-center。
+9. 放入 96×96 透明 cell，預留 top 6／bottom 2／left-right 4px；不得再向外建立 keyline。最終 alpha 頭頂距離不得低於 4px，並維持 foot-center。
 10. 以 lossless WebP 輸出並更新 manifest。
 
-ImageGen master 目前可能是無 alpha 的白色／棋盤狀扁平背景；這是已知輸入特性。v4 試製會用較寬容的邊界連通中性色去背，再全域清除封閉的淺中性色棋盤島。只有最終 `attack-*-v3/v4.webp` 與 `move-*-v3/v4.webp` 必須具有真實 alpha；任何棋盤、白底、灰綠／褐色矩形色帶或 cell 邊緣不透明長條都屬失敗資產。
+ImageGen master 可能是無 alpha 的白色／棋盤狀扁平背景；這是已知輸入特性。`prepare-first-chapter-remaster.js` 只從外緣連通區移除中性 matte，並以 metadata／alpha gate 驗證；只有最終 `attack-*-v3.webp` 與 `move-*-v3.webp` 必須具有真實 alpha。原 `*-master-v4.webp` 仍因烙底不符合此條而退出 runtime；目前四套 `*-master-v4-clean.webp` 已通過去背後作為第一章四名主將與五類敵人的 v3 輸入來源。
+
+### 封閉孔洞與消白暈強制標準（2026-09-02 規範追加）
+
+1. **封閉孔洞背景清除（Hole Transparency）**：
+   - 傳統漫水填充（Flood Fill）僅由 cell 四周外緣注入隊列，遇到封閉輪廓（如黃忠／弓兵拉弓時弓弦與身軀之三角閉環、騎兵馬腿與長槍交疊孔洞）無法滲透。
+   - 產生腳本必須具備**內部封閉無色區塊檢測**：凡被角色像素包圍、不與外緣相連，但其像素符合通道差（`max(R,G,B)-min(R,G,B) <= 25`）且亮部（`max(R,G,B) >= 215`）的封閉區塊，一律強制清除為 `alpha = 0`，嚴禁殘留實心純白死底。
+2. **邊緣消白收邊（Defringing / Anti-Halo）**：
+   - AI 母圖交界處之淺灰/淺白漸層過渡像素，在深色戰場會形成明顯白色毛邊（Halo）。
+   - 腳本必須執行邊緣收邊消色 pass：鄰近透明外緣、亮度至少 72 且通道差不超過 112 的亮白／中灰過渡像素，只能在既有 alpha 像素上按原 RGB 比例暗化。禁止向透明區擴張，禁止統一塗純黑；不可讓銀甲、白衣、弓弦與兵器內部亮部一起消失。
+   - 最終逐格最外圈亮／灰 halo 像素必須低於 8；單純只檢查亮度 185 以上不合格，因中灰 matte 仍會在深色戰場形成可見白點。
+3. **頭頂與完整格安全距離（Headroom / Cell Integrity）**：
+   - 正規化完成的完整 cell 不得再次以正位移合成回同尺寸畫布；這會靜默裁掉右側兵器與底部像素。
+   - 最終 alpha 頭頂透明距離 v3 每格至少 4px；頭、頭盔、雉尾、髮帶仍須以固定尺寸畫面人工確認完整。
+4. **Canvas 點陣清晰度契約（Crisp Pixel Rendering）**：
+   - 嚴禁在 Canvas 外層 transform 使用破壞點陣網格的任意浮點縮放（如 `0.915`、`0.84`）或每單位隨機比例；運行期 `unit.scale` 維持 `1`。
+   - 96px source 只可用 nearest-neighbour 畫入整數 destination box；目前一般單位固定 72px、Boss 固定 96px。繪製座標嚴格 `Math.round`，不得使用 `.5` 次像素。
+   - 受擊以短促暖金增亮、後仰、hit-stop 與命中火星傳達；禁止整張角色洗成純白，也禁止在角色周圍額外畫脫離輪廓的純白方點。
+
+### 一般遊戲的處理基準與本專案正式決策
+
+放大、加黑框或持續調高去背容差都只能遮掩問題，不是正式資產解法。角色出現白點、黑框、模糊、頭部裁切或細節混成一團時，必須依下表回到對應層修正：
+
+| 畫面症狀 | 正確處理層 | 強制方式 |
+|---|---|---|
+| 白點／白邊 | Alpha 與圖集輸出 | 使用真透明 alpha；透明像素 RGB 延伸相鄰角色色；圖集加入 2–4px padding／extrude，禁止白底或棋盤底 |
+| 黑色貼紙框 | 角色美術 | 不使用 runtime 統一描黑；只允許素材內選擇性同色系暗邊，例如金甲收深金、紅布收暗紅、銀甲收冷灰 |
+| 角色模糊 | 原生尺寸與取樣 | 以最終顯示尺寸 1:1 製作，或以整數倍率縮放；禁止把非整數比例縮放當最終品質 |
+| 人物太小 | 美術與戰場構圖 | 重製可讀的原生尺寸素材並同步調整戰場間距；不得放大低品質圖掩蓋問題 |
+| 頭／武器被截 | 分格與錨點 | 固定腳底錨點、頭頂安全區、武器 gutter，輸出後逐格自動檢查 alpha bounds |
+| 細節混成一團 | 色盤與像素群 | 每個角色限制主要色盤，以成組 pixel clusters 建立明暗面；禁止全身金色噪點與逐像素碎亮點 |
+| 與背景分不開 | 構圖與局部對比 | 使用乾淨腳底陰影、陣營配色和局部明度差；不得依賴粗黑外框 |
+
+目前 96px source 繪到 72px 是 `0.75×` 非整數縮放，只是暫時改善角色過小，不能作為美術完成證據。2026-09-02 已先完成第一章重製母圖與 runtime 接線，但仍需把這四套來源落成最終原生 72px 輸出。第一章正式重製鎖定以下二選一，不得混用：
+
+1. 直接以 72×72 原生 cell 製作並在 Canvas 1:1 顯示。
+2. 以 36×36 基礎像素格製作，再以 nearest-neighbour 整數放大 2 倍至 72×72。
+
+第一章垂直切片須先重製劉備、關羽、張飛、趙雲，以及 bandit、brute、cavalry、archer、strategist。每個身份都要使用真 alpha，完成 idle／move／attack／hit／death，並在 320×568、390×720、430×932 的密集交戰畫面驗收。若 72px 固定尺寸仍顯得雜亂，退回重畫素材，不得再放大到 80px 以上或加入 runtime 黑框。
 
 ## 6. Runtime 資產規格
 
@@ -181,11 +222,11 @@ ImageGen master 目前可能是無 alpha 的白色／棋盤狀扁平背景；這
 |---|---|---:|---:|---:|---|
 | attack | `attack-<id>-v3.webp` | 768×480 | 8×5 | 96×96 | lossless WebP + alpha |
 | move | `move-<id>-v3.webp` | 384×96 | 4×1 | 96×96 | lossless WebP + alpha |
-| v4 pilot attack | `attack-<id>-v4.webp` | 1024×640 | 8×5 | 128×128 | lossless WebP + alpha |
-| v4 pilot move | `move-<id>-v4.webp` | 512×128 | 4×1 | 128×128 | lossless WebP + alpha |
+| v4 reference attack | `attack-<id>-v4.webp` | 1024×640 | 8×5 | 128×128 | 非 runtime；需以真 alpha 母圖重製後才能提案接入 |
+| v4 reference move | `move-<id>-v4.webp` | 512×128 | 4×1 | 128×128 | 非 runtime；需以真 alpha 母圖重製後才能提案接入 |
 
-- attack manifest：`assets/characters/attack-manifest.json`，目前 version 6；`detailCellSize = 96`、`ultraDetailCellSize = 128`，v3／v4 路徑分別寫在 `detailPath`／`ultraDetailPath`。
-- move manifest：`assets/characters/move-manifest.json`，目前 version 3；`cellSize = 96`、`ultraDetailCellSize = 128`，試製項目另有 `ultraDetailPath`。
+- attack manifest：`assets/characters/attack-manifest.json`，目前 version 6；`detailCellSize = 96`，runtime 路徑寫在 `detailPath`，不得含 `ultraDetailPath`。
+- move manifest：`assets/characters/move-manifest.json`，目前 version 3；`cellSize = 96`，不得含 `ultraDetailCellSize`／`ultraDetailPath`。
 - attack 五個 row 是五階段；八個 column 目前複製同一 authored silhouette，以維持方向資料契約，實際只有 runtime 左右鏡像，不可宣稱已有八套獨立方向美術。
 - move 四格是四個獨立步態，不可複製同一格或只平移像素。
 - master、舊 `v1`／`v2`、portrait 與 combat-body 不得成為核准 runtime 的正常 draw path。
@@ -198,7 +239,7 @@ ImageGen master 目前可能是無 alpha 的白色／棋盤狀扁平背景；這
 
 ### 128px v4 戰鬥試製
 
-`liubei`、`guanyu`、`zhangfei`、`zhaoyun`。本輪只精修這四名實際上場的全身戰鬥角色，並同時提供 attack 與 move；不代表其他武將已升級到 v4。
+`liubei`、`guanyu`、`zhangfei`、`zhaoyun` 的既有 attack／move 檔只保留為參考。其無 alpha 母圖烙入棋盤底，WebP 壓縮 matte 與銀甲、白布、兵器相連，現階段不得由 runtime 或 manifest 選用。重製必須從真透明 alpha 母圖開始，並重新通過資產與固定尺寸畫面 gate。
 
 尚未有唯一 v3 圖集的武將，runtime 先讀 hero `visual`；若仍無核准身份，再依兵種使用：
 
@@ -223,11 +264,11 @@ alias 必須保留在 manifest／產生器／目前規格中，不能只藏在 r
 
 `js/game/game-render.js` 的目前契約：
 
-- v3 source cell 為 96px，繪到 72×72 logical destination；v4 試製 source cell 為 128px，繪到 80×80 logical destination。兩者皆以腳底 `y=2` 為錨點，再乘單位 scale。
+- v3 source cell 為 96px，一般單位繪到 72×72、Boss 繪到 96×96 整數 destination；以腳底為錨點，外層單位 scale 固定為 1。一般單位不可再超過 72px，避免 390px 戰場密集交戰時互遮。
 - 角色來源統一朝右，`unit.facing` 負責左右鏡像；不得為了轉向生成第二套身份漂移圖。
 - `imageSmoothingEnabled = false`，維持像素邊緣。
 - moving 且無 action 時抽 move strip；action 時抽 attack sheet；其餘使用 attack recovery row 作 idle。
-- 15 個核准身份在開始戰鬥前預載；首四將選 v4，其餘選 v3。
+- 15 個核准身份在開始戰鬥前預載，全部選用 v3。
 - `ATTACK_SPRITES_APPROVED = true` 時，舊 combat-body、boss v1、程序 body、程序 weapon 與 portrait 不得進入正常 draw path。
 - 核准圖若尚未載入，寧可暫時不畫角色，也不能顯示錯誤 bust、卡片或幾何替代品；載入失敗由 local request failure／console gate 判定。
 
@@ -251,15 +292,15 @@ npm run test:combat-browser
 
 - 59 張高細節 attack 與 59 張 move 存在（涵蓋全 50 名武將、5 類敵軍與 4 名 Boss）。
 - attack 為 768×480、move 為 384×96、cell 為 96px。
-- 首四將 v4 attack 為 1024×640、move 為 512×128、cell 為 128px。
 - 最終 WebP 有 alpha，coverage 不過疏也不是不透明矩形。
-- v4 每格外緣不透明像素低於門檻，阻止灰綠／褐色底塊、棋盤島與長條色帶再次進入戰場。
+- runtime manifest 不含 `ultraDetailCellSize`／`ultraDetailPath`，防止未通過的 v4 參考檔進入戰場。
+- alpha 外緣的亮白至中灰 halo 低於每格 8px，v3 頭頂安全距離至少 4px，且單格不得有大型不透明中性白連通塊。
 - attack 至少有三個不同 phase fingerprint；move 四格 fingerprint 全部不同。
 - manifest version、路徑、ID 與數量符合契約。
 
 `npm run test:combat-browser` 至少驗證：
 
-- 起始四將 v4 圖集已載入且為 1024×640。
+- 起始四將 v3 圖集已載入且為 768×480。
 - `drawStats.action > 0`、`drawStats.move > 0`、`drawStats.boss > 0`。
 - `drawStats.body === 0`，證明舊 portrait／combat-body 沒進入核准畫布。
 - 無 local asset failure、page error 或 transform 逃逸。
@@ -284,7 +325,7 @@ npm run test:combat-browser
 3. 以最新核准身份圖作 edit reference，分別生成 attack 五階段與 move 四階段。
 4. 人工檢查 grid、身份、完整全身、腳底、握持與透明背景。
 5. 把最終 master 轉存為 workspace 內 lossless WebP，更新產生器 row map。
-6. 執行 `npm run generate:combat-actions`，檢查 v3 基線、v4 試製輸出與 manifest。
+6. 執行 `npm run generate:combat-actions`，檢查 v3 基線輸出與 manifest；v4 研究輸出不得自動接入。
 7. 更新 runtime 核准 ID／alias；專屬圖完成後移除對應 archetype fallback。
 8. 執行全部自動化與固定尺寸人工 QA。
 9. 同步 `current-game-spec.md`、`known-issues.md`、`active-backlog.md` 與 QA 證據。
@@ -304,7 +345,7 @@ npm run test:combat-browser
 
 ## 12. 已知限制
 
-- 目前只有劉備、關羽、張飛、趙雲使用 128px v4 試製；另有 11 名武將具獨立 96px v3 archetype（含呂布／諸葛亮／貂蟬專屬母圖），其餘武將仍共用 `visual`／兵種全身 alias。
+- runtime 目前統一使用 96px v3；11 名武將具獨立 v3 archetype（含呂布／諸葛亮／貂蟬專屬母圖），其餘武將仍共用 `visual`／兵種全身 alias。第一章首四將與五類敵人的 v3 圖集現由 `*-master-v4-clean.webp` 重製來源產出；舊 `*-master-v4.webp` 仍只作歷史參考。
 - archer 與 strategist 暫時借用黃忠與張角的全身圖，尚未有獨立普通敵人身份。
 - attack sheet 雖有八個方向欄，現階段是單一 authored 方向複製並由 runtime 左右鏡像，不是八方向獨立作畫。
 - ImageGen master 仍可能輸出扁平白底／棋盤背景，必須依後處理去背，不能跳過 asset gate。
@@ -316,13 +357,13 @@ npm run test:combat-browser
 
 ### 已確認的問題
 
-1. ImageGen 顯示的棋盤格不等於透明 alpha；本次 v4 母圖實際是無 alpha 的扁平背景。
+1. ImageGen 顯示的棋盤格不等於透明 alpha；舊 v4 母圖實際是無 alpha 的扁平背景，已另以 `prepare-first-chapter-remaster.js` 產出真 alpha 的 v4-clean 來源。
 2. 只從四邊 flood-fill 去背，在 WebP 壓縮造成中性色斷線時，會留下封閉的棋盤色島。
 3. 殘留色島經 trim、nearest resize 與 Canvas 放大後，會變成角色周圍的灰綠／褐色矩形髒色塊；這不是可接受的 VFX。
 4. 母圖 row／cell 邊界的衣料、鬍鬚、刀柄或兵器碎片若未隔離，動畫換 frame 時會看起來像切到另一名角色的服裝／武器。
 5. 只看 master 或透明預覽不足以發現問題，必須檢查最終切格並在黑底／實戰畫面確認。
 
-本次具體案例是 `move-zhangfei-v4.webp` 的第 2 格：左側出現獨立 231px 武器 component。修正後該四格均只剩一個角色／自身武器 component，並由 `test:combat-assets` 固定阻擋同類回歸。
+本次具體案例除舊 `move-zhangfei-v4.webp` 的跨格武器 component 外，趙雲銀甲周圍也會在去白後留下矩形灰帶；用連續黑框遮蔽會造成明顯貼紙感。舊 v4 仍退出 runtime；本輪改用重新繪製且經真 alpha 驗證的 v4-clean 母圖，不能再把「黑框蓋住髒邊」列為修正。
 
 ### 固定修正方式
 

@@ -85,18 +85,22 @@ const gameSource = runtimeModules.map((file) => {
   assert.ok(fs.existsSync(modulePath), `runtime module missing: ${file}`);
   return fs.readFileSync(modulePath, "utf8");
 }).join("\n");
-for (const marker of ["function spawnResourceDrops", "function updateResourceDrops", "function drawResourceDrops", "runtime.drops", "function roleAdvantage", "function targetPriorityScore", "function damageSummary", "function heroSkillCost", "function drawWeatherOverlay", "function damageStatsHtml", "data-action=\"hero-skill\"", "function startStage", "function enemyGeneralById", "function showEnemyPreview", "enemyPreviewList", "enemy-preview-role", "waveGeneralIndex", "runtime.enemyPreviewTimer = setTimeout", "function beginWaveTransition", "showTransition && !boss", "playSpeed", "function drawWaveTransitionOverlay", "function toggleRailDrawer", "stageCompactLabel", "waveChip", "rightRailDrawer", "function activeStageNumber", "function stageDefinition", "function waveCleared", "function partyDefeated", "skillCooldown", "function showOfflineReward", "function renderAchievements", "function renderCollection", "function renderEvents", "function upgradeHeroStar", "function breakthroughHero", "function renderFrameSection", "function heroProgression", "function renderDungeons", "function challengeTower", "function sweepStage", "function refineHeroEquipment", "function refillStamina", "function drawCompactHeroDetails", "function drawHealthBar", "const spriteX = unit.scale < 1", "const gait = unit.moving ? walkCycle : 0", "function drawMountLeg", "function drawSkillEnergyBar", "const y = Math.round(visualY +", "const ALLY_UNIT_SCALE = 0.915", "const ENEMY_UNIT_SCALE = 0.84", "const BOSS_UNIT_SCALE = 1.26", "function directionIndex", "attackSpritePath", "const useAttackSprite", "const attackPaths", "attackFrame", "function directionLocalAngle", "function drawAttackPose", "function characterAnimationState", "function applyCombatBodyMotion", "function drawCombatBodySprite", "const actionTransform = Boolean(unit.action && !useAttackSprite)", "unit.type !== \"boss\"", "const boss = unit.type === \"boss\""]) {
+for (const marker of ["function spawnResourceDrops", "function updateResourceDrops", "function drawResourceDrops", "runtime.drops", "function roleAdvantage", "function targetPriorityScore", "function damageSummary", "function heroSkillCost", "function drawWeatherOverlay", "function damageStatsHtml", "data-action=\"hero-skill\"", "function startStage", "function enemyGeneralById", "function showEnemyPreview", "enemyPreviewList", "enemy-preview-role", "waveGeneralIndex", "runtime.enemyPreviewTimer = setTimeout", "function beginWaveTransition", "showTransition && !boss", "playSpeed", "function drawWaveTransitionOverlay", "function toggleRailDrawer", "stageCompactLabel", "waveChip", "rightRailDrawer", "function activeStageNumber", "function stageDefinition", "function waveCleared", "function partyDefeated", "skillCooldown", "function showOfflineReward", "function renderAchievements", "function renderCollection", "function renderEvents", "function upgradeHeroStar", "function breakthroughHero", "function renderFrameSection", "function heroProgression", "function renderDungeons", "function challengeTower", "function sweepStage", "function refineHeroEquipment", "function refillStamina", "function drawCompactHeroDetails", "function drawHealthBar", "const spriteX = Math.round(unit.renderX)", "const gait = unit.moving ? walkCycle : 0", "function drawMountLeg", "function drawSkillEnergyBar", "const y = Math.round(visualY +", "const ALLY_UNIT_SCALE = 1", "const ENEMY_UNIT_SCALE = 1", "const BOSS_UNIT_SCALE = 1", "function directionIndex", "attackSpritePath", "const useAttackSprite", "const attackPaths", "attackFrame", "function directionLocalAngle", "function drawAttackPose", "function characterAnimationState", "function applyCombatBodyMotion", "function drawCombatBodySprite", "const actionTransform = Boolean(unit.action && !useAttackSprite)", "unit.type !== \"boss\"", "const boss = unit.type === \"boss\""]) {
   assert.ok(gameSource.includes(marker), `game loop marker missing: ${marker}`);
 }
+assert.ok(gameSource.includes('return unit.type === "boss" ? 96 : 72;'), "combat sprites must use the approved enlarged integer destination sizes");
+assert.ok(gameSource.includes('const RESTRAINED_VFX_BLEND = new Set(["afterimage", "dust", "impact", "slash"])'), "routine combat VFX must avoid additive white wash");
+assert.ok(!gameSource.includes("brightness(2.7) saturate(0.25)"), "combat hit flash must not wash the full sprite white");
+assert.ok(!gameSource.includes('ctx.fillStyle = "#fff6dc"'), "combat hit feedback must not add detached white square pixels");
 assert.ok(fs.statSync(path.join(root, "game.js")).size < 2000, "legacy game.js should stay a small compatibility marker");
 assert.ok(fs.existsSync(path.join(root, "assets", "characters", "modular-manifest.json")), "modular asset manifest missing");
 const attackManifestPath = path.join(root, "assets", "characters", "attack-manifest.json");
 assert.ok(fs.existsSync(attackManifestPath), "attack sprite manifest missing");
 const attackManifest = JSON.parse(fs.readFileSync(attackManifestPath, "utf8"));
-assert.equal(attackManifest.version, 6, "attack manifest must expose the v4 combat pilot");
+assert.equal(attackManifest.version, 6, "attack manifest must expose the current high-detail combat roster");
 assert.equal(attackManifest.cellSize, 64, "attack sprite cells must use the shared 64px grid");
 assert.equal(attackManifest.detailCellSize, 96, "approved high-detail attack sprites must use 96px cells");
-assert.equal(attackManifest.ultraDetailCellSize, 128, "first-four ultra-detail battle sprites must use 128px cells");
+assert.equal(attackManifest.ultraDetailCellSize, undefined, "inactive v4 pilot metadata must not remain in the runtime attack manifest");
 assert.equal(attackManifest.columns, 8, "attack sprite sheets must expose eight directions");
 assert.equal(attackManifest.rows, 5, "attack sprite sheets must expose five action frames");
 const requiredAttackIds = [...data.heroes.map((hero) => hero.id), "bandit", "brute", "cavalry", "archer", "strategist", "boss-zhangjiao", "boss-dongzhuo", "boss-lvbu", "boss-menghuo"];
@@ -107,13 +111,12 @@ const detailedAttackAssets = attackManifest.assets.filter((asset) => asset.detai
 assert.equal(detailedAttackAssets.length, requiredAttackIds.length, "high-detail combat roster must cover all heroes, enemy types and bosses");
 assert.ok(detailedAttackAssets.every((asset) => fs.existsSync(path.join(root, asset.detailPath))), "declared high-detail attack assets must exist");
 const ultraDetailAttackAssets = attackManifest.assets.filter((asset) => asset.ultraDetailPath);
-assert.deepEqual(ultraDetailAttackAssets.map((asset) => asset.id), ["liubei", "guanyu", "zhangfei", "zhaoyun"], "v4 battle pilot must remain limited to the first four heroes");
-assert.ok(ultraDetailAttackAssets.every((asset) => fs.existsSync(path.join(root, asset.ultraDetailPath))), "declared v4 battle assets must exist");
+assert.deepEqual(ultraDetailAttackAssets, [], "baked-checker v4 references must stay out of the runtime attack manifest");
 const moveManifestPath = path.join(root, "assets", "characters", "move-manifest.json");
 const moveManifest = JSON.parse(fs.readFileSync(moveManifestPath, "utf8"));
-assert.equal(moveManifest.version, 3, "move manifest must expose the v4 combat pilot");
-assert.equal(moveManifest.ultraDetailCellSize, 128, "v4 movement pilots must use 128px cells");
-assert.deepEqual(moveManifest.assets.filter((asset) => asset.ultraDetailPath).map((asset) => asset.id), ["liubei", "guanyu", "zhangfei", "zhaoyun"], "v4 attack and movement pilot rosters must match");
+assert.equal(moveManifest.version, 3, "move manifest must expose the current high-detail combat roster");
+assert.equal(moveManifest.ultraDetailCellSize, undefined, "inactive v4 pilot metadata must not remain in the runtime move manifest");
+assert.deepEqual(moveManifest.assets.filter((asset) => asset.ultraDetailPath), [], "baked-checker v4 references must stay out of the runtime move manifest");
 assert.ok(fs.existsSync(path.join(root, "assets", "characters", "equipment-manifest.json")), "equipment asset manifest missing");
 const combatWeaponManifestPath = path.join(root, "assets", "characters", "combat-weapon-manifest.json");
 assert.ok(fs.existsSync(combatWeaponManifestPath), "combat weapon asset manifest missing");
@@ -170,7 +173,7 @@ assert.ok(gameSource.includes("outerDeath") && gameSource.includes("outerAction"
 assert.ok(!gameSource.includes("navigator.vibrate"), "browser vibration must stay removed from the game runtime");
 assert.ok(gameSource.includes("const ATTACK_SPRITES_APPROVED = true") && gameSource.includes("ATTACK_SPRITES_APPROVED && Boolean(!unit.dead && unit.action && attackSprite)"), "remade attack sheets stay gated by ATTACK_SPRITES_APPROVED after the combat-asset gate");
 assert.ok(gameSource.includes("useMoveSprite") && gameSource.includes("moveCombatSpritePath") && gameSource.includes("unit.moveFrame = Math.floor(unit.movePhase)"), "moving units must consume a distinct four-frame grounded gait strip");
-assert.ok(gameSource.includes("const ULTRA_DETAIL_ACTION_SPRITES") && gameSource.includes("ULTRA_DETAIL_ACTION_SPRITE_CELL_SIZE = 128") && gameSource.includes('"-v4.webp" : "-v3.webp"'), "runtime must select 128px v4 battle assets only for the pilot roster");
+assert.ok(gameSource.includes("const ULTRA_DETAIL_ACTION_SPRITES = new Set();") && gameSource.includes('"-v4.webp" : "-v3.webp"'), "runtime must keep the checker-matte v4 pilot disabled and select clean v3 battle assets");
 assert.ok(gameSource.includes("combatSpriteId") && gameSource.includes("Resolve one identity for this draw"), "combat animation states must share one locked character sprite identity");
 assert.ok(gameSource.includes("Restore the unit-local translate/scale before drawing world-space bars"), "drawUnit must restore its local Canvas transform before drawing HUD bars");
 const renderSource = fs.readFileSync(path.join(root, "js", "game", "game-render.js"), "utf8");

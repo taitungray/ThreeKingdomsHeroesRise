@@ -20,6 +20,7 @@
 | COMBAT-006 | P0 | action、body transform、weapon、VFX 與 death transform 曾疊加，攻擊及死亡畫面錯亂 | VERIFY | attack→hit→death→removed 連續證據通過 | WORK-004 |
 | COMBAT-008 | P0 | move 曾只用整張 body 上下彈跳與速度線，腿部不換步；2026-08-29 產生器依皮膚啟發式把已朝右母圖 flop 成朝左，趙雲／黃忠／盜賊／力士／騎兵／董卓及全部 clone 倒退走 | VERIFY | 第一章我方、普通敵人與 Boss 的四幀步態朝位移方向前進、進入／停下銜接畫面通過 | WORK-004 |
 | COMBAT-009 | P0 | 2026-08-29 實戰截圖顯示 64px 圖格細節流失，archer／strategist 與未精修武將會把舊肖像半身圖帶入戰場 | VERIFY | 96px 全身路徑通過 asset/browser gate，固定尺寸截圖無肖像 bust 且臉、甲、武器可辨識 | WORK-001、WORK-003、WORK-004 |
+| COMBAT-010 | P0 | 2026-09-02 兩輪實機截圖重現：角色外緣白光暈、封閉孔洞實心白底、浮點縮放發虛、部分敵軍頭頂安全距離不足，且受擊會把整張角色過曝並追加純白方點；第一輪只處理高亮 matte 的修正不足 | VERIFY | 資產 gate 已覆蓋封閉白塊、亮白至中灰 alpha halo 與逐格頭頂安全距離；Canvas 外層 scale=1、整數座標／destination；受擊保留色相且無脫離白點；390×720 無視窗實戰圖已複驗，仍待逐狀態與 Android 實機畫面確認 | WORK-020 |
 | UI-001 | P0 | 對角線／菱形裝飾不只出現在結算，也穿透每日、商城、活動與副本等命令面板 | VERIFY | 所有基準尺寸的主要面板與勝敗結算均無跨區裝飾線 | WORK-008 |
 | UI-002 | P0 | 自動推關進入下一關時，`startStage()` 呼叫 `closePanel()`，會關閉玩家正在閱讀的武將、編隊、設定等面板 | VERIFY | stage transition 不關閉、不搶焦點、不重設使用者面板狀態 | WORK-008 |
 | UI-003 | P1 | 訪客設定頁以 `activeUser.username` 顯示帳號，但訪客資料使用 `displayName`，畫面出現 `undefined` | VERIFY | 訪客與登入帳號均顯示正確名稱，缺值有核准 fallback | WORK-008 |
@@ -36,6 +37,48 @@
 | UI-017 | P1 | 主線目標列 DOM 被 `css/ui-overhaul.css` 隱藏；關卡 HUD 另把同一關次重複成「4-5 · 關名 · 5」 | VERIFY | 主線目標在三秒測試內可理解且不遮戰場；關卡只保留章－關與名稱，不重複末碼 | WORK-014、WORK-017 |
 | QA-002 | P0 | 2026-08-31 `npm test` 因 top HUD CSS gate 失敗，`npm run test:ui` 因 runtime 未定義全域中止；目前規格與舊證據曾仍宣稱兩者通過 | RESOLVED | 修正產品與測試後兩個 gate 均通過，文件只引用同次可重現輸出 | WORK-014、WORK-018 |
 | QA-003 | P0 | 自動化回歸已補齊 source／`www` UI、戰鬥生命週期與多模式結算，但仍缺少真人玩家盲測及 Android／WebView／TalkBack 的獨立品質判定 | OPEN | `node scripts/browser-lifecycle-smoke.js` 與 `--www` 已通過；第一章仍需四層同 commit 證據且 P0／P1 為零 | WORK-019 |
+
+## 戰鬥資產與清晰度專案稽核（2026-09-02）
+
+### COMBAT-010：封閉孔洞死白殘留、全角色白邊光暈與點陣模糊專案分析
+
+2026-09-02 實機戰鬥截圖重現全體角色畫面發虛且局部殘留大面積純白塊。經像素層級診斷與腳本反查，問題並非單一武將偶然缺陷，而是全 50 名武將／敵軍普遍存在的系統性問題：
+
+#### 1. 缺陷具體表現與重現證據
+- **封閉孔洞純白死底**：黃忠、弓兵、太史慈、夏侯淵、孫尚香等拉弓動作，弓弦、手臂與身軀構成封閉三角形孔洞；趙雲、關興、馬超、張郃等持長兵器與戰馬跨步孔洞。實測 `assets/characters/attack-huangzhong-v3.webp` 單張即殘留 **12,400 個**純白不透明像素（RGB > 240, Alpha = 255）；`attack-sunshang-v3.webp` 達 10,896 像素；近戰與騎兵圖集亦有 2,000~3,000 個封閉白像素。
+- **全角色外輪廓白光暈（White Halo Fringe）**：所有角色在深綠色草地、深褐色泥地戰場上，頭部、肩甲與兵器邊緣均浮現一圈刺眼的白色噪點與半透亮邊。
+- **點陣網格發虛失真（Pixel Distortion & Blur）**：角色整體呈現不清晰、顆粒拉扯、鋸齒毛邊，缺乏正統 16-bit 點陣的銳利清晰感。
+
+#### 2. 四項核心根因
+1. **漫水填充（Flood Fill）盲區**：`scripts/generate-combat-actions-v3.js` 與 `v4-pilot.js` 去背演算法僅自 cell 四周外邊界向內漫水。凡被角色實體完全包圍的閉合孔洞，外緣漫水無法滲入，演算法直接將未訪問區域全數判定為角色身體（`alpha = 255`），導致原母圖白色背景被永久固化為實心白色塊。
+2. **邊緣抗鋸齒殘留（Anti-Aliasing Matte）**：AI 生成母圖邊緣帶有淺灰/淺白漸層過渡像素，去背時僅做 3 輪外緣淡色清理，但色差容限不足以剝離貼附於深色輪廓外的亮色過渡層，在深色戰場上形成白光暈。
+3. **Canvas 浮點縮放與次像素渲染**：
+   - `js/game/game-combat.js` 曾設定我方 `scale: 0.915`、敵方 `scale: 0.84~0.90`、Boss `scale: 1.26`。圖集先縮進 destination box 後又套浮點 transform，造成第二次不均勻取樣。
+   - 繪製座標使用 `Math.round(renderX * 2) / 2` 產生 `.5` 次像素半座標，觸發瀏覽器 Canvas 雙線性平滑濾鏡，使整個人物發虛失焦。
+4. **受擊過曝與純白點**：角色命中時套用 `brightness(2.7) saturate(0.25)`，同時在角色旁繪製三個純白矩形；大量單位互攻時畫面幾乎持續出現白色剪影、點與邊。
+5. **完整 cell 二次位移裁切**：v3 frame 已正規化為 96×96 後，`normalizedCoreFrames()` 又以 `left: 2, top: 3` 合成回同尺寸畫布，右側兵器與底部像素會被靜默裁掉；部分格原本只有約 3px 頭頂距離，縮到 64px 後也缺乏穩定視覺安全邊。
+6. **同檔名圖片快取**：重新產生的 `attack-*`／`move-*` 沿用 manifest 路徑；未提升 runtime revision 與 Service Worker cache 時，已開啟的 PWA／WebView 可能持續呈現修正前 WebP，造成更新後畫面看似完全相同。
+7. **原生尺寸與最終尺寸不一致**：目前 96px v3 source 以 nearest-neighbour 繪到 72px，比例為 `0.75×`；雖比 64px 更容易辨識，但仍會規律捨棄來源像素列，無法修正素材本身的金色噪點、碎亮部與不清楚的明暗分組。此放大調整只屬暫時改善，不是完成證據。
+
+#### 3. 系統性處理方式與解決規範
+1. **去背演算法重構（內部封閉孔洞全域透明化）**：
+   - 升級 `scripts/generate-combat-actions-v3.js` 與 `scripts/generate-combat-actions-v4-pilot.js`：
+   - 保留外邊緣漫水填充後，增加「內部封閉無色區塊偵測（Hole Neutral Clearance）」：對於內部未被外緣連通的連通分量，若其像素符合通道差（`max-min <= 25`）且亮部（`max >= 215`），一律判定為背景孔洞，Alpha 強制歸零。
+   - 強化邊緣消白收邊（Defringing Pass）：鄰近透明外緣、亮度至少 72 且通道差不超過 112 的殘留 matte，只在既有不透明像素上依原 RGB 比例暗化；不得向透明區擴張，也不得以統一純黑 keyline 把角色包成貼紙。銀甲、白衣與兵器內部亮部必須保留。
+   - v3 frame 在單次正規化中直接保留完整 96×96 cell，不再二次向右下平移裁切；輸出後頭頂安全距離至少 4px。
+   - `已處理／仍有後續`：舊首四將 v4 母圖是無 alpha 的烙入棋盤底，壓縮 matte 與銀甲／兵器交疊；黑色外框會遮錯但造成貼紙感，放寬去背又會吃掉趙雲銀甲。2026-09-02 以重新繪製的四套 `*-master-v4-clean.webp`（首四將與五類敵人）通過真 alpha 去背後接入 v3 產生器；舊 `*-master-v4.webp` 仍退出 runtime，原生 72px 最終輸出尚未完成。
+2. **Canvas 渲染清晰度契約鎖定**：
+   - 強制整數像素對齊：`drawUnit` 座標改採 `Math.round(renderX)`／`Math.round(renderY + bob)`，禁止 `.5` 次像素。
+   - 外層角色縮放統一為 `scale: 1`；96px source 只以 nearest-neighbour 畫入固定整數 destination（一般 72px、Boss 96px），不再每名敵人加入隨機比例。390×720 source 實戰確認此尺寸尚未造成明顯互遮；不得再以 80px 以上硬放大掩蓋素材品質。
+   - 輪廓只使用素材本身的選擇性同色系暗部；禁止額外生成連續純黑外描邊。清晰度由乾淨 alpha、局部明度差與整數像素對齊共同提供。
+3. **受擊可讀性**：全身濾鏡降為保留色相的短促暖金變化，移除三個純白方點；普通 impact 降至 0.4 alpha 並套暖金濾色，slash／afterimage／dust 同樣以較低 alpha 的 `source-over` 繪製，後仰、hit-stop 與命中火星仍保留。
+4. **資產自動檢驗防護**：
+   - `scripts/check-combat-assets.js` 逐 cell 檢查 alpha 外緣亮白／中灰 halo、大型不透明中性白連通塊與頭頂透明距離；門檻只判最外圈而非角色內部亮部，避免把趙雲銀甲或白衣誤判為背景。
+5. **全量重新生成與人工複驗**：
+   - 已用更新後腳本重新產生 59 個戰鬥單位的 `attack-*-v3.webp`／`move-*-v3.webp`；第一章首四將與五類敵人的 v3 圖集改由 `*-master-v4-clean.webp` 真 alpha 母圖來源產出，舊 v4 試製仍退出 runtime。runtime 圖片加入 `20260902e` revision，Service Worker cache 升為 v16。命令列 asset gate、source／www 390×720 無視窗戰鬥回歸通過，完整逐狀態與 Android 實機畫面尚未執行，不得宣稱視覺完成。
+6. **第一章原生尺寸重製**：
+   - 正式解法為原生 72×72 cell，或 36×36 基礎像素格以 2× nearest-neighbour 輸出 72×72；禁止以 96→72 的非整數縮放作為最終完成品。
+   - 優先重製劉備、關羽、張飛、趙雲與五類第一章敵人；使用真 alpha、2–4px 圖集 padding／edge-color extrusion、限制色盤與成組像素明暗。若固定尺寸仍醜，必須退回角色美術重畫，不得繼續放大或加 runtime 黑框。
 
 ## 本輪 UI 全面稽核（2026-08-31）
 
@@ -104,7 +147,7 @@
 | ID | 已確認的自動／程式證據 | 仍缺 |
 |---|---|---|
 | COMBAT-001 | `spawnWave(true)` 先 `hideEnemyPreview()`、清對話、只留橫幅；browser QA 斷言中央 overlay ≤ 1 | Boss 出場截圖／影片 |
-| COMBAT-002／004／009 | `attack-manifest` v6；59 張 96px `v3` 基線覆蓋全 50 名武將、5 類敵軍與 4 名 Boss，劉備／關羽／張飛／趙雲另有 128px `v4` 戰鬥試製。v3／v4 去背均清除封閉棋盤島與小型跨格碎片，unit 生成時固定 `combatSpriteId`，move／attack／idle 共用同一身份；asset gate 驗證全 59 個單位尺寸、alpha 與外緣色帶；source browser QA 載入四張 1024×640 v4 圖集與 96px v3 圖集，記錄 `body=0`、`action>0`、`move>0`、`boss>0`，且 [390×720 畫面](../../artifacts/combat-detail-v4-identity-lock.png) 無角色矩形髒底或跨角色衣武碎片 | 仍缺五階段、八方向與完整生命週期固定尺寸畫面包 |
+| COMBAT-002／004／009 | `attack-manifest` v6；runtime 統一使用 59 張 96px `v3`，覆蓋全 50 名武將、5 類敵軍與 4 名 Boss；首四將與五類敵人的 v3 圖集目前由四套真 alpha `*-master-v4-clean.webp` 產出，舊 v4 matte 母圖退出 runtime。v3 去背清除封閉棋盤島與小型跨格碎片，unit 生成時固定 `combatSpriteId`，move／attack／idle 共用同一身份；asset gate 驗證全 59 個單位尺寸、alpha、頭頂距離與外緣色帶；source browser QA 必須載入首四將 768×480 v3 圖集並記錄 `body=0`、`action>0`、`move>0`、`boss>0` | 仍缺原生 72px 最終母圖、五階段、八方向與完整生命週期固定尺寸畫面包 |
 | COMBAT-003／DATA-001 | `huangzhong` 入敵將表；`enemyIdentityMap`；smoke 查關卡 ID 與對應 body 檔 | 抽樣關卡預覽＝實戰畫面 |
 | COMBAT-005 | 九類兵器各有 `anchor`；核准 `v3` action 內嵌手部相連兵器，renderer 不重複疊外部兵器 | 攻擊／死亡穿模畫面 |
 | COMBAT-006 | 五階段由單一 `action` 驅動；死亡立即清除 action／attackFrame／weaponSwing；核准 action sheet 接續繪製死亡淡出（`useDeadSprite`），不再疊加 body／weapon transform 且消除死亡瞬間消失缺陷 | attack→hit→death→removed 影片 |

@@ -22,13 +22,14 @@
 | ID | 工作 | 對應問題 | 狀態 | 完成條件 |
 |---|---|---|---|---|
 | WORK-000 | 鎖定垂直切片角色、敵人、武器、關卡與可見入口 | — | IN PROGRESS | 已閘活動／試煉／塔／副本／演武；右欄去「排行」謊稱；仍需完整資產表與後關灰顯文案 |
-| WORK-001 | 重製攻擊圖集，確保每格都有完整 body、可辨識細節、乾淨 alpha 與不同階段 | COMBAT-002、COMBAT-004、COMBAT-009 | IN PROGRESS | 59 張 96px `v3` 為基線；核心 11 將（含呂布／諸葛亮／貂蟬）具獨立 archetype 且不得互為像素複本；劉備／關羽／張飛／趙雲另有 128px `v4`；仍需固定尺寸五階段、八方向人工驗收與其餘武將唯一外觀 |
+| WORK-001 | 重製攻擊圖集，確保每格都有完整 body、可辨識細節、乾淨 alpha 與不同階段 | COMBAT-002、COMBAT-004、COMBAT-009 | IN PROGRESS | 2026-09-02 已重繪並接入首四將＋五類敵人的四套 `*-master-v4-clean.webp` 真 alpha 母圖，重建 59 張 `v3` 圖集；目前仍是 96→72 暫時路徑。下一步將來源落成原生 72px，或 36px 基礎格整數 2× 輸出，保留 2–4px padding／edge-color extrusion、限制色盤與成組像素明暗；不得再加 runtime 黑框，其餘武將唯一外觀仍待完成 |
 | WORK-002 | 重製切片戰鬥兵器與逐角色／方向 socket | COMBAT-005 | IN PROGRESS | 比例、握點、尖端、方向、攻擊與死亡均無漂浮、斷裂或穿模 |
 | WORK-003 | 建立普通敵人、敵將與 Boss 的單一身分／資產映射 | COMBAT-003、COMBAT-009、DATA-001 | IN PROGRESS | 全 59 個戰鬥單位正常路徑為全身 96px v3；核心 11 將（含呂布／諸葛亮／貂蟬）專屬 archetype；其餘仍走 visual／兵種 alias；預覽與實戰一致 |
-| WORK-004 | 修正移動、攻擊、受擊、死亡與移除的單一渲染生命週期 | COMBAT-002、COMBAT-006、COMBAT-008、COMBAT-009 | IN PROGRESS | runtime 依身份抽取 96px v3 或首四將 128px v4 的四幀 move／五階段 attack；現行母圖朝右且產生器 flop set 為空；死亡清 action 並支援死亡淡出繪製（useDeadSprite），正常路徑禁用肖像 bust；仍需我方／敵人／Boss 全狀態矩陣 |
+| WORK-004 | 修正移動、攻擊、受擊、死亡與移除的單一渲染生命週期 | COMBAT-002、COMBAT-006、COMBAT-008、COMBAT-009 | IN PROGRESS | runtime 依身份統一抽取 96px v3 的四幀 move／五階段 attack；現行母圖朝右且產生器 flop set 為空；死亡清 action 並支援死亡淡出繪製（useDeadSprite），正常路徑禁用肖像 bust；仍需我方／敵人／Boss 全狀態矩陣 |
 | WORK-005 | 重整戰鬥 HUD、技能喊話與 Boss／結算覆蓋層 | COMBAT-001、UI-004 | IN PROGRESS | 三秒內辨識敵我與波次；中央最多一層；資源、對話與 VFX 不遮戰鬥 |
 | WORK-006 | 移除全畫面 shake，建立 reduced-effects 行為 | MOTION-001 | IN PROGRESS | reduced motion 下無全畫面位移；結果與戰鬥時間不變 |
 | WORK-007 | 跑完完整戰鬥生命週期回歸 | QA-001 | IN PROGRESS | boot、三波、Boss、勝、敗、重試、存檔、背景恢復、death／removed 與 console 全通過 |
+| WORK-020 | 全角色封閉孔洞去白、消白暈、敵軍頭頂裁切與 Canvas 點陣清晰度重構 | COMBAT-010 | VERIFY | v3 產圖具封閉中性白孔透明化與亮白至中灰 edge defringe，只暗化既有邊界像素、不外擴且不加統一黑框；逐格頭頂至少 4px，並已移除二次平移裁切。Canvas 外層 scale=1、一般 72px／Boss 96px 整數 destination，血條／Boss 名牌／狀態標記同步錨定；舊 v4 棋盤 matte 退出 runtime，第一章四套 v4-clean 真 alpha 母圖已接入；受擊不再全身漂白／加純白方點，普通 impact 降 alpha 並暖色化；全 59 單位資產 gate 與 source／www 390×720 無視窗實戰圖已通過，待原生 72px 母圖、完整逐狀態與 Android 實機複驗 |
 
 ## P0-B — 建立真實選擇與可用介面
 

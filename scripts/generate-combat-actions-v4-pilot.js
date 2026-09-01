@@ -9,8 +9,6 @@ const root = path.resolve(__dirname, "..");
 const characterDir = path.join(root, "assets", "characters");
 const actionMasterPath = path.join(characterDir, "core-heroes-action-master-v4.webp");
 const moveMasterPath = path.join(characterDir, "core-heroes-move-master-v4.webp");
-const attackManifestPath = path.join(characterDir, "attack-manifest.json");
-const moveManifestPath = path.join(characterDir, "move-manifest.json");
 const cellSize = 128;
 const actionColumns = 8;
 const actionRows = 5;
@@ -65,9 +63,61 @@ function removeConnectedBackground(data, width, height) {
     data[index * 4 + 3] = visited[index] ? 0 : 255;
   }
 
+  // Clear enclosed neutral background holes
+  const holeVisited = new Uint8Array(width * height);
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const idx = y * width + x;
+      if (visited[idx] || holeVisited[idx]) continue;
+      const off = idx * 4;
+      const r = data[off];
+      const g = data[off + 1];
+      const b = data[off + 2];
+      const high = Math.max(r, g, b);
+      const low = Math.min(r, g, b);
+      const isNeutralWhite = (high >= 215 && high - low <= 25);
+      const isChromaMagenta = (r >= 200 && b >= 180 && g <= 80 && r - g >= 120 && b - g >= 100);
+      if (!isNeutralWhite && !isChromaMagenta) continue;
+
+      const holeQueue = [idx];
+      holeVisited[idx] = 1;
+      const component = [idx];
+      let hHead = 0;
+      while (hHead < holeQueue.length) {
+        const cIdx = holeQueue[hHead++];
+        const cx = cIdx % width;
+        const cy = Math.floor(cIdx / width);
+        for (const [dx, dy] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) {
+          const nx = cx + dx;
+          const ny = cy + dy;
+          if (nx < 0 || ny < 0 || nx >= width || ny >= height) continue;
+          const nIdx = ny * width + nx;
+          if (visited[nIdx] || holeVisited[nIdx]) continue;
+          const nOff = nIdx * 4;
+          const nr = data[nOff];
+          const ng = data[nOff + 1];
+          const nb = data[nOff + 2];
+          const nHigh = Math.max(nr, ng, nb);
+          const nLow = Math.min(nr, ng, nb);
+          if ((nHigh >= 215 && nHigh - nLow <= 25) || (nr >= 200 && nb >= 180 && ng <= 80 && nr - ng >= 120 && nb - ng >= 100)) {
+            holeVisited[nIdx] = 1;
+            holeQueue.push(nIdx);
+            component.push(nIdx);
+          }
+        }
+      }
+      if (component.length >= 6) {
+        for (const cIdx of component) {
+          visited[cIdx] = 1;
+          data[cIdx * 4 + 3] = 0;
+        }
+      }
+    }
+  }
+
   // Remove only pale pixels touching the extracted exterior. This keeps white
   // cloth and Zhao Yun's silver highlights while clearing generated mattes.
-  for (let pass = 0; pass < 2; pass += 1) {
+  for (let pass = 0; pass < 3; pass += 1) {
     const remove = [];
     for (let y = 1; y < height - 1; y += 1) {
       for (let x = 1; x < width - 1; x += 1) {
@@ -76,9 +126,12 @@ function removeConnectedBackground(data, width, height) {
         if (data[offset + 3] === 0) continue;
         const high = Math.max(data[offset], data[offset + 1], data[offset + 2]);
         const low = Math.min(data[offset], data[offset + 1], data[offset + 2]);
-        if (high < 228 || high - low > 18) continue;
-        const touchesAlpha = data[offset - 1] === 0
-          || data[offset + 7] === 0
+        const isPale = (high >= 170 && high - low <= 28)
+          || (high >= 190 && high - low <= 42)
+          || (high >= 220 && high - low <= 55);
+        if (!isPale) continue;
+        const touchesAlpha = data[offset - 4 + 3] === 0
+          || data[offset + 4 + 3] === 0
           || data[offset - width * 4 + 3] === 0
           || data[offset + width * 4 + 3] === 0;
         if (touchesAlpha) remove.push(offset + 3);
@@ -160,17 +213,17 @@ async function extractFrames(sourcePath, columnCount, flopIds = new Set()) {
 
       let pipeline = sharp(data, { raw: info })
         .trim({ background: { r: 0, g: 0, b: 0, alpha: 0 } })
-        .resize(cellSize - 4, cellSize - 4, {
+        .resize(cellSize - 6, cellSize - 6, {
           fit: "contain",
           position: "bottom",
           kernel: sharp.kernel.nearest,
           background: { r: 0, g: 0, b: 0, alpha: 0 }
         })
         .extend({
-          top: 2,
+          top: 4,
           bottom: 2,
-          left: 2,
-          right: 2,
+          left: 3,
+          right: 3,
           background: { r: 0, g: 0, b: 0, alpha: 0 }
         });
       // Runtime facing invariant: all source frames must face right.
@@ -238,38 +291,17 @@ async function writeMoveStrip(id, frames) {
 }
 
 async function main() {
-  const attackManifest = JSON.parse(fs.readFileSync(attackManifestPath, "utf8"));
-  const moveManifest = JSON.parse(fs.readFileSync(moveManifestPath, "utf8"));
   const actionFrames = await extractFrames(actionMasterPath, 5, new Set());
   // v4 move master already faces RIGHT for all four pilots; flopping guanyu caused LEFT sheets and moonwalking.
   const moveFrames = await extractFrames(moveMasterPath, 4, new Set());
 
   for (const id of pilotRows.keys()) {
-    const attackAsset = attackManifest.assets.find((asset) => asset.id === id);
-    const moveAsset = moveManifest.assets.find((asset) => asset.id === id);
-    assert.ok(attackAsset && moveAsset, `missing manifest entry for v4 pilot ${id}`);
-    attackAsset.ultraDetailPath = await writeActionSheet(id, actionFrames.get(id));
-    moveAsset.ultraDetailPath = await writeMoveStrip(id, moveFrames.get(id));
-    process.stdout.write(`generated ${attackAsset.ultraDetailPath} and ${moveAsset.ultraDetailPath}\n`);
+    const attackPath = await writeActionSheet(id, actionFrames.get(id));
+    const movePath = await writeMoveStrip(id, moveFrames.get(id));
+    process.stdout.write(`generated reference ${attackPath} and ${movePath}\n`);
   }
 
-  attackManifest.version = 6;
-  attackManifest.ultraDetailCellSize = cellSize;
-  attackManifest.source = {
-    ...attackManifest.source,
-    pilotCore: "assets/characters/core-heroes-action-master-v4.webp",
-    ultraDetailHeroes: [...pilotRows.keys()]
-  };
-  moveManifest.version = 3;
-  moveManifest.ultraDetailCellSize = cellSize;
-  moveManifest.sources = {
-    ...moveManifest.sources,
-    pilotCore: "assets/characters/core-heroes-move-master-v4.webp"
-  };
-  moveManifest.ultraDetailHeroes = [...pilotRows.keys()];
-  fs.writeFileSync(attackManifestPath, `${JSON.stringify(attackManifest, null, 2)}\n`, "utf8");
-  fs.writeFileSync(moveManifestPath, `${JSON.stringify(moveManifest, null, 2)}\n`, "utf8");
-  console.log(`Generated ${pilotRows.size} ultra-detail v4 combat pilots at ${cellSize}px.`);
+  console.log(`Generated ${pilotRows.size} inactive v4 references at ${cellSize}px; runtime manifests were not changed.`);
 }
 
 main().catch((error) => {

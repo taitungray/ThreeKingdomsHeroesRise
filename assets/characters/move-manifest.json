@@ -16,39 +16,34 @@
     "loop": true
   },
   "sources": {
-    "core": "assets/characters/core-heroes-move-master-v3.webp",
+    "core": "assets/characters/core-heroes-move-master-v4-clean.webp",
     "support": "assets/characters/support-heroes-move-master-v3.webp",
-    "chapter1Enemies": "assets/characters/chapter1-enemies-move-master-v3.webp",
-    "pilotCore": "assets/characters/core-heroes-move-master-v4.webp"
+    "chapter1Enemies": "assets/characters/chapter1-enemies-move-master-v4-clean.webp"
   },
   "assets": [
     {
       "id": "liubei",
       "kind": "hero",
       "archetype": "liubei",
-      "path": "assets/characters/move-liubei-v3.webp",
-      "ultraDetailPath": "assets/characters/move-liubei-v4.webp"
+      "path": "assets/characters/move-liubei-v3.webp"
     },
     {
       "id": "guanyu",
       "kind": "hero",
       "archetype": "guanyu",
-      "path": "assets/characters/move-guanyu-v3.webp",
-      "ultraDetailPath": "assets/characters/move-guanyu-v4.webp"
+      "path": "assets/characters/move-guanyu-v3.webp"
     },
     {
       "id": "zhangfei",
       "kind": "hero",
       "archetype": "zhangfei",
-      "path": "assets/characters/move-zhangfei-v3.webp",
-      "ultraDetailPath": "assets/characters/move-zhangfei-v4.webp"
+      "path": "assets/characters/move-zhangfei-v3.webp"
     },
     {
       "id": "zhaoyun",
       "kind": "hero",
       "archetype": "zhaoyun",
-      "path": "assets/characters/move-zhaoyun-v3.webp",
-      "ultraDetailPath": "assets/characters/move-zhaoyun-v4.webp"
+      "path": "assets/characters/move-zhaoyun-v3.webp"
     },
     {
       "id": "huangzhong",
@@ -380,12 +375,5 @@
       "archetype": "boss-dongzhuo",
       "path": "assets/characters/move-boss-menghuo-v3.webp"
     }
-  ],
-  "ultraDetailCellSize": 128,
-  "ultraDetailHeroes": [
-    "liubei",
-    "guanyu",
-    "zhangfei",
-    "zhaoyun"
   ]
 }

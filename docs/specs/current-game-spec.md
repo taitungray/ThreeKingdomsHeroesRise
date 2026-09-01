@@ -37,13 +37,15 @@
 - `已確認`：`styles.css` 依序匯入 `css/base.css`、`hud.css`、`avatars.css`、`panels.css`、`ui-redesign.css`、`ui-overhaul.css`；同元件在後兩個大型樣式檔持續覆寫，已造成尺寸 token 與最終畫面契約分歧。
 - `已確認`：單位狀態包含移動、攻擊 action、受擊、死亡、技能、波次與結算資料。
 - `已確認`：單位 HUD 血條與技能氣條分列：血條在上、氣條在下，各佔獨立 Y；`drawHealthBar`／`drawSkillEnergyBar` 各只宣告一次，禁止同條紅藍併色。
-- `已確認`：角色 body、portrait、attack、mount、Boss、VFX、terrain 與 combat weapon 有 WebP／manifest 管理，Canvas 角色圖使用 nearest-neighbor。
+- `已確認`：角色 body、portrait、attack、mount、Boss、VFX、terrain 與 combat weapon 有 WebP／manifest 管理，Canvas 角色圖使用 nearest-neighbor；一般單位由 64px 放大至 72px、Boss 由 88px 放大至原生 96px 整數 destination box，外層 `unit.scale` 固定為 1，座標使用整數像素。72px 是 390px 戰場不造成明顯互遮的安全上限，但目前 96→72 為 `0.75×` 非整數縮放，只改善讀圖尺寸，不代表素材細節已完成。第一章正式資產須改為原生 72px，或 36px 基礎像素格整數 2× 輸出；若仍醜就退回重畫，不得繼續放大或加 runtime 黑框。
 - `已確認`：Canvas transform 洩漏已修正，source 與同步後 `www` 的真實 Chrome transform gate 通過。
-- `已確認`：`attack-manifest.json` 為 version 6；59 張 64px `v2` 圖集保留作舊資產追蹤，runtime 以 59 張 96px `v3` 高細節全身圖集為基線（覆蓋全 50 名武將、5 類敵人士兵與 4 名首領 Boss），並對首四將（劉備、關羽、張飛、趙雲）改用 128px `v4` 試製圖集。每張維持 8 欄方向契約與 anticipation／windup／contact／follow-through／recovery 五列階段，renderer 依 `attackFrame` 實際抽格。
+- `已確認`：`attack-manifest.json` 為 version 6；59 張 64px `v2` 圖集保留作舊資產追蹤，runtime 統一使用 59 張 96px `v3` 高細節全身圖集（覆蓋全 50 名武將、5 類敵人士兵與 4 名首領 Boss）。首四將與五類敵人的 v3 圖集目前由四套重新繪製、真 alpha 的 `*-master-v4-clean.webp` 母圖產出；舊 `*-master-v4.webp` 烙入棋盤底與壓縮 matte，仍退出 runtime。每張 v3 維持 8 欄方向契約與 anticipation／windup／contact／follow-through／recovery 五列階段，renderer 依 `attackFrame` 實際抽格。
 - `已確認`：`v3` 動作圖以 11 名名將（含呂布／諸葛亮／貂蟬專屬母圖）、3 種普通敵軍與 2 名 Boss 獨立母圖為基礎，全 50 名武將與其餘敵首依 `visual` 或兵種（步→關羽、騎→趙雲、弓→黃忠、謀→曹操）及董卓身分全面映射產出獨立 96px attack 與 move 實體檔案。核心 11 將不得互為像素複本；其餘武將仍可能共用 archetype 剪影。身分 alias 契約持久化於 manifests，舊肖像／半身 combat body 不再作正常戰鬥路徑；不可宣稱全 50 名武將已完成唯一專屬外觀。
-- `已確認`：`move-manifest.json` version 3 管理全 59 個戰鬥單位的 4 幀 96px `v3` 移動條帶；首四將另用 128px `v4` 移動條帶（左腳接地／重心通過／右腳接地／回復通過）。條帶與攻擊母圖皆朝右，runtime 只依 `unit.facing` 鏡像；v3 產生器 flop set 為空。只有 `unit.moving` 時抽格，攻擊會中斷移動循環，停下改回 idle；死亡狀態（`unit.dead`）由動作圖接續播放後仰、旋轉與 squash 淡出，消除死亡瞬間憑空消失缺陷。
-- `已確認`：`npm run generate:combat-actions` 先由核心／支援／敵軍 v3 母圖加上呂布／諸葛亮／貂蟬專屬 strip 建立 59 張 96px 攻擊圖集與移動條帶，再由兩張 v4 首四將母圖重建 4 張 128px attack／move 試製資產；`npm run test:combat-assets` 驗證全量 59 張動作圖與移動條帶的尺寸、alpha、cell coverage、外緣髒色帶、路徑、階段／步態指紋，以及核心 11 將不得互為像素複本。
-- `已確認`：目前 ImageGen 提示、八張 master sheet 格位、背景去除、96px／128px 正規化、命名、alias、Canvas 消費與驗收流程已集中記錄於 [戰鬥人物圖片製作方式與規格](../standards/combat-character-asset-production.md)。
+- `已確認`：`move-manifest.json` version 3 管理全 59 個戰鬥單位的 4 幀 96px `v3` 移動條帶（左腳接地／重心通過／右腳接地／回復通過）。條帶與攻擊母圖皆朝右，runtime 只依 `unit.facing` 鏡像；v3 產生器 flop set 為空。只有 `unit.moving` 時抽格，攻擊會中斷移動循環，停下改回 idle；死亡狀態（`unit.dead`）由動作圖接續播放後仰、旋轉與 squash 淡出，消除死亡瞬間憑空消失缺陷。
+- `已確認`：`npm run generate:combat-actions` 只由核心／支援／敵軍 v3 母圖加上呂布／諸葛亮／貂蟬專屬 strip 建立 59 張 96px 攻擊圖集與移動條帶。輸出時清除封閉中性白孔洞，只暗化既有 alpha 邊界上的殘留 matte，保留原像素色相；不向透明區擴張，也不建立統一黑色外框。v3 正規化不再把完整 cell 向右下平移後裁掉右／下像素，asset gate 強制每格頭頂透明距離至少 4px。`npm run test:combat-assets` 同時驗證尺寸、alpha、cell coverage、外緣髒色帶、亮／灰 halo、頭頂安全距離、大型中性白連通塊、路徑、階段／步態指紋，以及核心 11 將不得互為像素複本。
+- `已確認`：受擊仍保留後仰、hit-stop、暖金色相變化與命中 VFX，但已移除 `brightness(2.7) saturate(0.25)` 的全身漂白，以及角色旁三個純白方點；普通命中 impact 改為 0.4 alpha、暖金濾色與 `source-over`，slash／afterimage／dust 亦不再以 `screen` 持續加亮白色核心。
+- `已確認`：戰鬥圖與其他 runtime 圖片由 `RUNTIME_ASSET_REVISION` 加入版本查詢參數，Service Worker cache 同步升為 `taoyuan-qunying-v16`；本輪重製使用 `20260902e` revision，同檔名 WebP 更新不再被舊 PWA cache 持續顯示。
+- `已確認`：目前 ImageGen 提示、八張 master sheet 格位、背景去除、96px／128px 正規化、命名、alias、Canvas 消費與驗收流程已集中記錄於 [戰鬥人物圖片製作方式與規格](../standards/combat-character-asset-production.md)；第一章 v4-clean 匯入由 `scripts/prepare-first-chapter-remaster.js` 固定化。
 - `已確認`：7 個 Boss 身分目前映射到 4 張 Boss sprite；普通敵人、敵將與 Boss 大量使用其他武將 body alias。
 - `已確認`：戰場兵器有 9 個基礎資產，額外武器 ID 大量 alias 到通用資產，握點主要依武器類型共用而非逐角色／方向定義。
 - `已確認`：核准的 `v3` 動作圖已內嵌手部相連兵器，renderer 不再疊加第二把外部兵器；程序 fallback 才使用獨立 combat weapon。
@@ -78,7 +80,7 @@
 
 目前判定：`FAIL／不可發布`。
 
-主要事實：96px `v3` 基線與首四將 128px `v4` 戰鬥試製已接入 runtime；命令列資產 gate 會阻止外緣矩形髒色帶，390×720 source browser 畫面已確認四名試製角色無矩形髒底。但全 50 名唯一外觀、五階段、八方向、握點、其餘基準尺寸與完整生命週期仍缺完整瀏覽器逐狀態畫面證據。UI 方面目前另有可見入口缺少 runtime helper、模態焦點未隔離、觸控與字級過小、重複／假功能入口、目標列被隱藏，以及測試文件與實況不一致；不得以 DOM、模板或資產檔存在宣稱可玩或可發布。
+主要事實：runtime 統一使用 96px `v3` 基線；首四將與五類敵人的 v3 圖集已改由四套真 alpha `v4-clean` 母圖產出，舊 128px `v4` 因烙入棋盤底造成 matte 色帶而退出 runtime，不能當完成證據。命令列資產 gate 會阻止 v3 外緣矩形髒色帶、亮／灰 halo 與頭頂裁切；一般單位 72px／Boss 96px 的 390×720 source／www 無視窗實戰畫面已確認無統一黑框、首四將載入 768×480 v3、普通敵人頭部完整，密集交戰未出現明顯新增互遮。原生 72px 最終母圖、全 50 名唯一外觀、五階段、八方向、握點、其餘基準尺寸與完整生命週期仍缺完整瀏覽器逐狀態畫面證據。UI 方面目前另有可見入口缺少 runtime helper、模態焦點未隔離、觸控與字級過小、重複／假功能入口、目標列被隱藏，以及測試文件與實況不一致；不得以 DOM、模板或資產檔存在宣稱可玩或可發布。
 
 UI 的逐畫面修正、入口去留、互動契約與產圖清單見 [UI 全面修正與資產產圖規格](../work/ui-remediation-and-asset-plan.md)。整體收斂方向見 [全遊戲調整計畫](../work/game-adjustment-plan.md)，詳細缺陷見 [已知問題](../issues/known-issues.md)，行動順序見 [目前工作清單](../work/active-backlog.md)，發布門檻見 [QA 測試矩陣](../qa/qa-test-matrix.md)。
 

@@ -33,32 +33,28 @@
       "kind": "hero",
       "archetype": "liubei",
       "path": "assets/characters/attack-liubei-v2.webp",
-      "detailPath": "assets/characters/attack-liubei-v3.webp",
-      "ultraDetailPath": "assets/characters/attack-liubei-v4.webp"
+      "detailPath": "assets/characters/attack-liubei-v3.webp"
     },
     {
       "id": "guanyu",
       "kind": "hero",
       "archetype": "guanyu",
       "path": "assets/characters/attack-guanyu-v2.webp",
-      "detailPath": "assets/characters/attack-guanyu-v3.webp",
-      "ultraDetailPath": "assets/characters/attack-guanyu-v4.webp"
+      "detailPath": "assets/characters/attack-guanyu-v3.webp"
     },
     {
       "id": "zhangfei",
       "kind": "hero",
       "archetype": "zhangfei",
       "path": "assets/characters/attack-zhangfei-v2.webp",
-      "detailPath": "assets/characters/attack-zhangfei-v3.webp",
-      "ultraDetailPath": "assets/characters/attack-zhangfei-v4.webp"
+      "detailPath": "assets/characters/attack-zhangfei-v3.webp"
     },
     {
       "id": "zhaoyun",
       "kind": "hero",
       "archetype": "zhaoyun",
       "path": "assets/characters/attack-zhaoyun-v2.webp",
-      "detailPath": "assets/characters/attack-zhaoyun-v3.webp",
-      "ultraDetailPath": "assets/characters/attack-zhaoyun-v4.webp"
+      "detailPath": "assets/characters/attack-zhaoyun-v3.webp"
     },
     {
       "id": "huangzhong",
@@ -447,9 +443,9 @@
     }
   ],
   "source": {
-    "core": "assets/characters/core-heroes-action-master-v3.webp",
+    "core": "assets/characters/core-heroes-action-master-v4-clean.webp",
     "support": "assets/characters/support-heroes-action-master-v3.webp",
-    "chapter1Enemies": "assets/characters/chapter1-enemies-action-master-v3.webp",
+    "chapter1Enemies": "assets/characters/chapter1-enemies-action-master-v4-clean.webp",
     "authoredHeroes": [
       "liubei",
       "guanyu",
@@ -474,15 +470,7 @@
     ],
     "allHeroesCount": 50,
     "allUnitsCount": 59,
-    "archetypeMappingRule": "unique named heroes (lubu/zhugeliang/diaochan) keep own masters; others: hero.visual -> hero.role fallback (infantry: guanyu, cavalry: zhaoyun, archer: huangzhong, strategist: caocao); unapproved bosses: boss-dongzhuo",
-    "pilotCore": "assets/characters/core-heroes-action-master-v4.webp",
-    "ultraDetailHeroes": [
-      "liubei",
-      "guanyu",
-      "zhangfei",
-      "zhaoyun"
-    ]
+    "archetypeMappingRule": "unique named heroes (lubu/zhugeliang/diaochan) keep own masters; others: hero.visual -> hero.role fallback (infantry: guanyu, cavalry: zhaoyun, archer: huangzhong, strategist: caocao); unapproved bosses: boss-dongzhuo"
   },
-  "detailCellSize": 96,
-  "ultraDetailCellSize": 128
+  "detailCellSize": 96
 }
